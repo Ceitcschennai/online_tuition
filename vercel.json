@@ -1,26 +1,15 @@
 {
+  "version": 2,
   "builds": [
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "frontend/build",
-        "buildCommand": "cd frontend && npm install && npm run build"
-      }
+      "src": "backend/server.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/static/(.*)",
-      "dest": "/frontend/build/static/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/frontend/build/index.html"
+      "dest": "backend/server.js"
     }
-  ],
-  "env": {
-    "NODE_VERSION": "18.x",
-    "REACT_APP_API_URL": "https://your-backend-domain.com"
-  }
+  ]
 }
