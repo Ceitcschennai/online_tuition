@@ -1,9 +1,10 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const router = express.Router();
+const multer = require("multer");
 
 const Student = require("../models/Student");
-const upload = require("../middleware/upload");
+// const upload = require("../middleware/upload"); // REMOVED - using local config like teacherRoutes
 const transporter = require("../config/email");
 const Activity = require("../models/Activity");
 
@@ -16,9 +17,15 @@ const {
 const mongoose = require("mongoose");
 const db = mongoose.connection;
 
+/* =========================
+   MULTER CONFIG - MEMORY STORAGE FOR VERCEL
+======================= */
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 /* =================================================
    HELPER — local validation (no API needed)
-================================================= */
+=============================================== */
 function normalizeSalutation(val) {
   if (!val) return null;
   const map = { mr: "Mr.", ms: "Ms.", mrs: "Mrs.", dr: "Dr." };
@@ -124,12 +131,14 @@ function validateStudent(body, hasFile) {
 
 /* =================================================
    STUDENT REGISTER
-================================================= */
+=============================================== */
 router.post("/register", upload.single("proof"), async (req, res) => {
-  const proof = req.file?.filename;
-
   try {
+    console.log("📥 STUDENT REGISTER BODY:", JSON.stringify(req.body, null, 2));
+    console.log("📎 FILE:", req.file ? "File received" : "NO FILE");
+
     const validation = validateStudent(req.body, !!req.file);
+    console.log("✅ VALIDATION:", JSON.stringify(validation, null, 2));
 
     if (!validation.valid) {
       return res.status(400).json({
@@ -155,6 +164,14 @@ router.post("/register", upload.single("proof"), async (req, res) => {
     // Hash password & save
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Handle file upload for Vercel (store as base64 or handle appropriately)
+    let proofData = null;
+    if (req.file) {
+      // For Vercel serverless, we might want to store file differently or skip file storage
+      // For now, let's store as base64 similar to teacher registration
+      proofData = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+    }
+
     const newStudent = new Student({
       salutation,
       firstName,
@@ -167,7 +184,7 @@ router.post("/register", upload.single("proof"), async (req, res) => {
       group,
       syllabus,
       emisNumber,
-      proof,
+      proof: proofData, // Store as base64 or null
       approvalStatus: "Pending",
       isActive: false,
     });
@@ -240,14 +257,16 @@ router.post("/register", upload.single("proof"), async (req, res) => {
 
   } catch (err) {
     console.error("Student Registration Error:", err);
-    res.status(500).json({ message: "❌ Server error" });
+    res.status(500).json({
+      success: false,
+      message: "❌ Server error: " + err.message
+    });
   }
 });
 
-
 /* =================================================
    SEARCH STUDENTS BY NAME
-================================================= */
+=============================================== */
 router.get("/search", async (req, res) => {
   try {
     const { name } = req.query;
@@ -268,10 +287,9 @@ router.get("/search", async (req, res) => {
   }
 });
 
-
 /* =================================================
    ADMIN – GET ALL PENDING STUDENTS
-================================================= */
+=============================================== */
 router.get("/admin/pending", async (req, res) => {
   try {
     const students = await Student.find({ approvalStatus: "Pending" })
@@ -284,10 +302,9 @@ router.get("/admin/pending", async (req, res) => {
   }
 });
 
-
 /* =================================================
    ADMIN – APPROVE / REJECT STUDENT
-================================================= */
+=============================================== */
 router.put("/admin/:id/approve", async (req, res) => {
   try {
     const { status } = req.body;
@@ -345,10 +362,9 @@ router.put("/admin/:id/approve", async (req, res) => {
   }
 });
 
-
 /* =================================================
    STUDENT DASHBOARD
-================================================= */
+=============================================== */
 router.get("/:id/dashboard", async (req, res) => {
   try {
     const student = await Student.findById(req.params.id);
@@ -395,10 +411,9 @@ router.get("/:id/dashboard", async (req, res) => {
   }
 });
 
-
 /* =================================================
    GET SINGLE STUDENT
-================================================= */
+=============================================== */
 router.get("/:id", async (req, res) => {
   try {
     const student = await Student.findById(req.params.id).select("-password");
