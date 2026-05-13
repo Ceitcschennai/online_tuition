@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import "../styles/login.css";
 import { FaLaptop, FaTimes } from "react-icons/fa";
+import API_BASE_URL from "../config/api";
 
 // ── Mobile detection ───────────────────────────────────────────────────────────
 const isMobileDevice = () => {
@@ -90,11 +91,11 @@ const Login = () => {
       return;
     }
 
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        { email, password, role }
-      );
+     try {
+       const res = await axios.post(
+         `${API_BASE_URL}/api/auth/login`,
+         { email, password, role }
+       );
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("userRole", res.data.role);

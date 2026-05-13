@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import "../styles/manageTeachers.css";
+import API_BASE_URL from "../config/api";
 
 const ManageTeachers = () => {
   const [filteredTeachers, setFilteredTeachers] = useState([]);
@@ -18,39 +19,38 @@ const ManageTeachers = () => {
   /* ===============================
      FETCH TEACHERS
    =============================== */
-  const fetchTeachers = useCallback(async () => {
-    try {
-      const res = await axios.get(
-        "http://localhost:5000/api/admin/teachers",
-        {
-          params: { search, filter },
-        }
-      );
+   const fetchTeachers = useCallback(async () => {
+     try {
+       const res = await axios.get(
+         `${API_BASE_URL}/api/admin/teachers`,
+         {
+           params: { search, filter },
+         }
+       );
 
-      console.log("Teachers API Response:", res.data);
+       console.log("Teachers API Response:", res.data);
 
-      // ✅ Extract array safely
-      const teacherArray = res.data.teachers || [];
+       // ✅ Extract array safely
+       const teacherArray = res.data.teachers || [];
 
-      setFilteredTeachers(teacherArray);
+       setFilteredTeachers(teacherArray);
 
-      // ✅ Set stats directly from backend
-      if (res.data.stats) {
-        setStats(res.data.stats);
-      }
-
-    } catch (error) {
-      console.error("Error fetching teachers:", error);
-      setFilteredTeachers([]);
-      setStats({
-        total: 0,
-        approved: 0,
-        pending: 0,
-        rejected: 0,
-        assigned: 0,
-      });
-    }
-  }, [search, filter]);
+       // ✅ Set stats directly from backend
+       if (res.data.stats) {
+         setStats(res.data.stats);
+       }
+     } catch (error) {
+       console.error("Error fetching teachers:", error);
+       setFilteredTeachers([]);
+       setStats({
+         total: 0,
+         approved: 0,
+         pending: 0,
+         rejected: 0,
+         assigned: 0,
+       });
+     }
+   }, [search, filter]);
 
 /* ===============================
       INITIAL LOAD + SEARCH + FILTER TRIGGER
@@ -62,33 +62,33 @@ const ManageTeachers = () => {
   /* ===============================
      UPDATE TEACHER STATUS
    =============================== */
-  const updateStatus = async (id, status) => {
-    try {
-      await axios.put(
-        `http://localhost:5000/api/admin/teachers/${id}/status`,
-        { status }
-      );
+   const updateStatus = async (id, status) => {
+     try {
+       await axios.put(
+         `${API_BASE_URL}/api/admin/teachers/${id}/status`,
+         { status }
+       );
 
-      fetchTeachers();
-    } catch (error) {
-      console.error("Status update failed:", error);
-    }
-  };
+       fetchTeachers();
+     } catch (error) {
+       console.error("Status update failed:", error);
+     }
+   };
 
   /* ===============================
      DELETE TEACHER
    =============================== */
-  const deleteTeacher = async (id) => {
-    try {
-      await axios.delete(
-        `http://localhost:5000/api/admin/teachers/${id}`
-      );
+   const deleteTeacher = async (id) => {
+     try {
+       await axios.delete(
+         `${API_BASE_URL}/api/admin/teachers/${id}`
+       );
 
-      fetchTeachers();
-    } catch (error) {
-      console.error("Delete failed:", error);
-    }
-  };
+       fetchTeachers();
+     } catch (error) {
+       console.error("Delete failed:", error);
+     }
+   };
 
   return (
     <div className="manage-teachers-container">
