@@ -1,0 +1,300 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* ── Variables ───────────────────────────────────────────────── */
+:root {
+  --bg:           #f4f2ee;
+  --surface:      #ffffff;
+  --surface-alt:  #f8f7f5;
+  --border:       rgba(30, 24, 18, 0.10);
+  --border-hover: rgba(30, 24, 18, 0.18);
+
+  --ink:          #1c1814;
+  --ink-mid:      #4a4440;
+  --ink-soft:     #8a827a;
+  --ink-hint:     #b0a89e;
+
+  --blue:         #185FA5;
+  --blue-lt:      #E6F1FB;
+  --blue-focus:   rgba(55, 138, 221, 0.12);
+
+  --high:         #993C1D;
+  --high-lt:      #FAECE7;
+  --high-border:  #F0997B;
+
+  --med:          #854F0B;
+  --med-lt:       #FAEEDA;
+
+  --low:          #0F6E56;
+  --low-lt:       #E1F5EE;
+
+  --radius-sm:    6px;
+  --radius:       10px;
+  --radius-lg:    14px;
+
+  --trans:        0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Base ────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Dashboard wrapper ───────────────────────────────────────── */
+.assignment-dashboard {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 40px 24px 72px;
+}
+
+/* ── Section label ───────────────────────────────────────────── */
+.assignment-dashboard > h2 {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+}
+
+/* ── Divider ─────────────────────────────────────────────────── */
+.assignment-dashboard > hr {
+  border: none;
+  border-top: 0.5px solid var(--border);
+  margin: 32px 0;
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.assignment-dashboard > p {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  padding: 20px 0;
+  font-style: italic;
+}
+
+/* ================================================================
+   FORM
+   ================================================================ */
+.assignment-form {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px 28px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+  margin-bottom: 32px;
+}
+
+.assignment-form textarea,
+.assignment-form button[type="submit"] {
+  grid-column: 1 / -1;
+}
+
+.assignment-form input,
+.assignment-form select,
+.assignment-form textarea {
+  width: 100%;
+  background: var(--surface-alt);
+  border: 0.5px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  padding: 10px 13px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color var(--trans), box-shadow var(--trans);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.assignment-form input::placeholder,
+.assignment-form textarea::placeholder {
+  color: var(--ink-hint);
+  font-weight: 300;
+}
+
+.assignment-form input:focus,
+.assignment-form select:focus,
+.assignment-form textarea:focus {
+  background: var(--surface);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-focus);
+}
+
+.assignment-form select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%238a827a' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  padding-right: 34px;
+  cursor: pointer;
+}
+
+.assignment-form textarea {
+  min-height: 88px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.assignment-form button[type="submit"] {
+  justify-self: end;
+  width: fit-content;
+  background: var(--blue);
+  color: var(--blue-lt);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 22px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: .01em;
+  transition: background var(--trans), transform var(--trans);
+}
+
+.assignment-form button[type="submit"]:hover:not(:disabled) { background: #0C447C; }
+.assignment-form button[type="submit"]:active:not(:disabled) { transform: scale(0.98); }
+.assignment-form button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ================================================================
+   ASSIGNMENT CARDS
+   ================================================================ */
+.assignment-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 16px;
+  align-items: start;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--trans), box-shadow var(--trans);
+}
+
+.assignment-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--border);
+  border-radius: 0;
+}
+
+.assignment-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .06);
+}
+
+.assignment-card h3 {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 10px;
+  grid-column: 1;
+  line-height: 1.35;
+}
+
+.assignment-card p {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+  grid-column: 1;
+  line-height: 1.5;
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.assignment-card p:last-of-type { margin-bottom: 0; }
+
+.assignment-card p b {
+  color: var(--ink-mid);
+  font-weight: 500;
+}
+
+.assignment-card > button {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: flex-start;
+  background: transparent;
+  color: var(--ink-soft);
+  border: 0.5px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  padding: 5px 13px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--trans), color var(--trans), border-color var(--trans);
+}
+
+.assignment-card > button:hover {
+  background: var(--high-lt);
+  color: var(--high);
+  border-color: var(--high-border);
+}
+
+/* Priority accent strips — add data-priority="High/Medium/Low" to .assignment-card */
+.assignment-card[data-priority="High"]::before   { background: var(--high); }
+.assignment-card[data-priority="Medium"]::before { background: var(--med);  }
+.assignment-card[data-priority="Low"]::before    { background: var(--low);  }
+
+/* Priority badge — add <span class="priority-badge high/medium/low"> */
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .02em;
+}
+
+.priority-badge.high   { background: var(--high-lt); color: var(--high); }
+.priority-badge.medium { background: var(--med-lt);  color: var(--med);  }
+.priority-badge.low    { background: var(--low-lt);  color: var(--low);  }
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 560px) {
+  .assignment-dashboard { padding: 24px 16px 56px; }
+
+  .assignment-form {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+
+  .assignment-form textarea,
+  .assignment-form button[type="submit"] {
+    grid-column: 1;
+  }
+
+  .assignment-form button[type="submit"] {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .assignment-card {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .assignment-card > button {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 14px;
+    width: fit-content;
+  }
+}
