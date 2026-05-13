@@ -1,132 +1,129 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../config/api";
 import "../styles/teacherDashboard.css";
 import {
-  FaChartLine,
-  FaClock,
-  FaGraduationCap,
-  FaBook,
-  FaUsers,
-  FaTasks,
-  FaQuestionCircle,
-  FaPlus,
-  FaCalendarCheck
+   FaChartLine,
+   FaGraduationCap,
+   FaBook,
+   FaUsers,
+   FaTasks,
+   FaQuestionCircle,
+   FaPlus,
+   FaCalendarCheck
 } from "react-icons/fa";
 
 const TeacherDashboard = () => {
-  const navigate = useNavigate();
+   const navigate = useNavigate();
 
-  const [stats, setStats] = useState({
-    totalStudents: 0,
-    assignmentsToReview: 0,
-    pendingQueries: 0,
-    attendanceRate: 0
-  });
+   const [stats, setStats] = useState({
+     totalStudents: 0,
+     assignmentsToReview: 0,
+     pendingQueries: 0,
+     attendanceRate: 0
+   });
 
-  const [teacherInfo, setTeacherInfo] = useState({
-    name: "",
-    classes: [],
-    subjects: []
-  });
+   const [teacherInfo, setTeacherInfo] = useState({
+     name: "",
+     classes: [],
+     subjects: []
+   });
 
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [queries, setQueries] = useState([]); // ✅ NEW
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+   const [queries, setQueries] = useState([]); // ✅ NEW
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState("");
 
-  const teacherId = localStorage.getItem("teacherId");
-  const token = localStorage.getItem("token");
+   const teacherId = localStorage.getItem("teacherId");
+   const token = localStorage.getItem("token");
 
-  // =========================
-  // 📊 FETCH DASHBOARD DATA
-  // =========================
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      setError("");
+   // =========================
+   // 📊 FETCH DASHBOARD DATA
+   // =========================
+   const fetchDashboardData = useCallback(async () => {
+     try {
+       setLoading(true);
+       setError("");
 
-      if (!teacherId || !token) {
-        navigate("/login");
-        return;
-      }
+       if (!teacherId || !token) {
+         navigate("/login");
+         return;
+       }
 
-      const res = await fetch(
-        `${API_BASE_URL}/api/teacher/dashboard/stats/${teacherId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+       const res = await fetch(
+         `${API_BASE_URL}/api/teacher/dashboard/stats/${teacherId}`,
+         {
+           headers: {
+             Authorization: `Bearer ${token}`
+           }
+         }
+       );
 
-      if (!res.ok) throw new Error("Failed to fetch dashboard");
+       if (!res.ok) throw new Error("Failed to fetch dashboard");
 
-      const data = await res.json();
+       const data = await res.json();
 
-      setStats(data.stats);
-      setTeacherInfo(data.teacherInfo);
-      setRecentActivities(data.recentActivities || []);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
+       setStats(data.stats);
+       setTeacherInfo(data.teacherInfo);
+     } catch (err) {
+       console.error(err);
+       setError("Failed to load dashboard");
+     } finally {
+       setLoading(false);
+     }
+   }, [teacherId, token, navigate]);
 
-  // =========================
-  // 📩 FETCH QUERIES
-  // =========================
-  const fetchQueries = async () => {
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/queries/teacher/${teacherId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+   // =========================
+   // 📩 FETCH QUERIES
+   // =========================
+   const fetchQueries = useCallback(async () => {
+     try {
+       const res = await fetch(
+         `${API_BASE_URL}/api/queries/teacher/${teacherId}`,
+         {
+           headers: {
+             Authorization: `Bearer ${token}`
+           }
+         }
+       );
 
-      const data = await res.json();
-      setQueries(data.queries || []);
-    } catch (err) {
-      console.error("Query fetch error:", err);
-    }
-  };
+       const data = await res.json();
+       setQueries(data.queries || []);
+     } catch (err) {
+       console.error("Query fetch error:", err);
+     }
+   }, [teacherId, token]);
 
-  // =========================
-  // ✅ ACCEPT QUERY
-  // =========================
-  const acceptQuery = async (id) => {
-    try {
-      await fetch(`${API_BASE_URL}/api/queries/${id}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: "Answered" })
-      });
+   // =========================
+   // ✅ ACCEPT QUERY
+   // =========================
+   const acceptQuery = async (id) => {
+     try {
+       await fetch(`${API_BASE_URL}/api/queries/${id}/status`, {
+         method: "PUT",
+         headers: {
+           "Content-Type": "application/json",
+           Authorization: `Bearer ${token}`
+         },
+         body: JSON.stringify({ status: "Answered" })
+       });
 
-      setQueries((prev) =>
-        prev.map((q) =>
-          q._id === id ? { ...q, status: "Answered" } : q
-        )
-      );
-    } catch (err) {
-      console.error("Update error:", err);
-    }
-  };
+       setQueries((prev) =>
+         prev.map((q) =>
+           q._id === id ? { ...q, status: "Answered" } : q
+         )
+       );
+     } catch (err) {
+       console.error("Update error:", err);
+     }
+   };
 
-  // =========================
-  // 🔄 LOAD DATA
-  // =========================
-  useEffect(() => {
-    fetchDashboardData();
-    fetchQueries();
-  }, []);
+   // =========================
+   // 🔄 LOAD DATA
+   // =========================
+   useEffect(() => {
+     fetchDashboardData();
+     fetchQueries();
+   }, [fetchDashboardData, fetchQueries]);
 
   if (loading) return <p>Loading dashboard...</p>;
 

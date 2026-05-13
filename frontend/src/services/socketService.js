@@ -106,13 +106,14 @@ class SocketService {
     }
   }
 
-  joinLiveClass(classData) {
-    if (this.socket && this.socket.connected) { // Check if connected
-      this.socket.emit('joinLiveClass', classData);
-    } else {
-      console.error('Socket not connected, cannot join live class');
-    }
-  }
-}
+   joinLiveClass(classData) {
+     if (this.socket && this.socket.connected) { // Check if connected
+       this.socket.emit('joinLiveClass', classData);
+     } else {
+       console.error('Socket not connected, cannot join live class');
+     }
+   }
+ }
 
-export default new SocketService();
+ const socketService = new SocketService();
+ export default socketService;

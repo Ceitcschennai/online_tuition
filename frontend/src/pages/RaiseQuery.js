@@ -11,9 +11,8 @@ const RaiseQuery = () => {
     const [loading, setLoading] = useState(false);
     const [fetchingQueries, setFetchingQueries] = useState(true);
     const [fetchingSubjects, setFetchingSubjects] = useState(true);
-    const [error, setError] = useState('');
-    const [subjects, setSubjects] = useState([]);
-    const [teachers, setTeachers] = useState([]);
+const [error, setError] = useState('');
+     const [teachers, setTeachers] = useState([]);
     const [fetchingTeachers, setFetchingTeachers] = useState(true);
    
    // --- Class Request State ---
@@ -68,27 +67,24 @@ const RaiseQuery = () => {
      : localStorage.getItem('studentName') || localStorage.getItem('userName') || 'Student';
    const currentStudentClass = (student?.class || localStorage.getItem('studentClass') || localStorage.getItem('userClass') || '10').toString().replace(/^Class\s*/i, '');
    
-   // Fetch subjects
-   const fetchSubjects = useCallback(async () => {
-     try {
-       setFetchingSubjects(true);
-       setError('');
-       const response = await axios.get(`${API_BASE_URL}/api/subjects`);
-       if (response.status === 200 && response.data.subjects) {
-         const subjectNames = response.data.subjects.map(subject => subject.name);
-         setSubjects([...new Set(subjectNames)]);
-       } else {
-         setError('Failed to load subjects');
-         setSubjects([]);
-       }
-     } catch (error) {
-       console.error('Failed to fetch subjects:', error);
-       setError('Failed to load subjects. Please refresh the page.');
-       setSubjects([]);
-     } finally {
-       setFetchingSubjects(false);
-     }
-   }, []);
+// Fetch subjects
+    const fetchSubjects = useCallback(async () => {
+      try {
+        setFetchingSubjects(true);
+        setError('');
+        const response = await axios.get(`${API_BASE_URL}/api/subjects`);
+        if (response.status === 200 && response.data.subjects) {
+          // Subjects loaded successfully
+        } else {
+          setError('Failed to load subjects');
+        }
+      } catch (error) {
+        console.error('Failed to fetch subjects:', error);
+        setError('Failed to load subjects. Please refresh the page.');
+      } finally {
+        setFetchingSubjects(false);
+      }
+    }, []);
    
    // Fetch student's queries
    const fetchStudentQueries = useCallback(async () => {

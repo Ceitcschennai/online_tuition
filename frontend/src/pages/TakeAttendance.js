@@ -1,22 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
-import { 
-  FaUserCheck, 
-  FaUsers, 
-  FaClock, 
+import {
+  FaClock,
   FaCheckCircle,
   FaTimesCircle,
   FaSpinner,
-  FaFilter,
   FaDownload,
   FaEye,
   FaTimes,
   FaChevronLeft,
   FaChevronRight,
-  FaClipboardCheck,
   FaExclamationTriangle,
-  FaVideo,
   FaInfoCircle,
   FaCalendarAlt,
   FaHistory,
@@ -456,39 +452,39 @@ const TakeAttendance = () => {
   };
   const stats = getStats();
 
-  useEffect(() => {
-    loadTeacherAssignments();
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
-      if (liveClassCheckRef.current) clearInterval(liveClassCheckRef.current);
-    };
-  }, []);
+   useEffect(() => {
+     loadTeacherAssignments();
+     return () => {
+       if (timerRef.current) clearInterval(timerRef.current);
+       if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
+       if (liveClassCheckRef.current) clearInterval(liveClassCheckRef.current);
+     };
+   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { if (selectedClass && selectedSubject) fetchStudents(); }, [selectedClass, selectedSubject]);
+   useEffect(() => { if (selectedClass && selectedSubject) fetchStudents(); }, [selectedClass, selectedSubject]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (selectedClass && selectedSubject && teacher) {
-      checkForActiveLiveClass();
-      liveClassCheckRef.current = setInterval(checkForActiveLiveClass, 10000);
-    }
-    return () => { if (liveClassCheckRef.current) clearInterval(liveClassCheckRef.current); };
-  }, [selectedClass, selectedSubject, teacher]);
+ useEffect(() => {
+      if (selectedClass && selectedSubject && teacher) {
+        checkForActiveLiveClass();
+        liveClassCheckRef.current = setInterval(checkForActiveLiveClass, 10000);
+      }
+      return () => { if (liveClassCheckRef.current) clearInterval(liveClassCheckRef.current); };
+    }, [selectedClass, selectedSubject, teacher, checkForActiveLiveClass]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (isAutoTracking && liveSession && activeLiveClass) {
-      startDurationTimer();
-      trackingIntervalRef.current = setInterval(autoTrackAttendance, 15000);
-      autoTrackAttendance();
-    } else {
-      if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
-    }
-    return () => { if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current); };
-  }, [isAutoTracking, liveSession, activeLiveClass]);
+    useEffect(() => {
+      if (isAutoTracking && liveSession && activeLiveClass) {
+        startDurationTimer();
+        trackingIntervalRef.current = setInterval(autoTrackAttendance, 15000);
+        autoTrackAttendance();
+      } else {
+        if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
+      }
+      return () => { if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current); };
+    }, [isAutoTracking, liveSession, activeLiveClass, autoTrackAttendance]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (selectedDate && selectedClass && selectedSubject && teacher) checkForActiveLiveClass();
-  }, [selectedDate]);
+    useEffect(() => {
+      if (selectedDate && selectedClass && selectedSubject && teacher) checkForActiveLiveClass();
+    }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const handleClickOutside = (event) => {

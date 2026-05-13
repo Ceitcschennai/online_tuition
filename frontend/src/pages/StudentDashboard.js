@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import API_BASE_URL from '../config/api';
 import '../styles/studentDashboard.css';
 import {
@@ -9,7 +9,6 @@ import { useLiveClass } from '../contexts/LiveClassContext';
 import { markStudentJoin } from '../service/AttendanceService';
 
 const StudentDashboard = ({ student: propStudent }) => {
-  const [student, setStudent] = useState(propStudent || null);
   const [stats, setStats] = useState({
     enrolledSubjects: 0, pendingAssignments: 0,
     completedAssignments: 0, lastPayment: 'Pending', attendance: 0
@@ -17,46 +16,12 @@ const StudentDashboard = ({ student: propStudent }) => {
   const [loading, setLoading] = useState(true);
   const [enrolledSubjectsList, setEnrolledSubjectsList] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
-  const [scheduledClasses, setScheduledClasses] = useState([]);
+   const [scheduledClasses] = useState([]);
 
   const { liveClasses } = useLiveClass();
+  const student = propStudent;
 
-  const getStudentData = () => {
-    try {
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const parsedData = JSON.parse(userData);
-        return parsedData.student || parsedData;
-      }
-    } catch (error) { console.error('Error parsing user data:', error); }
-    return null;
-  };
-
-   useEffect(() => {
-     if (student && (student.id || student._id)) fetchDashboardData();
-   }, [student, fetchDashboardData]);
-
-  useEffect(() => {
-    if (student && (student.id || student._id)) fetchDashboardData();
-  }, [student]);
-
-  // ── Fetch scheduled classes from backend ──
-  useEffect(() => {
-    const fetchScheduled = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/live-classes/scheduled`);
-        const data = await res.json();
-        if (data.success) {
-          setScheduledClasses(data.scheduledClasses);
-        }
-      } catch (e) {
-        console.error('Error fetching scheduled classes:', e);
-      }
-    };
-    fetchScheduled();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       const studentId = student?.id || student?._id;
       if (!studentId) { setLoading(false); return; }
@@ -92,7 +57,13 @@ const StudentDashboard = ({ student: propStudent }) => {
       }
     } catch (error) { console.error('Error fetching dashboard data:', error); }
     finally { setLoading(false); }
-  };
+  }, [student]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // ── Fetch scheduled classes from backend ──
 
   const handleCopyLink = (cls) => {
     const link = cls.jitsiUrl || (cls.roomName ? `https://meet.jit.si/${cls.roomName}` : null) || cls.manualLink;

@@ -52,19 +52,12 @@ const ManageTeachers = () => {
     }
   }, [search, filter]);
 
-  /* ===============================
-     INITIAL LOAD
-   =============================== */
-  useEffect(() => {
-    fetchTeachers();
-  }, [fetchTeachers]);
-
-  /* ===============================
-     SEARCH + FILTER TRIGGER
-   =============================== */
-  useEffect(() => {
-    fetchTeachers();
-  }, [search, filter]);
+/* ===============================
+      INITIAL LOAD + SEARCH + FILTER TRIGGER
+    =============================== */
+   useEffect(() => {
+     fetchTeachers();
+   }, [fetchTeachers]);
 
   /* ===============================
      UPDATE TEACHER STATUS

@@ -29,6 +29,18 @@ import Accounts from "../assets/Accounts.jpeg";
 
 const PLATFORMS = ["Jitsi Meet", "Zoom", "Google Meet", "Microsoft Teams", "Cisco Webex"];
 
+const imageMap = {
+  Maths, Physics, Chemistry, English, Tamil, Science, Social,
+  Zoology, Botany, Geography, History, Economics, Hindi,
+  "Computer Science": ComputerScience, Accounts
+};
+
+const getSubjectIcon = (name) => {
+  if (name === "Maths") return <FaCalculator />;
+  if (name === "Computer Science") return <FaLaptopCode />;
+  return <FaBook />;
+};
+
 const TeacherSubjects = () => {
   const navigate = useNavigate();
   const { liveClasses, startLiveClass, endLiveClass } = useLiveClass();
@@ -49,18 +61,6 @@ const TeacherSubjects = () => {
     date: "", time: "", platform: "Jitsi Meet",
     description: "", manualLink: ""
   });
-
-  const imageMap = {
-    Maths, Physics, Chemistry, English, Tamil, Science, Social,
-    Zoology, Botany, Geography, History, Economics, Hindi,
-    "Computer Science": ComputerScience, Accounts
-  };
-
-  const getSubjectIcon = (name) => {
-    if (name === "Maths") return <FaCalculator />;
-    if (name === "Computer Science") return <FaLaptopCode />;
-    return <FaBook />;
-  };
 
   // ── Load teacher from localStorage ──
   useEffect(() => {
