@@ -165,10 +165,15 @@ const StudentRegister = () => {
     alert(`❌ ${result.message}`);
   }
 }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('❌ Registration failed');
-    }
+     } catch (error) {
+       console.error('Student registration error:', error);
+       console.error('Error details:', {
+         message: error.message,
+         stack: error.stack,
+         name: error.name
+       });
+       alert('❌ Registration failed: ' + (error.message || 'Unknown error'));
+     }
   };
 
   return (

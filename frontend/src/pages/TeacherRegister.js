@@ -87,10 +87,15 @@ const TeacherRegister = () => {
       } else {
         alert(data.message || "Registration failed");
       }
-    } catch (error) {
-      console.error(error);
-      alert("Error connecting to server");
-    }
+     } catch (error) {
+       console.error("Teacher registration error:", error);
+       console.error("Error details:", {
+         message: error.message,
+         stack: error.stack,
+         name: error.name
+       });
+       alert("Error connecting to server: " + (error.message || "Unknown error"));
+     }
   };
 
   return (

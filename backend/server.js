@@ -24,7 +24,8 @@ if (process.env.NODE_ENV !== "production") {
 // ================= MIDDLEWARE =================
 app.use(cors({
   origin: [
-    "https://ceitcsacedamy-08-05-2026-main-ksin.vercel.app/",
+    "https://ceitcsacedamy-08-05-2026-main-ksin.vercel.app",
+    "https://ceitcsacedamy-08-05-2026-main.vercel.app",
     "http://localhost:3000"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
