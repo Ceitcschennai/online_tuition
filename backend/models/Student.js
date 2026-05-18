@@ -1,52 +1,49 @@
 const mongoose = require('mongoose');
 
-const studentSchema = new mongoose.Schema({
+const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
+const studentSchema = new mongoose.Schema({
   salutation: {
     type: String,
-      enum: ['Mr.', 'Ms.', 'Mrs.', 'Mr', 'Ms', 'Mrs']
+    enum: ['Mr.', 'Ms.', 'Mrs.', 'Mr', 'Ms', 'Mrs']
   },
   firstName: {
     type: String,
-    required: true,
-    trim: true
+    required: [true, 'First name is required'],
+    trim: true,
+    minlength: [2, 'First name must be at least 2 characters']
   },
   lastName: {
     type: String,
-    required: true,
-    trim: true
+    required: [true, 'Last name is required'],
+    trim: true,
+    minlength: [1, 'Last name must be at least 1 character']
   },
   email: {
     type: String,
-    required: true,
+    required: [true, 'Email is required'],
     unique: true,
     lowercase: true,
-    trim: true
+    trim: true,
+    match: [emailRegex, 'Please provide a valid email address'] // ✅ ADDED
   },
-  password: {
-    type: String,
-    // Not required for admin-created students
-  },
+  password: { type: String },
   mobile: {
     type: String,
-    trim: true
+    trim: true,
+    minlength: [7, 'Mobile number too short'],   // ✅ ADDED
+    maxlength: [15, 'Mobile number too long']     // ✅ ADDED
   },
   timezone: String,
   class: {
     type: String,
-    required: true
+    required: [true, 'Class is required']
   },
   group: String,
   syllabus: String,
-  emisNumber: {
-    type: String,
-    trim: true
-  },
-  proof: String, // File path for student proof document
-  registeredAt: {
-    type: Date,
-    default: Date.now
-  },
+  emisNumber: { type: String, trim: true },
+  proof: String,
+  registeredAt: { type: Date, default: Date.now },
   status: {
     type: String,
     enum: ['Paid', 'Unpaid'],
@@ -57,28 +54,18 @@ const studentSchema = new mongoose.Schema({
     enum: ['Pending', 'Approved', 'Rejected'],
     default: 'Pending'
   },
-  isActive: {
-    type: Boolean,
-    default: true
-  }
-}, {
-  timestamps: true
-});
+  isActive: { type: Boolean, default: true }
+}, { timestamps: true });
 
-// Virtual field for backward compatibility
-studentSchema.virtual('isApproved').get(function() {
+studentSchema.virtual('isApproved').get(function () {
   return this.approvalStatus === 'Approved';
 });
-
-// Ensure virtual fields are included when converting to JSON
 studentSchema.set('toJSON', { virtuals: true });
 studentSchema.set('toObject', { virtuals: true });
 
-// Index for better query performance
 studentSchema.index({ email: 1 });
 studentSchema.index({ approvalStatus: 1 });
 studentSchema.index({ status: 1 });
 studentSchema.index({ class: 1 });
 
-// ✅ FIX: Changed Model to model (lowercase 'm')
 module.exports = mongoose.model('Student', studentSchema);

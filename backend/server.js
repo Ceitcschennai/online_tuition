@@ -4,12 +4,15 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const connectDB = require("./config/db");
-const validateRoute  = require("./routes/validate");
+const validateRoute = require("./routes/validate");
+const setupDatabaseGuardrails = require("./config/dbGuardrails"); // ✅ ADDED
 
 const app = express();
 
 // ================= CONNECT DB =================
-connectDB();
+connectDB().then(() => {
+  setupDatabaseGuardrails(); // ✅ ADDED — runs once after DB connects
+});
 
 // ================= UPLOAD FOLDER (LOCAL ONLY) =================
 if (process.env.NODE_ENV !== "production") {
@@ -55,8 +58,7 @@ app.use("/api/queries", require("./routes/queryRoutes"));
 app.use("/api/assignments", require("./routes/assignmentRoutes"));
 app.use("/api/live-classes", require("./routes/liveClassRoutes"));
 app.use("/api", require("./routes/attendanceRoutes"));
-app.use("/api/validate",  validateRoute);
-
+app.use("/api/validate", validateRoute);
 
 // ================= CREW AGENT ROUTE =================
 app.use("/api/crew", require("./routes/customerRoutes"));
@@ -71,4 +73,3 @@ if (process.env.NODE_ENV !== "production") {
     console.log(`🚀 Server running on port ${PORT}`);
   });
 }
-  
