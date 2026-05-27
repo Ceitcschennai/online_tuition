@@ -25,14 +25,14 @@ const studentSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     trim: true,
-    match: [emailRegex, 'Please provide a valid email address'] // ✅ ADDED
+    match: [emailRegex, 'Please provide a valid email address']
   },
   password: { type: String },
   mobile: {
     type: String,
     trim: true,
-    minlength: [7, 'Mobile number too short'],   // ✅ ADDED
-    maxlength: [15, 'Mobile number too long']     // ✅ ADDED
+    minlength: [7, 'Mobile number too short'],
+    maxlength: [15, 'Mobile number too long']
   },
   timezone: String,
   class: {
@@ -42,6 +42,12 @@ const studentSchema = new mongoose.Schema({
   group: String,
   syllabus: String,
   emisNumber: { type: String, trim: true },
+  panNumber: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    match: [/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Please enter a valid PAN number'] // ✅ ADDED
+  },
   proof: String,
   registeredAt: { type: Date, default: Date.now },
   status: {

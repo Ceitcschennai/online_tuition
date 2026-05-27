@@ -38,7 +38,6 @@ function validateTeacher(body) {
   const errors = {};
   const normalized = { ...body };
 
-  // firstName
   const fn = (body.firstName || "").trim();
   if (fn.length < 2 || !/^[a-zA-Z]+$/.test(fn)) {
     errors.firstName = "Min 2 letters, letters only";
@@ -46,7 +45,6 @@ function validateTeacher(body) {
     normalized.firstName = fn;
   }
 
-  // lastName
   const ln = (body.lastName || "").trim();
   if (ln.length < 2 || !/^[a-zA-Z]+$/.test(ln)) {
     errors.lastName = "Min 2 letters, letters only";
@@ -54,7 +52,6 @@ function validateTeacher(body) {
     normalized.lastName = ln;
   }
 
-  // email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const em = (body.email || "").trim().toLowerCase();
   if (!emailRegex.test(em)) {
@@ -63,13 +60,11 @@ function validateTeacher(body) {
     normalized.email = em;
   }
 
-  // password — min 8 chars
   const pw = body.password || "";
   if (pw.length < 8) {
     errors.password = "Password must be at least 8 characters";
   }
 
-  // mobile
   const mob = (body.mobile || "").toString().trim();
   if (!/^[1-9]\d{9}$/.test(mob)) {
     errors.mobile = "Must be exactly 10 digits, not starting with 0";
@@ -77,21 +72,18 @@ function validateTeacher(body) {
     normalized.mobile = mob;
   }
 
-  // timezone — accept any non-empty value
   if (!body.timezone || body.timezone.trim() === "") {
     errors.timezone = "Timezone is required";
   } else {
     normalized.timezone = body.timezone.trim();
   }
 
-  // qualification — accept any non-empty value
   if (!body.qualification || body.qualification.trim() === "") {
     errors.qualification = "Qualification is required";
   } else {
     normalized.qualification = body.qualification.trim();
   }
 
-  // preferredSubject — accept any non-empty value
   if (!body.preferredSubject || body.preferredSubject.toString().trim() === "") {
     errors.preferredSubject = "Preferred subject is required";
   } else {
@@ -131,20 +123,17 @@ router.post("/register", upload.single("degreeCertificate"), async (req, res) =>
       qualification, mobile, timezone, preferredSubject,
     } = validation.normalized;
 
-    // Check duplicate email
     const exists = await Teacher.findOne({ email: email.toLowerCase() });
     if (exists) {
       return res.status(400).json({ message: "Teacher already exists" });
     }
 
-    // Build file data & hash password
     const fileData = req.file
       ? `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`
       : null;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Save teacher
     const teacher = new Teacher({
       firstName,
       lastName,
@@ -162,7 +151,6 @@ router.post("/register", upload.single("degreeCertificate"), async (req, res) =>
 
     const customerId = teacher._id.toString();
 
-    // KnowledgeAgent — insert into customers collection
     await db.db.collection("customers").insertOne({
       customerId,
       name: `${firstName} ${lastName}`,
@@ -171,7 +159,6 @@ router.post("/register", upload.single("degreeCertificate"), async (req, res) =>
       createdAt: new Date(),
     });
 
-    // Link teacher to subject
     if (preferredSubject) {
       try {
         await Subject.findByIdAndUpdate(preferredSubject, {
@@ -182,28 +169,24 @@ router.post("/register", upload.single("degreeCertificate"), async (req, res) =>
       }
     }
 
-    // ActionAgent
     await ActionAgent.createTask({
       customerId,
       issue: "New teacher registration — pending admin approval",
       status: "open",
     });
 
-    // AnalyticsAgent
     await AnalyticsAgent.logInteraction({
       customerId,
       message: `Teacher registered: ${firstName} ${lastName}`,
       type: "registration",
     });
 
-    // Activity log
     await Activity.create({
       type: "teacher",
       message: `New teacher registered: ${teacher.firstName} ${teacher.lastName}`,
       time: new Date(),
     });
 
-    // Email admin (non-blocking)
     try {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
@@ -322,7 +305,7 @@ router.put("/admin/teacher/:id/approve", async (req, res) => {
 
 
 /* =========================
-   TEACHER DASHBOARD
+   TEACHER DASHBOARD  ← FIXED: now returns all profile fields
 ========================= */
 router.get("/dashboard/stats/:teacherId", async (req, res) => {
   try {
@@ -335,6 +318,7 @@ router.get("/dashboard/stats/:teacherId", async (req, res) => {
     const recentActivities = await Activity.find({ type: "teacher" })
       .sort({ time: -1 })
       .limit(5);
+
     res.json({
       stats: {
         totalStudents: 0,
@@ -344,10 +328,16 @@ router.get("/dashboard/stats/:teacherId", async (req, res) => {
         totalInteractions: summary.totalInteractions,
         lastContact: summary.lastContact,
       },
+      // ✅ FIXED: all profile fields now included
       teacherInfo: {
-        name: teacher.firstName + " " + teacher.lastName,
+        name: `${teacher.firstName} ${teacher.lastName}`,
         classes: teacher.classesAssigned || [],
         subjects: teacher.subjects.map(s => s.name),
+        email: teacher.email || "",
+        mobile: teacher.mobile || "",
+        qualification: teacher.qualification || "",
+        timezone: teacher.timezone || "",
+        approvalStatus: teacher.isApproved ? "Approved" : "Pending",
       },
       recentActivities,
     });
