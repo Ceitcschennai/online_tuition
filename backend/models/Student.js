@@ -5,7 +5,7 @@ const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 const studentSchema = new mongoose.Schema({
   salutation: {
     type: String,
-    enum: ['Mr.', 'Ms.', 'Mrs.', 'Mr', 'Ms', 'Mrs']
+    enum: ['Mr.', 'Ms.', 'Mrs.', 'Mr', 'Ms', 'Mrs', 'Dr.']
   },
   firstName: {
     type: String,
@@ -17,7 +17,7 @@ const studentSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Last name is required'],
     trim: true,
-    minlength: [1, 'Last name must be at least 1 character']
+    minlength: [2, 'Last name must be at least 2 characters']
   },
   email: {
     type: String,

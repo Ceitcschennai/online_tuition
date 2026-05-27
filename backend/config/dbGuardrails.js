@@ -32,7 +32,7 @@ async function setupDatabaseGuardrails() {
             class:          { bsonType: "string" },
             salutation: {
               bsonType: "string",
-              enum: ["Mr.", "Ms.", "Mrs.", "Mr", "Ms", "Mrs"],
+              enum: ["Mr.", "Ms.", "Mrs.", "Mr", "Ms", "Mrs", "Dr."],
             },
             timezone: { bsonType: "string" },
             group: { bsonType: "string" },
@@ -171,16 +171,12 @@ async function setupDatabaseGuardrails() {
       validator: {
         $jsonSchema: {
           bsonType: "object",
-          required: ["customerId", "name", "email", "role"],
           properties: {
             customerId: { bsonType: "string" },
             name:       { bsonType: "string" },
             email:      { bsonType: "string" },
-            role: {
-              bsonType: "string",
-              enum: ["student", "teacher", "admin"],
-            },
-            createdAt: { bsonType: "date" },
+            role:       { bsonType: "string" },
+            createdAt:  { bsonType: "date" },
           },
         },
       },
