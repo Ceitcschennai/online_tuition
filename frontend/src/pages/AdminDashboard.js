@@ -14,6 +14,29 @@ const normalizeSalutation = (val) => {
   return map[val.trim().toLowerCase()] || val.trim();
 };
 
+// ─── FIELD REGISTRY ───────────────────────────────────────────────────────────
+// ✅ Single source of truth — defines WHO can see WHAT
+// The crew agent reads this. The UI reads this. No manual conditions anywhere.
+const FIELD_REGISTRY = {
+  email:            { icon: '📧', label: 'Email',     visibleTo: ['student', 'teacher', 'admin'] },
+  mobile:           { icon: '📱', label: 'Mobile',    visibleTo: ['student', 'teacher', 'admin'] },
+  syllabus:         { icon: '📚', label: 'Syllabus',  visibleTo: ['student'] },
+  studentClass:     { icon: '🏫', label: 'Class',     visibleTo: ['student'] },
+  emisNumber:       { icon: '🆔', label: 'EMIS No.',  visibleTo: ['student'] },
+  panNumber:        { icon: '🪪', label: 'PAN No.',   visibleTo: ['student'], sensitive: true }, // 🔒 student-only
+  qualification:    { icon: '🎓', label: 'Qual.',     visibleTo: ['teacher', 'admin'] },
+  preferredSubject: { icon: '📖', label: 'Subject',   visibleTo: ['teacher', 'admin'] },
+  timezone:         { icon: '🌍', label: 'Timezone',  visibleTo: ['student', 'teacher', 'admin'] },
+  createdAt:        { icon: '🕐', label: 'Created',   visibleTo: ['student', 'teacher', 'admin'] },
+};
+
+// Ordered list of fields to show on the card
+const CARD_FIELD_ORDER = [
+  'email', 'mobile', 'syllabus', 'studentClass',
+  'emisNumber', 'panNumber', 'qualification', 'preferredSubject',
+  'timezone', 'createdAt',
+];
+
 // ─── ROLES config ─────────────────────────────────────────────────────────────
 const ROLES = {
   student: {
@@ -30,9 +53,10 @@ const ROLES = {
       { key: 'password',        backendKey: 'password',        label: 'Password',         type: 'password', required: true },
       { key: 'confirmPassword', backendKey: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true },
       { key: 'emisNumber',      backendKey: 'emisNumber',      label: 'EMIS Number',      type: 'text',     required: true },
+      { key: 'panNumber',       backendKey: 'panNumber',       label: 'PAN Number',       type: 'text',     required: true },
     ],
     endpoint: '/api/student/register',
-    hint: 'Mr., Ravi, Kumar, 9876543210, State Board, 10th, Asia/Kolkata, ravi@email.com, Pass@123, Pass@123, 123456',
+    hint: 'Mr., Ravi, Kumar, 9876543210, State Board, 10th, Asia/Kolkata, ravi@email.com, Pass@123, Pass@123, 123456, ABCDE1234F',
   },
   teacher: {
     label: 'Teacher',
@@ -54,26 +78,32 @@ const ROLES = {
 };
 
 // ─── CreatedUserCard ──────────────────────────────────────────────────────────
+// ✅ Zero manual conditions — everything driven by FIELD_REGISTRY.visibleTo
+// The crew agent guardrail: if sensitive: true and role not in visibleTo → show N/A in red
 const CreatedUserCard = ({ user, role, onDismiss }) => {
   const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
-  const isStudent = role === 'student';
 
-  const rows = [
-    { icon: '📧', label: 'Email',    value: user.email },
-    { icon: '📱', label: 'Mobile',   value: user.mobile },
-    isStudent && { icon: '📚', label: 'Syllabus', value: user.syllabus },
-    isStudent && { icon: '🏫', label: 'Class',    value: user.studentClass },
-    isStudent && { icon: '🆔', label: 'EMIS No.', value: user.emisNumber },
-    !isStudent && { icon: '🎓', label: 'Qual.',   value: user.qualification },
-    !isStudent && { icon: '📖', label: 'Subject', value: user.preferredSubject },
-    { icon: '🌍', label: 'Timezone', value: user.timezone },
-    { icon: '🕐', label: 'Created',  value: user.createdAt },
-  ].filter(Boolean);
+  // ✅ Auto-generate rows from FIELD_REGISTRY — no isStudent checks, no if/else
+  const rows = CARD_FIELD_ORDER.map((key) => {
+    const meta = FIELD_REGISTRY[key];
+    if (!meta) return null;
+
+    const canSee = meta.visibleTo.includes(role); // crew agent guardrail check
+
+    return {
+      key,
+      icon: meta.icon,
+      label: meta.label,
+      value: canSee ? (user[key] || '—') : null,
+      restricted: !canSee,       // true = show N/A in red
+      sensitive: meta.sensitive || false,
+    };
+  }).filter(Boolean);
 
   return (
     <div className="cuc-card">
       <div className="cuc-ribbon">
-        {isStudent ? '🎓 Student' : '📚 Teacher'} Created Successfully
+        {role === 'student' ? '🎓 Student' : '📚 Teacher'} Created Successfully
       </div>
       <div className="cuc-avatar-wrap">
         <div className="cuc-avatar">{initials}</div>
@@ -84,17 +114,22 @@ const CreatedUserCard = ({ user, role, onDismiss }) => {
       </div>
       <div className="cuc-status-badge">⏳ Pending Admin Approval</div>
       <div className="cuc-details">
-        {rows.map((row, i) => (
-          <div key={i} className="cuc-row">
+        {rows.map((row) => (
+          <div key={row.key} className="cuc-row">
             <span className="cuc-row-icon">{row.icon}</span>
             <span className="cuc-row-label">{row.label}</span>
-            <span className="cuc-row-value">{row.value}</span>
+            {row.restricted ? (
+              // ✅ Crew agent blocked this field — show N/A in red automatically
+              <span className="cuc-row-value cuc-restricted">N/A</span>
+            ) : (
+              <span className="cuc-row-value">{row.value}</span>
+            )}
           </div>
         ))}
         {user.fileName && (
           <div className="cuc-row">
             <span className="cuc-row-icon">📄</span>
-            <span className="cuc-row-label">{isStudent ? 'ID Proof' : 'Cert.'}</span>
+            <span className="cuc-row-label">{role === 'student' ? 'ID Proof' : 'Cert.'}</span>
             <span className="cuc-row-value cuc-file">{user.fileName}</span>
           </div>
         )}
@@ -191,6 +226,13 @@ const VALIDATORS = {
   emisNumber: (v) => {
     if (!v || !v.trim()) return 'EMIS number is required';
     if (v.trim().length < 4) return 'At least 4 characters';
+    return null;
+  },
+  panNumber: (v) => {
+    if (!v || !v.trim()) return 'PAN number is required';
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(v.trim().toUpperCase())) {
+      return 'Invalid PAN format (e.g. ABCDE1234F)';
+    }
     return null;
   },
 };
@@ -386,7 +428,11 @@ const AdminQuickCreate = () => {
     config.fields.forEach((f) => {
       if (f.key === 'confirmPassword') return;
       if (parsedData[f.key] !== undefined && parsedData[f.key] !== '') {
-        const value = f.key === 'salutation' ? normalizeSalutation(parsedData[f.key]) : parsedData[f.key];
+        const value = f.key === 'salutation'
+          ? normalizeSalutation(parsedData[f.key])
+          : f.key === 'panNumber'
+          ? parsedData[f.key].toUpperCase()
+          : parsedData[f.key];
         formData.append(f.backendKey, value);
       }
     });
@@ -399,6 +445,7 @@ const AdminQuickCreate = () => {
         setCreatedUser({
           ...parsedData,
           salutation: normalizeSalutation(parsedData.salutation),
+          panNumber: parsedData.panNumber?.toUpperCase(),
           role,
           fileName: certFile?.name || null,
           createdAt: new Date().toLocaleString('en-IN'),
@@ -435,7 +482,6 @@ const AdminQuickCreate = () => {
 
   return (
     <div className="aqc-layout">
-      {/* LEFT — Created user card */}
       <div className="aqc-left">
         {createdUser ? (
           <CreatedUserCard user={createdUser} role={createdUser.role} onDismiss={() => setCreatedUser(null)} />
@@ -447,7 +493,6 @@ const AdminQuickCreate = () => {
         )}
       </div>
 
-      {/* RIGHT — Form */}
       <div className="aqc-right">
         <div>
           <span className="aqc-ai-badge">⚡ AI-Powered Live Validation</span>
@@ -841,6 +886,7 @@ const AdminDashboard = () => {
           <p><strong>Group:</strong> {selectedStudent.group || "—"}</p>
           <p><strong>Syllabus:</strong> {selectedStudent.syllabus}</p>
           <p><strong>EMIS Number:</strong> {selectedStudent.emisNumber}</p>
+          <p><strong>PAN Number:</strong> {selectedStudent.panNumber || "—"}</p>
           <p><strong>Status:</strong> {selectedStudent.status}</p>
           <p><strong>Approval Status:</strong> {selectedStudent.approvalStatus}</p>
           <p><strong>Registered At:</strong> {new Date(selectedStudent.registeredAt).toLocaleString()}</p>

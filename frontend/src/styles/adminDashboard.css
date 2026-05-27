@@ -716,3 +716,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   .aqc-file-label { font-size: 0.78rem; }
   .aqc-file-name  { max-width: 160px; }
 }
+.cuc-restricted {
+  color: #E24B4A;
+  font-style: italic;
+  font-weight: 500;
+}

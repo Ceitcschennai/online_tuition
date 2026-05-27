@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import API_BASE_URL from '../config/api';
 import '../styles/studentDashboard.css';
+import PromptBox from '../components/PromptBox';
 import {
   FaTasks, FaCreditCard, FaChartLine,
   FaExternalLinkAlt, FaCopy, FaCheck, FaClock, FaCalendarAlt
@@ -8,6 +9,206 @@ import {
 import { useLiveClass } from '../contexts/LiveClassContext';
 import { markStudentJoin } from '../service/AttendanceService';
 
+// ─── FIELD REGISTRY ───────────────────────────────────────────────────────────
+const FIELD_REGISTRY = {
+  email:        { icon: '📧', label: 'Email',     visibleTo: ['student', 'teacher', 'admin'] },
+  mobile:       { icon: '📱', label: 'Mobile',    visibleTo: ['student', 'teacher', 'admin'] },
+  syllabus:     { icon: '📚', label: 'Syllabus',  visibleTo: ['student'] },
+  class:        { icon: '🏫', label: 'Class',     visibleTo: ['student'] },
+  emisNumber:   { icon: '🆔', label: 'EMIS No.',  visibleTo: ['student'] },
+  panNumber:    { icon: '🪪', label: 'PAN No.',   visibleTo: ['student'], sensitive: true },
+  timezone:     { icon: '🌍', label: 'Timezone',  visibleTo: ['student', 'teacher', 'admin'] },
+};
+
+const CARD_FIELD_ORDER = [
+  'email', 'mobile', 'syllabus', 'class',
+  'emisNumber', 'panNumber', 'timezone',
+];
+
+// ─── StudentProfileCard ───────────────────────────────────────────────────────
+const StudentProfileCard = ({ student }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  const initials = `${student?.firstName?.[0] || ''}${student?.lastName?.[0] || ''}`.toUpperCase();
+
+  const rows = CARD_FIELD_ORDER.map((key) => {
+    const meta = FIELD_REGISTRY[key];
+    if (!meta) return null;
+
+    const canSee = meta.visibleTo.includes('student');
+    const value = student?.[key] || '—';
+
+    return {
+      key,
+      icon: meta.icon,
+      label: meta.label,
+      value: canSee ? value : null,
+      restricted: !canSee,
+    };
+  }).filter(Boolean);
+
+  return (
+    <div style={PS.card}>
+      <div style={PS.ribbon}>🎓 Student Profile</div>
+
+      <div style={PS.topRow}>
+        <div style={PS.avatarWrap}>
+          <div style={PS.avatar}>{initials}</div>
+          <div style={PS.badgeCheck}>✓</div>
+        </div>
+        <div style={PS.nameBlock}>
+          <div style={PS.name}>
+            {student?.salutation} {student?.firstName} {student?.lastName}
+          </div>
+          <div style={PS.statusBadge}>
+            {student?.approvalStatus === 'Approved'
+              ? '✅ Approved'
+              : '⏳ Pending Approval'}
+          </div>
+          <div style={{
+            ...PS.payBadge,
+            background: student?.status === 'Paid' ? '#dcfce7' : '#fef9c3',
+            color: student?.status === 'Paid' ? '#16a34a' : '#a16207',
+          }}>
+            {student?.status === 'Paid' ? '💳 Paid' : '⚠️ Payment Pending'}
+          </div>
+        </div>
+
+        <button style={PS.toggleBtn} onClick={() => setExpanded(p => !p)}>
+          {expanded ? '▲ Hide' : '▼ Details'}
+        </button>
+      </div>
+
+      {expanded && (
+        <div style={PS.details}>
+          {rows.map((row) => (
+            <div key={row.key} style={PS.row}>
+              <span style={PS.rowIcon}>{row.icon}</span>
+              <span style={PS.rowLabel}>{row.label}</span>
+              {row.restricted ? (
+                <span style={PS.restricted}>N/A</span>
+              ) : (
+                <span style={PS.rowValue}>{row.value}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Profile Card Styles ──────────────────────────────────────────────────────
+const PS = {
+  card: {
+    background: '#fff',
+    borderRadius: 16,
+    boxShadow: '0 4px 24px rgba(8,145,178,0.10)',
+    border: '1.5px solid #e0f2fe',
+    marginBottom: 24,
+    overflow: 'hidden',
+    fontFamily: "'Nunito', sans-serif",
+  },
+  ribbon: {
+    background: 'linear-gradient(135deg, #0891b2, #0e7490)',
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 800,
+    padding: '8px 20px',
+    letterSpacing: 0.5,
+  },
+  topRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 16,
+    padding: '16px 20px',
+  },
+  avatarWrap: { position: 'relative', flexShrink: 0 },
+  avatar: {
+    width: 54,
+    height: 54,
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #0891b2, #7c3aed)',
+    color: '#fff',
+    fontWeight: 800,
+    fontSize: 20,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeCheck: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 18,
+    height: 18,
+    borderRadius: '50%',
+    background: '#16a34a',
+    color: '#fff',
+    fontSize: 10,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 800,
+    border: '2px solid #fff',
+  },
+  nameBlock: { flex: 1 },
+  name: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: '#0f172a',
+    marginBottom: 4,
+  },
+  statusBadge: {
+    display: 'inline-block',
+    fontSize: 11,
+    fontWeight: 700,
+    background: '#dcfce7',
+    color: '#16a34a',
+    borderRadius: 20,
+    padding: '2px 10px',
+    marginBottom: 4,
+    marginRight: 6,
+  },
+  payBadge: {
+    display: 'inline-block',
+    fontSize: 11,
+    fontWeight: 700,
+    borderRadius: 20,
+    padding: '2px 10px',
+  },
+  toggleBtn: {
+    background: '#f0f9ff',
+    border: '1.5px solid #0891b2',
+    color: '#0891b2',
+    borderRadius: 8,
+    padding: '7px 14px',
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+    flexShrink: 0,
+    fontFamily: "'Nunito', sans-serif",
+  },
+  details: {
+    borderTop: '1.5px solid #e0f2fe',
+    padding: '12px 20px 16px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  },
+  row: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    fontSize: 13,
+  },
+  rowIcon: { fontSize: 15, width: 22, textAlign: 'center' },
+  rowLabel: { width: 90, color: '#64748b', fontWeight: 600, flexShrink: 0 },
+  rowValue: { color: '#0f172a', fontWeight: 700 },
+  restricted: { color: '#E24B4A', fontStyle: 'italic', fontWeight: 500 },
+};
+
+// ─── StudentDashboard ─────────────────────────────────────────────────────────
 const StudentDashboard = ({ student: propStudent }) => {
   const [stats, setStats] = useState({
     enrolledSubjects: 0, pendingAssignments: 0,
@@ -16,7 +217,7 @@ const StudentDashboard = ({ student: propStudent }) => {
   const [loading, setLoading] = useState(true);
   const [enrolledSubjectsList, setEnrolledSubjectsList] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
-   const [scheduledClasses] = useState([]);
+  const [scheduledClasses] = useState([]);
 
   const { liveClasses } = useLiveClass();
   const student = propStudent;
@@ -63,8 +264,6 @@ const StudentDashboard = ({ student: propStudent }) => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // ── Fetch scheduled classes from backend ──
-
   const handleCopyLink = (cls) => {
     const link = cls.jitsiUrl || (cls.roomName ? `https://meet.jit.si/${cls.roomName}` : null) || cls.manualLink;
     if (!link) return;
@@ -73,7 +272,6 @@ const StudentDashboard = ({ student: propStudent }) => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // ── UPDATED: marks attendance when student clicks Join ──
   const handleJoinClass = (cls) => {
     const link = cls.jitsiUrl || (cls.roomName ? `https://meet.jit.si/${cls.roomName}` : null) || cls.manualLink;
     if (link) {
@@ -82,7 +280,6 @@ const StudentDashboard = ({ student: propStudent }) => {
     }
   };
 
-  // ── Filter live classes relevant to student ──
   const studentClass = student?.class?.toString().replace(/^Class\s*/i, '') || '';
   const relevantLiveClasses = liveClasses.filter(cls =>
     cls.isLive && (
@@ -135,6 +332,9 @@ const StudentDashboard = ({ student: propStudent }) => {
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
       `}</style>
 
+      {/* ── STUDENT PROFILE CARD ── */}
+      <StudentProfileCard student={student} />
+
       {/* ── HEADER ── */}
       <div className="student-portal-header">
         <div className="student-welcome-section">
@@ -157,6 +357,18 @@ const StudentDashboard = ({ student: propStudent }) => {
           <div className="student-reminder-banner student-success">✅ Your account is active and payment is up to date!</div>
         )}
       </div>
+
+      {/* ── AI PROMPT BOX ── */}
+      <PromptBox
+        role="student"
+        suggestions={[
+          'What is my EMIS number?',
+          'Show my class and syllabus',
+          'What is my registered mobile?',
+          'What subjects am I enrolled in?',
+          'What is my fee payment status?',
+        ]}
+      />
 
       {/* ── LIVE CLASSES NOW ── */}
       <div style={LS.section}>

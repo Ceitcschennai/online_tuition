@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Subjects from './pages/Subjects';
-import SubjectDetails from './pages/SubjectDetails';   // 
+import SubjectDetails from './pages/SubjectDetails';
 import StudentRegister from './pages/StudentRegister';
 import TeacherRegister from './pages/TeacherRegister';
 
@@ -40,12 +40,36 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import './styles/layout.css';
 
+// ✅ Safe helper — always returns null if missing or invalid
+const getStoredUser = () => {
+  try {
+    const raw = localStorage.getItem('user');
+    if (!raw || raw === 'undefined' || raw === 'null') return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
 const AppContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  // ✅ student is now reactive state — updates when localStorage changes
+  const [student, setStudent] = useState(getStoredUser);
+
   const location = useLocation();
   const userRole = localStorage.getItem('userRole');
   const isLoggedIn = !!userRole;
+
+  // ✅ Re-read student from localStorage whenever the route changes
+  // This ensures after login the student dashboard gets the fresh object
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (stored) setStudent(stored);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -100,7 +124,7 @@ const AppContent = () => {
 
           {/* SUBJECT ROUTES */}
           <Route path="/subjects" element={<Subjects />} />
-  <Route path="/subjects/:subjectName" element={<SubjectDetails />} />
+          <Route path="/subjects/:subjectName" element={<SubjectDetails />} />
 
           {/* TEACHER */}
           <Route path="/teacher-subjects" element={<TeacherSubjects />} />
@@ -114,7 +138,9 @@ const AppContent = () => {
           {/* DASHBOARDS */}
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
-          <Route path="/student-dashboard" element={<StudentDashboard />} />
+
+          {/* ✅ FIXED: student is now reactive state, not a one-time localStorage read */}
+          <Route path="/student-dashboard" element={<StudentDashboard student={student} />} />
 
           {/* FEATURES */}
           <Route path="/assignments" element={<Assignments />} />
@@ -133,8 +159,6 @@ const AppContent = () => {
 
           {/* LIVE CLASS */}
           <Route path="/live-class" element={<LiveClass />} />
-
-          
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

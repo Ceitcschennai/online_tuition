@@ -4,14 +4,12 @@ import API_BASE_URL from '../config/api';
 import '../styles/register.css';
 import { FaLaptop, FaTimes } from 'react-icons/fa';
 
-// ── Mobile detection ───────────────────────────────────────────────────────────
 const isMobileDevice = () => {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   return /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua)
     || window.innerWidth <= 768;
 };
 
-// ── Mobile Popup ───────────────────────────────────────────────────────────────
 const MobilePopup = ({ onClose }) => (
   <div style={popupStyles.overlay}>
     <div style={popupStyles.card}>
@@ -73,7 +71,6 @@ const popupStyles = {
   },
 };
 
-// ── StudentRegister Component ──────────────────────────────────────────────────
 const StudentRegister = () => {
   const navigate = useNavigate();
   const [showMobilePopup, setShowMobilePopup] = useState(false);
@@ -91,6 +88,7 @@ const StudentRegister = () => {
     group: '',
     syllabus: '',
     emisNumber: '',
+    panNumber: '',
     proof: null,
   });
 
@@ -104,6 +102,8 @@ const StudentRegister = () => {
         class: value,
         group: value === 'Class 11' || value === 'Class 12' ? prev.group : '',
       }));
+    } else if (name === 'panNumber') {
+      setForm((prev) => ({ ...prev, panNumber: value.toUpperCase() }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -112,9 +112,15 @@ const StudentRegister = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 🔒 Block student registration on mobile
     if (isMobileDevice()) {
       setShowMobilePopup(true);
+      return;
+    }
+
+    // PAN validation
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    if (!form.panNumber || !panRegex.test(form.panNumber.toUpperCase())) {
+      alert('❌ Invalid PAN Number!\n\nFormat must be: ABCDE1234F\n(5 letters, 4 numbers, 1 letter)');
       return;
     }
 
@@ -133,9 +139,31 @@ const StudentRegister = () => {
       return;
     }
 
+    // ✅ Build FormData explicitly — do NOT loop over form object
+    // This ensures every field is appended with the correct name and value
     const formData = new FormData();
-    for (const key in form) {
-      formData.append(key, form[key]);
+
+    formData.append('salutation',       form.salutation);
+    formData.append('firstName',        form.firstName);
+    formData.append('lastName',         form.lastName);
+    formData.append('mobile',           form.mobile);
+    formData.append('timezone',         form.timezone);
+    formData.append('email',            form.email);
+    formData.append('password',         form.password);
+    formData.append('confirmPassword',  form.confirmPassword);
+    formData.append('class',            form.class);
+    formData.append('group',            form.group || '');
+    formData.append('syllabus',         form.syllabus);
+    formData.append('emisNumber',       form.emisNumber);
+    formData.append('panNumber',        form.panNumber.toUpperCase()); // ✅ always uppercase
+    if (form.proof) {
+      formData.append('proof', form.proof);
+    }
+
+    // ✅ Debug: log exactly what is being sent
+    console.log('📤 Submitting registration:');
+    for (let [key, value] of formData.entries()) {
+      if (key !== 'proof') console.log(`  ${key}: ${value}`);
     }
 
     try {
@@ -152,40 +180,33 @@ const StudentRegister = () => {
           salutation: 'Mr.',
           firstName: '', lastName: '', mobile: '', timezone: '',
           email: '', password: '', confirmPassword: '',
-          class: '', group: '', syllabus: '', emisNumber: '', proof: null,
+          class: '', group: '', syllabus: '', emisNumber: '',
+          panNumber: '',
+          proof: null,
         });
         navigate('/login');
-    } else {
-  console.log(result);
-
-  if (result.errors) {
-    const errorMessages = Object.values(result.errors).join("\n");
-    alert(`❌ Validation Failed:\n\n${errorMessages}`);
-  } else {
-    alert(`❌ ${result.message}`);
-  }
-}
-     } catch (error) {
-       console.error('Student registration error:', error);
-       console.error('Error details:', {
-         message: error.message,
-         stack: error.stack,
-         name: error.name
-       });
-       alert('❌ Registration failed: ' + (error.message || 'Unknown error'));
-     }
+      } else {
+        if (result.errors) {
+          const errorMessages = Object.values(result.errors).join("\n");
+          alert(`❌ Validation Failed:\n\n${errorMessages}`);
+        } else {
+          alert(`❌ ${result.message}`);
+        }
+      }
+    } catch (error) {
+      console.error('Student registration error:', error);
+      alert('❌ Registration failed: ' + (error.message || 'Unknown error'));
+    }
   };
 
   return (
     <div className="register-page">
 
-      {/* Mobile Popup */}
       {showMobilePopup && <MobilePopup onClose={() => setShowMobilePopup(false)} />}
 
       <div className="register-form">
         <h2>Register as Student</h2>
 
-        {/* Warning banner shown passively on mobile before they even try */}
         {isMobileDevice() && (
           <div style={warningBanner}>
             ⚠️ Student registration is only available on a laptop or desktop computer.
@@ -299,6 +320,17 @@ const StudentRegister = () => {
             placeholder="Enter EMIS Number"
             value={form.emisNumber}
             onChange={handleChange}
+            required
+          />
+
+          {/* ✅ PAN Number */}
+          <input
+            type="text"
+            name="panNumber"
+            placeholder="Enter PAN Number (e.g. ABCDE1234F)"
+            value={form.panNumber}
+            onChange={handleChange}
+            maxLength={10}
             required
           />
 

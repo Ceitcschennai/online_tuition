@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import PromptBox from "../components/PromptBox";
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../config/api";
 import "../styles/teacherDashboard.css";
@@ -29,7 +30,7 @@ const TeacherDashboard = () => {
      subjects: []
    });
 
-   const [queries, setQueries] = useState([]); // ✅ NEW
+   const [queries, setQueries] = useState([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState("");
 
@@ -145,7 +146,7 @@ const TeacherDashboard = () => {
       <div className="dashboard-header">
         <div>
           <h1>Welcome back, {teacherInfo.name}</h1>
-          <p>Here’s what’s happening today</p>
+          <p>Here's what's happening today</p>
           <span>{today}</span>
 
           <p>
@@ -180,6 +181,18 @@ const TeacherDashboard = () => {
           <p>⚠ {stats.pendingQueries} Student doubts pending</p>
         )}
       </div>
+
+      {/* ── AI PROMPT BOX ── */}
+      <PromptBox
+        role="teacher"
+        suggestions={[
+          'What subjects am I handling?',
+          'Show my assigned classes',
+          'What is my qualification?',
+          'How many years of experience do I have?',
+          'What is my registered mobile number?',
+        ]}
+      />
 
       {/* STATS */}
       <div className="stats-grid">

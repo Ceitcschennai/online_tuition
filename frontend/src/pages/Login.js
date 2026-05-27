@@ -98,20 +98,20 @@ const Login = () => {
        );
 
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("userRole", res.data.role);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+localStorage.setItem("userRole", role);
+localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      if (res.data.role === "teacher") {
-        localStorage.setItem("teacherId", res.data.user._id);
-      }
+if (role === "teacher") {
+  localStorage.setItem("teacherId", res.data.user._id);
+}
 
-      if (res.data.role === "admin") {
-        window.location.href = "/admin-dashboard";
-      } else if (res.data.role === "teacher") {
-        window.location.href = "/teacher-dashboard";
-      } else {
-        window.location.href = "/student-dashboard";
-      }
+if (role === "admin") {
+  window.location.href = "/admin-dashboard";
+} else if (role === "teacher") {
+  window.location.href = "/teacher-dashboard";
+} else {
+  window.location.href = "/student-dashboard";
+}
 
     } catch (err) {
       console.error("Login error:", err);
