@@ -1,0 +1,1725 @@
+/* =========================================================
+   TEACHER QUERIES
+   LIGHT BLUE + WHITE THEME
+========================================================= */
+
+.teacher-queries-container {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+
+  color: #172554;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+}
+
+.teacher-queries-container *,
+.teacher-queries-container *::before,
+.teacher-queries-container *::after {
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   PAGE HEADER
+   COMPACT BLUE HEADER
+========================================================= */
+
+.teacher-queries-container .queries-header {
+  position: relative;
+
+  width: 100%;
+  min-height: 142px;
+
+  margin: 0 0 20px;
+  padding: 22px 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  border-radius: 15px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #3b82f6 0%,
+      #2563eb 55%,
+      #1d4ed8 100%
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 8px 22px rgba(37, 99, 235, 0.18);
+}
+
+
+/* Decorative circles */
+
+.teacher-queries-container .queries-header::before {
+  content: "";
+
+  position: absolute;
+
+  width: 180px;
+  height: 180px;
+
+  top: -110px;
+  right: -45px;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.10);
+
+  pointer-events: none;
+}
+
+.teacher-queries-container .queries-header::after {
+  content: "";
+
+  position: absolute;
+
+  width: 130px;
+  height: 130px;
+
+  left: 45%;
+  bottom: -105px;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.07);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   HEADER CONTENT
+========================================================= */
+
+.teacher-queries-container .queries-header-content {
+  position: relative;
+
+  z-index: 2;
+
+  width: 100%;
+
+  text-align: center;
+}
+
+.teacher-queries-container .queries-header-content h2 {
+  margin: 0;
+
+  color: #ffffff !important;
+
+  font-size: 34px;
+  font-weight: 800;
+
+  line-height: 1.2;
+}
+
+.teacher-queries-container .queries-header-content p {
+  margin: 8px 0 0;
+
+  color: #ffffff !important;
+
+  font-size: 15px;
+
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   STATISTICS
+   WHITE CARDS BELOW BLUE HEADER
+========================================================= */
+
+.teacher-queries-container .queries-statistics-row {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 18px;
+
+  margin: 0 0 22px;
+}
+
+.teacher-queries-container .queries-stat-card {
+  height: 104px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 13px;
+
+  box-shadow:
+    0 4px 13px rgba(15, 23, 42, 0.06);
+}
+
+.teacher-queries-container .queries-stat-number {
+  color: #2563eb;
+
+  font-size: 30px;
+  font-weight: 800;
+
+  line-height: 1;
+}
+
+.teacher-queries-container .queries-stat-label {
+  margin-top: 8px;
+
+  color: #64748b;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+}
+
+.teacher-queries-container
+.queries-stat-card.pending
+.queries-stat-number {
+  color: #f59e0b;
+}
+
+.teacher-queries-container
+.queries-stat-card.answered
+.queries-stat-number {
+  color: #16a34a;
+}
+
+.teacher-queries-container
+.queries-stat-card.resolved
+.queries-stat-number {
+  color: #2563eb;
+}
+
+
+/* =========================================================
+   TABS
+========================================================= */
+
+.teacher-queries-container .queries-tabs {
+  width: 100%;
+  height: 54px;
+
+  display: flex;
+
+  margin-bottom: 24px;
+
+  background: #ffffff;
+
+  border-bottom: 1px solid #dbe2ea;
+
+  border-radius: 10px 10px 0 0;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.teacher-queries-container .queries-tab {
+  flex: 1;
+
+  height: 54px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  border: none;
+
+  background: #ffffff;
+
+  color: #334155;
+
+  font-family: inherit;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.teacher-queries-container .queries-tab:hover {
+  background: #eff6ff;
+
+  color: #2563eb;
+}
+
+.teacher-queries-container .queries-tab.active {
+  background: #2563eb;
+
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   TAB BADGE
+========================================================= */
+
+.teacher-queries-container .queries-tab-badge {
+  min-width: 22px;
+  height: 22px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 6px;
+
+  border-radius: 50%;
+
+  background: #ef4444;
+
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   CONTROLS
+========================================================= */
+
+.teacher-queries-container .queries-controls {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  margin-bottom: 24px;
+}
+
+.teacher-queries-container .queries-controls-left {
+  flex: 1;
+
+  min-width: 0;
+}
+
+.teacher-queries-container .queries-controls-right {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.teacher-queries-container .queries-search-container {
+  position: relative;
+
+  width: 100%;
+  max-width: 500px;
+}
+
+.teacher-queries-container .queries-search-icon {
+  position: absolute;
+
+  left: 16px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  color: #64748b;
+
+  font-size: 16px;
+
+  pointer-events: none;
+}
+
+.teacher-queries-container .queries-search-input {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 16px 0 46px;
+
+  border: 1px solid #d8e0eb;
+
+  border-radius: 10px;
+
+  outline: none;
+
+  background: #ffffff;
+
+  color: #334155;
+
+  font-family: inherit;
+
+  font-size: 14px;
+
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.teacher-queries-container .queries-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.teacher-queries-container .queries-search-input:focus {
+  border-color: #3b82f6;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.10);
+}
+
+
+/* =========================================================
+   FILTER BUTTON
+========================================================= */
+
+.teacher-queries-container .queries-filter-dropdown {
+  position: relative;
+}
+
+.teacher-queries-container .queries-filter-btn {
+  height: 48px;
+
+  min-width: 96px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 0 16px;
+
+  border: 1px solid #d8e0eb;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  color: #334155;
+
+  font-family: inherit;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.teacher-queries-container .queries-filter-btn:hover {
+  border-color: #3b82f6;
+
+  color: #2563eb;
+
+  background: #eff6ff;
+}
+
+
+/* =========================================================
+   FILTER MENU
+========================================================= */
+
+.teacher-queries-container .queries-filter-menu {
+  position: absolute;
+
+  top: calc(100% + 8px);
+  right: 0;
+
+  z-index: 5000;
+
+  width: 250px;
+
+  padding: 16px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 15px 35px rgba(15, 23, 42, 0.16);
+}
+
+.teacher-queries-container .filter-group {
+  margin-bottom: 14px;
+}
+
+.teacher-queries-container .filter-group label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #334155;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.teacher-queries-container .filter-group select {
+  width: 100%;
+  height: 40px;
+
+  padding: 0 10px;
+
+  border: 1px solid #dbe2ea;
+
+  border-radius: 8px;
+
+  outline: none;
+
+  background: #ffffff;
+
+  color: #334155;
+
+  font-family: inherit;
+
+  font-size: 13px;
+}
+
+.teacher-queries-container .filter-group select:focus {
+  border-color: #3b82f6;
+}
+
+
+/* =========================================================
+   SORT
+========================================================= */
+
+.teacher-queries-container .queries-sort-dropdown {
+  height: 48px;
+
+  display: flex;
+
+  align-items: center;
+
+  border: 1px solid #d8e0eb;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.teacher-queries-container .queries-sort-label {
+  width: 40px;
+  height: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  color: #64748b;
+}
+
+.teacher-queries-container .queries-sort-select {
+  height: 100%;
+
+  padding: 0 12px 0 0;
+
+  border: none;
+
+  outline: none;
+
+  background: #ffffff;
+
+  color: #334155;
+
+  font-family: inherit;
+
+  font-size: 14px;
+
+  cursor: pointer;
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
+
+.teacher-queries-container .queries-main-container {
+  width: 100%;
+
+  margin: 0;
+  padding: 0;
+}
+
+
+/* =========================================================
+   STUDENT QUERY GRID
+========================================================= */
+
+.teacher-queries-container
+.queries-cards-grid-restructured {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 20px;
+}
+
+
+/* =========================================================
+   STUDENT QUERY CARD
+========================================================= */
+
+.teacher-queries-container
+.query-card-restructured {
+  width: 100%;
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.teacher-queries-container
+.query-card-restructured:hover {
+  box-shadow:
+    0 8px 20px rgba(15, 23, 42, 0.09);
+}
+
+
+/* =========================================================
+   QUERY CARD HEADER
+========================================================= */
+
+.teacher-queries-container .card-top-section {
+  padding: 18px 20px;
+
+  border-bottom: 1px solid #eef2f7;
+
+  background: #ffffff;
+}
+
+.teacher-queries-container .student-profile-area {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+.teacher-queries-container .student-avatar {
+  width: 42px;
+  height: 42px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #eaf2ff;
+
+  color: #2563eb;
+}
+
+.teacher-queries-container .student-info {
+  flex: 1;
+
+  min-width: 0;
+}
+
+.teacher-queries-container .student-name-section {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.teacher-queries-container .student-name {
+  margin: 0;
+
+  color: #172554;
+
+  font-size: 16px;
+
+  font-weight: 700;
+}
+
+.teacher-queries-container .query-time {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+
+  white-space: nowrap;
+}
+
+.teacher-queries-container .student-meta {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin-top: 7px;
+}
+
+.teacher-queries-container .class-badge,
+.teacher-queries-container .subject-chip {
+  display: inline-flex;
+
+  align-items: center;
+
+  min-height: 24px;
+
+  padding: 3px 9px;
+
+  border-radius: 20px;
+
+  font-size: 11px;
+
+  font-weight: 600;
+}
+
+.teacher-queries-container .class-badge {
+  background: #eef2ff;
+
+  color: #4f46e5;
+}
+
+.teacher-queries-container .subject-chip {
+  background: #eff6ff;
+
+  color: #2563eb;
+}
+
+
+/* =========================================================
+   QUESTION
+========================================================= */
+
+.teacher-queries-container .question-container {
+  padding: 18px 20px;
+}
+
+.teacher-queries-container .question-container h4 {
+  margin: 0 0 8px;
+
+  color: #172554;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+.teacher-queries-container .question-content {
+  padding: 12px 14px;
+
+  background: #f8fafc;
+
+  border-left: 3px solid #3b82f6;
+
+  border-radius: 6px;
+}
+
+.teacher-queries-container .question-content p {
+  margin: 0;
+
+  color: #475569;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   QUERY RESPONSE
+========================================================= */
+
+.teacher-queries-container .card-interaction-section {
+  padding: 0 20px 18px;
+}
+
+.teacher-queries-container .pending-section h4,
+.teacher-queries-container .answered-section h4 {
+  margin: 0;
+
+  color: #172554;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   QUERY TEXTAREA
+========================================================= */
+
+.teacher-queries-container .reply-compose-area {
+  margin-top: 9px;
+
+  overflow: hidden;
+
+  border: 1px solid #dbe2ea;
+
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.teacher-queries-container .compose-textarea {
+  width: 100%;
+
+  min-height: 70px;
+
+  padding: 10px 12px;
+
+  border: none;
+
+  outline: none;
+
+  resize: vertical;
+
+  background: #ffffff;
+
+  color: #334155;
+
+  font-family: inherit;
+
+  font-size: 13px;
+}
+
+.teacher-queries-container .compose-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.teacher-queries-container .compose-actions {
+  display: flex;
+
+  justify-content: flex-end;
+
+  padding: 7px 9px;
+
+  background: #f8fafc;
+
+  border-top: 1px solid #e2e8f0;
+}
+
+.teacher-queries-container .submit-reply-button {
+  min-height: 34px;
+
+  padding: 0 14px;
+
+  border: none;
+
+  border-radius: 7px;
+
+  background: #2563eb;
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.teacher-queries-container .submit-reply-button:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   ANSWERED QUERY
+========================================================= */
+
+.teacher-queries-container .reply-header {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 9px;
+}
+
+.teacher-queries-container .reply-timestamp {
+  color: #94a3b8;
+
+  font-size: 11px;
+}
+
+.teacher-queries-container .reply-content {
+  padding: 12px 14px;
+
+  background: #eff6ff;
+
+  border-left: 3px solid #2563eb;
+
+  border-radius: 6px;
+}
+
+.teacher-queries-container .reply-content p {
+  margin: 0;
+
+  color: #475569;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+.teacher-queries-container .post-reply-actions {
+  display: flex;
+
+  justify-content: flex-end;
+
+  margin-top: 10px;
+}
+
+.teacher-queries-container .resolve-button {
+  min-height: 34px;
+
+  padding: 0 14px;
+
+  border: none;
+
+  border-radius: 7px;
+
+  background: #2563eb;
+
+  color: #ffffff;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+/* =========================================================
+   CLASS REQUESTS
+   THIS IS THE PART YOU WANT FROM IMAGE-1
+========================================================= */
+
+.teacher-queries-container .class-requests-container {
+  width: 100%;
+
+  margin: 0;
+  padding: 0;
+}
+
+
+/* =========================================================
+   CLASS REQUEST GRID
+========================================================= */
+
+.teacher-queries-container .class-requests-list {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 20px;
+}
+
+
+/* =========================================================
+   CLASS REQUEST CARD
+   WHITE CARD
+========================================================= */
+
+.teacher-queries-container .class-request-card {
+  width: 100%;
+  min-width: 0;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.06);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.teacher-queries-container .class-request-card:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 9px 22px rgba(15, 23, 42, 0.10);
+}
+
+
+/* =========================================================
+   REQUEST CARD HEADER
+   WHITE, NOT BLUE
+========================================================= */
+
+.teacher-queries-container .class-request-header {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 18px 20px;
+
+  background: #ffffff;
+
+  border-bottom: 1px solid #eef2f7;
+}
+
+.teacher-queries-container .class-request-student {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  min-width: 0;
+}
+
+.teacher-queries-container .class-request-avatar {
+  width: 42px;
+  height: 42px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #eaf2ff;
+
+  color: #2563eb;
+
+  font-size: 16px;
+}
+
+.teacher-queries-container .class-request-student-name {
+  color: #172554;
+
+  font-size: 16px;
+
+  font-weight: 700;
+}
+
+.teacher-queries-container .class-request-student-meta {
+  margin-top: 4px;
+
+  color: #64748b;
+
+  font-size: 11px;
+}
+
+
+/* =========================================================
+   STATUS BADGE
+========================================================= */
+
+.teacher-queries-container .class-request-status {
+  flex-shrink: 0;
+
+  min-height: 30px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 5px 12px;
+
+  border-radius: 20px;
+
+  color: #ffffff;
+
+  font-size: 11px;
+
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   REQUEST BODY
+========================================================= */
+
+.teacher-queries-container .class-request-body {
+  padding: 18px 20px;
+}
+
+
+/* =========================================================
+   SUBJECT + DATE
+========================================================= */
+
+.teacher-queries-container .class-request-info-row {
+  display: flex;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 12px 20px;
+
+  margin-bottom: 14px;
+}
+
+.teacher-queries-container .class-request-subject,
+.teacher-queries-container .class-request-date {
+  color: #475569;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   REQUEST REASON
+========================================================= */
+
+.teacher-queries-container .class-request-reason {
+  padding: 12px 14px;
+
+  margin-bottom: 15px;
+
+  background: #f8fafc;
+
+  border-left: 3px solid #3b82f6;
+
+  border-radius: 6px;
+
+  color: #475569;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   EXISTING RESPONSE
+========================================================= */
+
+.teacher-queries-container .class-request-response {
+  padding: 12px 14px;
+
+  margin-bottom: 15px;
+
+  background: #eff6ff;
+
+  border-left: 3px solid #2563eb;
+
+  border-radius: 6px;
+
+  color: #475569;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+.teacher-queries-container .class-request-response strong {
+  color: #172554;
+}
+
+
+/* =========================================================
+   RESPONSE LABEL
+========================================================= */
+
+.teacher-queries-container .class-request-actions-area label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #172554;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+.teacher-queries-container
+.class-request-actions-area
+label span {
+  color: #64748b;
+
+  font-weight: 400;
+}
+
+
+/* =========================================================
+   RESPONSE TEXTAREA
+========================================================= */
+
+.teacher-queries-container .class-request-textarea {
+  width: 100%;
+
+  min-height: 70px;
+
+  padding: 11px 12px;
+
+  resize: vertical;
+
+  border: 1px solid #d8e0eb;
+
+  border-radius: 9px;
+
+  outline: none;
+
+  background: #ffffff;
+
+  color: #334155;
+
+  font-family: inherit;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+}
+
+.teacher-queries-container
+.class-request-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.teacher-queries-container
+.class-request-textarea:focus {
+  border-color: #3b82f6;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.10);
+}
+
+
+/* =========================================================
+   ACCEPT / REJECT BUTTONS
+========================================================= */
+
+.teacher-queries-container .class-request-buttons {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  margin-top: 12px;
+}
+
+.teacher-queries-container
+.accept-request-button,
+.teacher-queries-container
+.reject-request-button {
+  min-height: 36px;
+
+  padding: 0 15px;
+
+  border: none;
+
+  border-radius: 7px;
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.teacher-queries-container
+.accept-request-button {
+  background: #16a34a;
+}
+
+.teacher-queries-container
+.reject-request-button {
+  background: #ef4444;
+}
+
+.teacher-queries-container
+.accept-request-button:hover,
+.teacher-queries-container
+.reject-request-button:hover {
+  transform: translateY(-1px);
+}
+
+.teacher-queries-container
+.accept-request-button:disabled,
+.teacher-queries-container
+.reject-request-button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+
+/* =========================================================
+   UPDATING TEXT
+========================================================= */
+
+.teacher-queries-container .request-updating-text {
+  color: #64748b;
+
+  font-size: 11px;
+}
+
+
+/* =========================================================
+   MARK COMPLETED
+========================================================= */
+
+.teacher-queries-container .complete-request-button {
+  min-height: 36px;
+
+  margin-top: 10px;
+
+  padding: 0 15px;
+
+  border: none;
+
+  border-radius: 7px;
+
+  background: #2563eb;
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.teacher-queries-container
+.complete-request-button:hover {
+  background: #1d4ed8;
+}
+
+
+/* =========================================================
+   IMPORTANT
+   REQUEST ID IS COMPLETELY HIDDEN
+========================================================= */
+
+.teacher-queries-container .class-request-footer,
+.teacher-queries-container .request-id,
+.teacher-queries-container .query-id {
+  display: none !important;
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.teacher-queries-container .class-requests-empty {
+  min-height: 220px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 12px;
+
+  color: #64748b;
+}
+
+.teacher-queries-container .queries-no-data {
+  grid-column: 1 / -1;
+
+  min-height: 180px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 12px;
+
+  color: #64748b;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.teacher-queries-container .queries-loading-spinner {
+  width: 100%;
+
+  min-height: 220px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 12px;
+
+  color: #64748b;
+}
+
+.teacher-queries-container .queries-spinner {
+  width: 38px;
+  height: 38px;
+
+  border: 4px solid #dbeafe;
+
+  border-top-color: #2563eb;
+
+  border-radius: 50%;
+
+  animation:
+    teacher-query-spin
+    0.8s
+    linear
+    infinite;
+}
+
+@keyframes teacher-query-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* =========================================================
+   PAGINATION
+========================================================= */
+
+.teacher-queries-container .queries-pagination {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 16px;
+
+  margin-top: 28px;
+
+  padding-top: 20px;
+
+  border-top: 1px solid #e2e8f0;
+}
+
+.teacher-queries-container .queries-pagination-btn {
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #dbe2ea;
+
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  color: #64748b;
+
+  cursor: pointer;
+}
+
+.teacher-queries-container
+.queries-pagination-btn:hover:not(:disabled) {
+  border-color: #3b82f6;
+
+  color: #2563eb;
+}
+
+.teacher-queries-container
+.queries-pagination-btn:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+}
+
+.teacher-queries-container .queries-pagination-info {
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1000px) {
+
+  .teacher-queries-container
+  .queries-statistics-row {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .teacher-queries-container
+  .queries-cards-grid-restructured,
+  .teacher-queries-container
+  .class-requests-list {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .teacher-queries-container .queries-header {
+    min-height: 130px;
+
+    padding: 18px;
+  }
+
+  .teacher-queries-container
+  .queries-header-content h2 {
+    font-size: 28px;
+  }
+
+  .teacher-queries-container
+  .queries-header-content p {
+    font-size: 13px;
+  }
+
+  .teacher-queries-container
+  .queries-statistics-row {
+    gap: 12px;
+  }
+
+  .teacher-queries-container
+  .queries-stat-card {
+    height: 90px;
+  }
+
+  .teacher-queries-container
+  .queries-stat-number {
+    font-size: 25px;
+  }
+
+  .teacher-queries-container
+  .queries-controls {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .teacher-queries-container
+  .queries-search-container {
+    max-width: none;
+  }
+
+  .teacher-queries-container
+  .queries-controls-right {
+    width: 100%;
+  }
+
+  .teacher-queries-container
+  .queries-filter-btn,
+  .teacher-queries-container
+  .queries-sort-dropdown {
+    flex: 1;
+  }
+
+  .teacher-queries-container
+  .class-request-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .teacher-queries-container
+  .class-request-status {
+    align-self: flex-start;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .teacher-queries-container
+  .queries-header {
+    min-height: 120px;
+  }
+
+  .teacher-queries-container
+  .queries-header-content h2 {
+    font-size: 24px;
+  }
+
+  .teacher-queries-container
+  .queries-header-content p {
+    font-size: 12px;
+  }
+
+  .teacher-queries-container
+  .queries-stat-card {
+    height: 82px;
+  }
+
+  .teacher-queries-container
+  .queries-stat-number {
+    font-size: 22px;
+  }
+
+  .teacher-queries-container
+  .queries-stat-label {
+    font-size: 9px;
+  }
+
+  .teacher-queries-container
+  .queries-tabs,
+  .teacher-queries-container
+  .queries-tab {
+    height: 50px;
+  }
+
+  .teacher-queries-container
+  .queries-tab {
+    font-size: 11px;
+  }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .teacher-queries-container *,
+  .teacher-queries-container *::before,
+  .teacher-queries-container *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+}

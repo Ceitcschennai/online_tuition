@@ -1,0 +1,1198 @@
+/* =========================================================
+   HOME PAGE
+========================================================= */
+
+.home-container {
+  width: 100%;
+  margin: 0;
+  padding: 20px 0 0;
+  box-sizing: border-box;
+
+  font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
+  color: #1a202c;
+
+  overflow-x: hidden;
+  position: relative;
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   HOME BACKGROUND
+========================================================= */
+
+.home-container::before {
+  content: "";
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.03) 0%,
+    rgba(168, 85, 247, 0.03) 100%
+  );
+
+  z-index: -1;
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   COMMON SECTION CONTAINER
+========================================================= */
+
+.section-container {
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 0 auto;
+  padding: 0 24px;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   SECTION HEADER
+========================================================= */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 16px;
+  margin-bottom: 24px;
+
+  text-align: center;
+}
+
+
+.section-icon {
+  font-size: 2rem;
+  color: #6366f1;
+  opacity: 0.8;
+}
+
+
+/* =========================================================
+   HERO CAROUSEL
+========================================================= */
+
+.hero-carousel {
+  position: relative;
+
+  /* CENTER THE HOME HERO */
+  width: calc(100% - 80px);
+  max-width: 1400px;
+
+  height: 100vh;
+  max-height: 800px;
+
+  /* EQUAL LEFT AND RIGHT SPACE */
+  margin: 20px auto 0;
+
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   CAROUSEL WRAPPER
+========================================================= */
+
+.carousel-wrapper {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  margin: 0 auto;
+}
+
+
+/* =========================================================
+   CAROUSEL SLIDE
+========================================================= */
+
+.carousel-slide {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  opacity: 0;
+
+  transition:
+    opacity 0.6s ease-in-out,
+    transform 0.6s ease-in-out;
+
+  transform: scale(1.05);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.carousel-slide.active {
+  opacity: 1;
+  transform: scale(1);
+
+  z-index: 1;
+}
+
+
+/* =========================================================
+   DARK OVERLAY
+========================================================= */
+
+.slide-overlay {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0, 0, 0, 0.4);
+
+  z-index: 1;
+}
+
+
+/* =========================================================
+   CAROUSEL CONTENT
+========================================================= */
+
+.carousel-content {
+  position: relative;
+
+  z-index: 2;
+
+  width: 100%;
+  max-width: 800px;
+
+  padding: 0 20px;
+
+  color: white;
+  text-align: center;
+
+  box-sizing: border-box;
+
+  transform: translateY(20px);
+
+  transition: transform 0.6s ease 0.3s;
+}
+
+
+.carousel-slide.active .carousel-content {
+  transform: translateY(0);
+}
+
+
+/* =========================================================
+   HERO TITLE
+========================================================= */
+
+.slide-title {
+  margin-bottom: 24px;
+
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+
+  color: white;
+
+  text-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+.highlight {
+  position: relative;
+
+  color: #fbbf24;
+
+  font-weight: 800;
+
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+
+/* =========================================================
+   HERO DESCRIPTION
+========================================================= */
+
+.slide-description {
+  max-width: 700px;
+
+  margin:
+    0 auto
+    28px;
+
+  font-size: 1.25rem;
+  line-height: 1.6;
+
+  color: #f8fafc;
+}
+
+
+/* =========================================================
+   CTA BUTTON
+========================================================= */
+
+.cta-button {
+  padding: 15px 34px;
+
+  margin-bottom: 28px;
+
+  color: white;
+
+  font-size: 1rem;
+  font-weight: 700;
+
+  background:
+    linear-gradient(
+      90deg,
+      #6366f1,
+      #8b5cf6
+    );
+
+  border: none;
+  border-radius: 10px;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 20px
+    rgba(99, 102, 241, 0.35);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.cta-button:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 12px 25px
+    rgba(99, 102, 241, 0.45);
+}
+
+
+/* =========================================================
+   SEARCH BOX
+========================================================= */
+
+.search-box {
+  width: 100%;
+  max-width: 550px;
+
+  margin: 0 auto;
+
+  display: flex;
+  align-items: center;
+
+  padding: 8px;
+
+  background: white;
+
+  border-radius: 10px;
+
+  box-sizing: border-box;
+
+  box-shadow:
+    0 8px 24px
+    rgba(0, 0, 0, 0.2);
+}
+
+
+.search-box input {
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 15px 18px;
+
+  font-size: 0.95rem;
+
+  color: #334155;
+
+  background: transparent;
+
+  border: none;
+  outline: none;
+}
+
+
+.search-box input::placeholder {
+  color: #94a3b8;
+}
+
+
+.search-button {
+  padding: 14px 24px;
+
+  color: white;
+
+  font-size: 0.95rem;
+  font-weight: 700;
+
+  background:
+    linear-gradient(
+      90deg,
+      #6366f1,
+      #7c3aed
+    );
+
+  border: none;
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+
+.search-button:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+
+/* =========================================================
+   SEARCH ERROR
+========================================================= */
+
+.search-error {
+  width: 100%;
+  max-width: 650px;
+
+  margin: 14px auto 0;
+  padding: 12px 16px;
+
+  box-sizing: border-box;
+
+  color: #ffffff;
+  background: rgba(220, 38, 38, 0.85);
+
+  border-radius: 8px;
+
+  font-size: 0.9rem;
+}
+
+
+.search-browse-all-link {
+  margin-left: 10px;
+
+  color: #ffffff;
+
+  font-weight: 700;
+
+  background: transparent;
+
+  border: none;
+
+  text-decoration: underline;
+
+  cursor: pointer;
+}
+
+
+/* =========================================================
+   SUBJECT TAGS
+========================================================= */
+
+.category-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  gap: 12px;
+
+  margin-top: 22px;
+}
+
+
+.subject-tag {
+  padding: 8px 18px;
+
+  color: #334155;
+
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  background: rgba(255, 255, 255, 0.92);
+
+  border-radius: 999px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+
+.subject-tag:hover {
+  transform: translateY(-2px);
+
+  background: #ffffff;
+}
+
+
+/* =========================================================
+   CAROUSEL ARROWS
+========================================================= */
+
+.arrow {
+  position: absolute;
+
+  top: 50%;
+
+  width: 52px;
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transform: translateY(-50%);
+
+  color: white;
+
+  font-size: 2rem;
+
+  background:
+    rgba(0, 0, 0, 0.35);
+
+  border: none;
+  border-radius: 50%;
+
+  cursor: pointer;
+
+  z-index: 5;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+.arrow:hover {
+  background:
+    rgba(0, 0, 0, 0.6);
+
+  transform:
+    translateY(-50%)
+    scale(1.08);
+}
+
+
+.arrow.left {
+  left: 28px;
+}
+
+
+.arrow.right {
+  right: 28px;
+}
+
+
+/* =========================================================
+   CAROUSEL DOTS
+========================================================= */
+
+.carousel-dots {
+  position: absolute;
+
+  left: 50%;
+  bottom: 24px;
+
+  display: flex;
+
+  gap: 10px;
+
+  transform: translateX(-50%);
+
+  z-index: 5;
+}
+
+
+.dot {
+  width: 10px;
+  height: 10px;
+
+  padding: 0;
+
+  background:
+    rgba(255, 255, 255, 0.5);
+
+  border: none;
+  border-radius: 50%;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+
+.dot.active {
+  background: #ffffff;
+
+  transform: scale(1.3);
+}
+
+
+/* =========================================================
+   ABOUT SECTION
+========================================================= */
+
+.about-section {
+  padding: 80px 0;
+
+  background: #ffffff;
+}
+
+
+.about-section h2 {
+  margin: 0;
+
+  font-size: 2.5rem;
+  font-weight: 700;
+
+  color: #1e293b;
+
+  text-align: center;
+}
+
+
+.about-content {
+  max-width: 750px;
+
+  margin: 20px auto 0;
+
+  text-align: center;
+}
+
+
+.about-content p {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 1.125rem;
+  line-height: 1.8;
+}
+
+
+/* =========================================================
+   FEATURES SECTION
+========================================================= */
+
+.features-section {
+  position: relative;
+
+  padding: 80px 0;
+
+  background: white;
+}
+
+
+.features-section h2 {
+  margin-bottom: 0;
+
+  font-size: 2.5rem;
+  font-weight: 700;
+
+  color: #1e293b;
+
+  text-align: center;
+}
+
+
+.section-intro {
+  max-width: 600px;
+
+  margin:
+    24px auto
+    48px;
+
+  color: #64748b;
+
+  font-size: 1.125rem;
+  line-height: 1.6;
+
+  font-weight: 400;
+
+  text-align: center;
+}
+
+
+/* =========================================================
+   CARD GRID
+========================================================= */
+
+.card-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(280px, 1fr)
+    );
+
+  gap: 32px;
+
+  margin-top: 48px;
+}
+
+
+/* =========================================================
+   FEATURE CARD
+========================================================= */
+
+.feature-card {
+  position: relative;
+
+  padding: 40px 24px;
+
+  text-align: center;
+
+  background: white;
+
+  border:
+    1px solid #e2e8f0;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 4px 6px
+    rgba(0, 0, 0, 0.05);
+
+  transition: all 0.3s ease;
+}
+
+
+.feature-card:hover {
+  transform: translateY(-4px);
+
+  border-color: #6366f1;
+
+  box-shadow:
+    0 12px 24px
+    rgba(0, 0, 0, 0.1);
+}
+
+
+.feature-card svg {
+  margin-bottom: 20px;
+
+  color: #6366f1;
+
+  font-size: 2rem;
+}
+
+
+.feature-card h3 {
+  margin-bottom: 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  color: #1e293b;
+
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+
+.feature-card p {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 0.975rem;
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   CLASSES SECTION
+========================================================= */
+
+.classes-section {
+  padding: 60px 20px;
+
+  background: #f9fafc;
+}
+
+
+.classes-section h2 {
+  margin: 0;
+
+  color: #1e293b;
+
+  font-size: 2.5rem;
+
+  text-align: center;
+}
+
+
+/* =========================================================
+   CLASS CARD
+========================================================= */
+
+.class-card {
+  padding: 25px;
+
+  color: #64748b;
+
+  background: #ffffff;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 4px 15px
+    rgba(0, 0, 0, 0.08);
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+
+.class-card:hover {
+  transform: translateY(-5px);
+
+  box-shadow:
+    0 12px 24px
+    rgba(0, 0, 0, 0.12);
+}
+
+
+.class-card h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+
+  color: #1e293b;
+
+  font-size: 1.3rem;
+}
+
+
+/* =========================================================
+   TUTORS SECTION
+========================================================= */
+
+.tutors-section {
+  padding: 60px 20px 80px;
+
+  background: #ffffff;
+}
+
+
+.tutors-section h2 {
+  margin: 0;
+
+  color: #1e293b;
+
+  font-size: 2.5rem;
+
+  text-align: center;
+}
+
+
+/* =========================================================
+   TEACHER CARD
+========================================================= */
+
+.teacher-card {
+  padding: 25px;
+
+  background: #ffffff;
+
+  border:
+    1px solid #e2e8f0;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 4px 15px
+    rgba(0, 0, 0, 0.08);
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+
+.teacher-card:hover {
+  transform: translateY(-5px);
+
+  box-shadow:
+    0 12px 25px
+    rgba(0, 0, 0, 0.12);
+}
+
+
+.teacher-card h3 {
+  margin-top: 0;
+
+  color: #1e293b;
+
+  font-size: 1.3rem;
+}
+
+
+.teacher-card p {
+  margin: 8px 0;
+
+  color: #64748b;
+}
+
+
+.teacher-card a {
+  display: inline-block;
+
+  margin-top: 12px;
+
+  color: #6366f1;
+
+  font-weight: 700;
+
+  text-decoration: none;
+}
+
+
+.teacher-card a:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   ATTENDANCE SECTION
+========================================================= */
+
+.attendance-section {
+  padding: 80px 0;
+
+  background: #f8fafc;
+}
+
+
+.attendance-section h2 {
+  margin: 0;
+
+  color: #1e293b;
+
+  font-size: 2.3rem;
+
+  text-align: center;
+}
+
+
+.attendance-section .section-header {
+  flex-direction: column;
+}
+
+
+.attendance-section .section-header p {
+  margin: 0;
+
+  color: #64748b;
+
+  text-align: center;
+}
+
+
+/* =========================================================
+   MOBILE - TABLET
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .section-container {
+    padding: 0 16px;
+  }
+
+
+  .hero-carousel {
+    width: calc(100% - 24px);
+
+    height: 70vh;
+    max-height: none;
+
+    margin: 12px auto 0;
+  }
+
+
+  .carousel-content {
+    padding: 0 24px;
+  }
+
+
+  .slide-title {
+    font-size: 1.75rem;
+  }
+
+
+  .slide-description {
+    margin-bottom: 32px;
+
+    font-size: 1.125rem;
+  }
+
+
+  .search-box {
+    flex-direction: column;
+
+    gap: 10px;
+
+    padding: 10px;
+  }
+
+
+  .search-box input {
+    width: 100%;
+
+    padding: 12px 16px;
+
+    box-sizing: border-box;
+  }
+
+
+  .search-button {
+    width: 100%;
+  }
+
+
+  .category-tags {
+    gap: 8px;
+  }
+
+
+  .subject-tag {
+    padding: 8px 16px;
+
+    font-size: 0.8rem;
+  }
+
+
+  .arrow {
+    width: 44px;
+    height: 44px;
+  }
+
+
+  .arrow.left {
+    left: 16px;
+  }
+
+
+  .arrow.right {
+    right: 16px;
+  }
+
+
+  .about-section,
+  .features-section,
+  .benefits-section,
+  .success-stories-section {
+    padding: 60px 0;
+  }
+
+
+  .section-header {
+    flex-direction: column;
+
+    gap: 12px;
+  }
+
+
+  .section-icon {
+    font-size: 1.75rem;
+  }
+
+
+  .about-section h2,
+  .features-section h2,
+  .classes-section h2,
+  .tutors-section h2,
+  .benefits-section h2,
+  .success-stories-section h2 {
+    font-size: 2rem;
+  }
+
+
+  .card-grid {
+    grid-template-columns: 1fr;
+
+    gap: 24px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE - SMALL
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .hero-carousel {
+    width: 100%;
+
+    height: 72vh;
+
+    margin: 0;
+  }
+
+
+  .slide-title {
+    font-size: 1.5rem;
+  }
+
+
+  .slide-description {
+    font-size: 1rem;
+  }
+
+
+  .cta-button {
+    padding: 14px 28px;
+
+    font-size: 1rem;
+  }
+
+
+  .search-box {
+    width: calc(100% - 20px);
+  }
+
+
+  .category-tags {
+    gap: 6px;
+  }
+
+
+  .subject-tag {
+    padding: 7px 13px;
+
+    font-size: 0.75rem;
+  }
+
+
+  .arrow {
+    width: 38px;
+    height: 38px;
+
+    font-size: 1.5rem;
+  }
+
+
+  .arrow.left {
+    left: 8px;
+  }
+
+
+  .arrow.right {
+    right: 8px;
+  }
+
+
+  .carousel-dots {
+    bottom: 14px;
+  }
+
+
+  .about-section h2,
+  .features-section h2,
+  .classes-section h2,
+  .tutors-section h2,
+  .attendance-section h2 {
+    font-size: 1.7rem;
+  }
+
+
+  .feature-card,
+  .class-card,
+  .teacher-card {
+    padding: 20px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 400px) {
+
+  .slide-title {
+    font-size: 1.35rem;
+  }
+
+
+  .slide-description {
+    font-size: 0.9rem;
+  }
+
+
+  .search-box input {
+    font-size: 0.85rem;
+  }
+
+
+  .search-button {
+    font-size: 0.85rem;
+  }
+}
+
+/* =========================================================
+   MOBILE HOME PAGE - PREVENT CONTENT FROM HIDING
+========================================================= */
+
+@media screen and (max-width: 768px) {
+
+  .home-page {
+    padding-top: 0px !important;
+    margin-top: 0px !important;
+  }
+
+  .hero-section,
+  .hero-container,
+  .carousel-container {
+    margin-top: 0 !important;
+  }
+
+}
+
+@media (max-width: 768px) {
+  .home-container {
+    padding-top: 10px;
+  }
+}

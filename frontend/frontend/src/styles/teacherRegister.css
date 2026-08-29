@@ -1,0 +1,940 @@
+/* =========================================================
+   PAGE
+========================================================= */
+
+.teacher-register-page {
+  width: 100%;
+  min-height: 100vh;
+
+  /* SCROLLBAR */
+  overflow-x: hidden;
+  overflow-y: scroll;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(66, 96, 190, 0.16),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(105, 68, 190, 0.12),
+      transparent 35%
+    ),
+    #eef2f8;
+}
+
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.teacher-register-main {
+  width: 100%;
+  min-height: 100vh;
+
+  /* ALLOWS CONTENT TO EXTEND AND SCROLL */
+  overflow: visible;
+
+  padding:
+    110px
+    20px
+    50px;
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.teacher-register-card {
+  width: 100%;
+  max-width: 780px;
+
+  margin: 0 auto;
+
+  padding:
+    34px
+    32px;
+
+  background:
+    rgba(255, 255, 255, 0.92);
+
+  border:
+    1px solid
+    rgba(210, 218, 235, 0.9);
+
+  border-radius: 22px;
+
+  box-shadow:
+    0 18px 45px
+    rgba(40, 57, 95, 0.12);
+}
+
+
+/* =========================================================
+   HEADING
+========================================================= */
+
+.teacher-register-heading {
+  text-align: center;
+
+  margin-bottom: 28px;
+}
+
+
+.teacher-register-heading h1 {
+  margin: 0;
+
+  color: #26364f;
+
+  font-size: 28px;
+  font-weight: 700;
+}
+
+
+.teacher-register-heading p {
+  margin:
+    8px
+    0
+    0;
+
+  color: #758197;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.teacher-register-form {
+  width: 100%;
+}
+
+
+.teacher-form-group {
+  width: 100%;
+
+  margin-bottom: 17px;
+}
+
+
+.teacher-form-group label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #47556b;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   NAME ROW
+========================================================= */
+
+.teacher-name-row {
+  display: grid;
+
+  grid-template-columns:
+    0.8fr
+    1.5fr
+    1.5fr;
+
+  gap: 14px;
+}
+
+
+/* =========================================================
+   TIMEZONE ROW
+========================================================= */
+
+.timezone-qualification-row {
+  display: grid;
+
+  grid-template-columns:
+    1fr
+    1fr;
+
+  gap: 14px;
+}
+
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+.teacher-form-group input,
+.teacher-form-group select {
+  width: 100%;
+  height: 46px;
+
+  padding:
+    0
+    15px;
+
+  font-family: inherit;
+
+  font-size: 14px;
+
+  color: #34435a;
+
+  background: #f8faff;
+
+  border:
+    1px solid
+    #d5ddeb;
+
+  border-radius: 11px;
+
+  outline: none;
+
+  transition:
+    border 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+
+.teacher-form-group input::placeholder {
+  color: #8d99ac;
+}
+
+
+.teacher-form-group input:focus,
+.teacher-form-group select:focus {
+  background: #ffffff;
+
+  border-color: #5c67d9;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(92, 103, 217, 0.12);
+}
+
+
+/* =========================================================
+   PASSWORD
+========================================================= */
+
+.teacher-password-wrapper {
+  position: relative;
+
+  width: 100%;
+}
+
+
+.teacher-password-wrapper input {
+  padding-left: 42px;
+  padding-right: 48px;
+}
+
+
+.teacher-password-icon {
+  position: absolute;
+
+  left: 15px;
+  top: 50%;
+
+  transform:
+    translateY(-50%);
+
+  color: #8492a8;
+
+  font-size: 14px;
+
+  z-index: 1;
+}
+
+
+.teacher-eye-button {
+  position: absolute;
+
+  right: 0;
+  top: 0;
+
+  width: 48px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  background: transparent;
+
+  color: #8190a6;
+
+  cursor: pointer;
+}
+
+
+.teacher-eye-button:hover {
+  color: #4f5fd0;
+}
+
+
+/* =========================================================
+   PASSWORD RULES
+========================================================= */
+
+.teacher-password-rules {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  gap: 7px;
+
+  margin-top: 10px;
+
+  padding: 12px;
+
+  background: #f8faff;
+
+  border:
+    1px solid
+    #e0e6f2;
+
+  border-radius: 10px;
+
+  color: #8b96a8;
+
+  font-size: 12px;
+}
+
+
+.teacher-password-rules div::before {
+  content: "○";
+
+  margin-right: 6px;
+}
+
+
+.teacher-password-rules div.valid {
+  color: #16a34a;
+}
+
+
+.teacher-password-rules div.valid::before {
+  content: "✓";
+}
+
+
+/* =========================================================
+   PASSWORD MATCH
+========================================================= */
+
+.teacher-password-match {
+  display: block;
+
+  margin-top: 7px;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.teacher-password-match.valid {
+  color: #16a34a;
+}
+
+
+.teacher-password-match.invalid {
+  color: #dc2626;
+}
+
+
+/* =========================================================
+   CLASSES DROPDOWN
+========================================================= */
+
+.teacher-classes-dropdown {
+  position: relative;
+
+  width: 100%;
+}
+
+
+.teacher-classes-button {
+  width: 100%;
+  min-height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding:
+    10px
+    15px;
+
+  font-family: inherit;
+
+  font-size: 14px;
+
+  text-align: left;
+
+  color: #34435a;
+
+  background: #f8faff;
+
+  border:
+    1px solid
+    #d5ddeb;
+
+  border-radius: 11px;
+
+  cursor: pointer;
+}
+
+
+.teacher-classes-button svg {
+  transition:
+    transform 0.2s ease;
+}
+
+
+.teacher-classes-button svg.rotate {
+  transform:
+    rotate(180deg);
+}
+
+
+.teacher-classes-menu {
+  position: absolute;
+
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+
+  z-index: 50;
+
+  max-height: 250px;
+
+  overflow-y: auto;
+
+  padding: 8px;
+
+  background: #ffffff;
+
+  border:
+    1px solid
+    #d5ddeb;
+
+  border-radius: 11px;
+
+  box-shadow:
+    0 12px 30px
+    rgba(30, 41, 59, 0.15);
+}
+
+
+.teacher-class-option {
+  display: flex !important;
+  align-items: center;
+
+  gap: 10px;
+
+  margin: 0 !important;
+
+  padding: 10px;
+
+  color: #47556b !important;
+
+  border-radius: 7px;
+
+  cursor: pointer;
+}
+
+
+.teacher-class-option:hover {
+  background: #eef4ff;
+}
+
+
+.teacher-class-option input {
+  width: 16px !important;
+  height: 16px !important;
+
+  padding: 0 !important;
+}
+
+
+/* =========================================================
+   FILE UPLOAD
+========================================================= */
+
+.teacher-file-upload {
+  width: 100%;
+  min-height: 46px;
+
+  display: flex !important;
+  align-items: center !important;
+
+  gap: 12px;
+
+  padding: 8px 12px;
+
+  box-sizing: border-box;
+
+  background: #f8faff;
+
+  border: 1px dashed #b9c5df;
+
+  border-radius: 11px;
+
+  cursor: pointer;
+}
+
+
+/* Upload icon */
+
+.teacher-file-upload > svg {
+  flex-shrink: 0;
+
+  color: #5568d6;
+
+  font-size: 16px;
+
+  margin: 0;
+
+  transform: none;
+}
+
+
+/* Choose file button */
+
+.teacher-file-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  flex: 0 0 auto !important;
+
+  width: auto !important;
+  min-height: 34px;
+
+  padding: 0 14px !important;
+
+  margin: 0 !important;
+
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  background: linear-gradient(
+    135deg,
+    #405ec7,
+    #6a42ca
+  );
+
+  border-radius: 7px;
+}
+
+
+/* File name */
+
+.teacher-file-name {
+  flex: 1;
+
+  display: block !important;
+
+  min-width: 0;
+
+  margin: 0 !important;
+
+  color: #69768a;
+
+  font-size: 13px;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   REGISTER BUTTON
+========================================================= */
+
+.teacher-register-button {
+  width: 100%;
+  height: 48px;
+
+  margin-top: 4px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  background:
+    linear-gradient(
+      90deg,
+      #ff756c,
+      #6c3fd0
+    );
+
+  box-shadow:
+    0 10px 20px
+    rgba(78, 75, 190, 0.2);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.teacher-register-button:hover:not(:disabled) {
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 14px 25px
+    rgba(78, 75, 190, 0.3);
+}
+
+
+.teacher-register-button:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   POPUP OVERLAY
+========================================================= */
+
+.teacher-popup-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 50000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    rgba(15, 23, 42, 0.55);
+
+  backdrop-filter:
+    blur(4px);
+}
+
+
+/* =========================================================
+   POPUP CARD
+========================================================= */
+
+.teacher-popup-card {
+  position: relative;
+
+  width: 100%;
+  max-width: 420px;
+
+  padding:
+    35px
+    30px
+    30px;
+
+  text-align: center;
+
+  background: #ffffff;
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 25px 70px
+    rgba(0, 0, 0, 0.3);
+
+  animation:
+    teacherPopupSlideUp
+    0.25s ease;
+}
+
+
+.teacher-popup-card.success {
+  border-top:
+    5px solid
+    #22c55e;
+}
+
+
+.teacher-popup-card.error {
+  border-top:
+    5px solid
+    #ef4444;
+}
+
+
+.teacher-popup-close {
+  position: absolute;
+
+  top: 12px;
+  right: 12px;
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  border-radius: 50%;
+
+  background: #f1f5f9;
+
+  color: #64748b;
+
+  cursor: pointer;
+}
+
+
+.teacher-popup-icon {
+  width: 70px;
+  height: 70px;
+
+  margin:
+    0
+    auto
+    18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  font-size: 32px;
+}
+
+
+.teacher-popup-icon.success {
+  color: #16a34a;
+
+  background: #dcfce7;
+}
+
+
+.teacher-popup-icon.error {
+  color: #dc2626;
+
+  background: #fee2e2;
+}
+
+
+.teacher-popup-card h2 {
+  margin:
+    0
+    0
+    12px;
+
+  color: #1e293b;
+
+  font-size: 22px;
+}
+
+
+.teacher-popup-card p {
+  margin:
+    0
+    0
+    24px;
+
+  white-space: pre-line;
+
+  color: #64748b;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+
+.teacher-popup-button {
+  width: 100%;
+
+  padding: 12px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+.teacher-popup-button.success {
+  background: #16a34a;
+}
+
+
+.teacher-popup-button.error {
+  background: #dc2626;
+}
+
+
+@keyframes teacherPopupSlideUp {
+
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(15px)
+      scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .teacher-register-main {
+    padding:
+      95px
+      15px
+      50px;
+  }
+
+  .teacher-register-card {
+    padding:
+      28px
+      22px;
+  }
+
+  .teacher-name-row {
+    grid-template-columns:
+      110px
+      1fr
+      1fr;
+
+    gap: 10px;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+  .teacher-register-main {
+    padding:
+      85px
+      12px
+      40px;
+  }
+
+  .teacher-register-card {
+    padding:
+      24px
+      16px;
+
+    border-radius: 16px;
+  }
+
+  .teacher-register-heading h1 {
+    font-size: 23px;
+  }
+
+  .teacher-name-row {
+    grid-template-columns: 1fr;
+
+    gap: 0;
+  }
+
+  .timezone-qualification-row {
+    grid-template-columns: 1fr;
+
+    gap: 0;
+  }
+
+  .teacher-password-rules {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+/* =========================================
+   PAGE SCROLL FIX
+========================================= */
+
+html,
+body,
+#root {
+  min-height: 100%;
+  height: auto;
+  overflow-y: auto;
+}
+
+.teacher-register-page {
+  width: 100%;
+  min-height: 100vh;
+  height: auto;
+
+  padding-top: 10px;
+  padding-bottom: 50px;
+
+  overflow: visible;
+}
+
+.teacher-register-container {
+  height: auto;
+  overflow: visible;
+}
+
+/* Mobile */
+@media screen and (max-width: 700px) {
+  .teacher-register-page {
+    padding-top: 0px;
+    padding-bottom: 30px;
+  }
+}

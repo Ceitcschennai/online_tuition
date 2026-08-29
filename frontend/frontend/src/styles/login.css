@@ -1,0 +1,2135 @@
+/* ============================================================
+   ONLINE TUITION - LOGIN PAGE
+   Modern Education Theme
+   Blue + Purple + Coral + Green + Orange
+   ============================================================ */
+
+
+/* ============================================================
+   GLOBAL RESET — kills the browser's default <body> margin,
+   which is the real source of the white strip above the
+   header on every screen size (desktop AND mobile).
+   Safe to keep even if index.css already has a reset.
+   ============================================================ */
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+/* HARD OVERRIDE — wins regardless of layout.css import order
+   or specificity. layout.css likely reserves space for a
+   fixed Navbar via padding-top/margin-top on body/html/#root;
+   this neutralizes that ONLY while the login page is mounted
+   (Login.js toggles the "login-active" class on <body>). */
+
+body.login-active,
+html:has(body.login-active),
+body.login-active #root {
+  margin: 0 !important;
+  padding: 0 !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+
+/* ============================================================
+   RESET
+   ============================================================ */
+
+.login-page,
+.login-page * {
+  box-sizing: border-box;
+}
+
+.login-page {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+
+  font-family:
+    "Segoe UI",
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  background:
+    radial-gradient(
+      circle at 15% 20%,
+      rgba(39, 105, 255, 0.18),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 85% 70%,
+      rgba(125, 55, 255, 0.18),
+      transparent 30%
+    ),
+    linear-gradient(
+      135deg,
+      #03113f 0%,
+      #07194f 45%,
+      #101c58 100%
+    );
+
+  color: #ffffff;
+
+  
+}
+
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.login-header {
+  height: 72px;
+
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 4.5vw;
+
+  background:
+    rgba(2, 12, 48, 0.96);
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  position: relative;
+  z-index: 10;
+}
+
+
+/* ============================================================
+   BRAND
+   ============================================================ */
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-icon {
+  width: 48px;
+  height: 48px;
+
+  border-radius: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 24px;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #3567ff,
+      #7c3aed
+    );
+
+  box-shadow:
+    0 8px 25px rgba(57, 100, 255, 0.35);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-text h2 {
+  margin: 0;
+
+  font-size: 20px;
+  font-weight: 800;
+
+  letter-spacing: -0.3px;
+}
+
+.brand-text span {
+  font-size: 10px;
+
+  color: #b8c7eb;
+
+  letter-spacing: 0.3px;
+}
+
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+.login-navigation {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.login-navigation a {
+  color: #ffffff;
+
+  text-decoration: none;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  padding: 11px 20px;
+
+  border-radius: 8px;
+
+  transition:
+    0.25s ease;
+
+  letter-spacing: 0.2px;
+}
+
+.login-navigation a:hover {
+  background:
+    rgba(255, 255, 255, 0.08);
+}
+
+.login-navigation a.active {
+  background:
+    linear-gradient(
+      135deg,
+      #ff8178,
+      #ff6f61
+    );
+
+  box-shadow:
+    0 7px 18px
+    rgba(255, 111, 97, 0.28);
+}
+
+
+/* ============================================================
+   MOBILE HAMBURGER TOGGLE
+   Hidden on desktop/tablet — only shown under 768px.
+   ============================================================ */
+
+.mobile-menu-toggle {
+  display: none;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 48px;
+  height: 48px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.1);
+
+  color: #ffffff;
+
+  font-size: 26px;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.mobile-menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.mobile-menu-toggle svg {
+  width: 24px;
+  height: 24px;
+}
+
+
+/* ============================================================
+   MOBILE DROPDOWN NAV
+   ============================================================ */
+
+.mobile-nav-dropdown {
+  /* React only mounts this element when the menu is open,
+     so it's always meant to be visible once present in the
+     DOM — display:flex here, not none. */
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+
+  padding: 14px 18px 18px;
+
+  background: rgba(2, 12, 48, 0.98);
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  position: relative;
+  z-index: 9;
+}
+
+.mobile-nav-dropdown a {
+  color: #ffffff;
+
+  text-decoration: none;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 0.3px;
+
+  padding: 12px 14px;
+
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-nav-dropdown a.active {
+  background:
+    linear-gradient(
+      135deg,
+      #ff8178,
+      #ff6f61
+    );
+}
+
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+
+.login-main {
+  width: 100%;
+
+  height:
+    calc(100vh - 72px);
+
+  min-height: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.35fr)
+    minmax(390px, 0.65fr);
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+
+/* ============================================================
+   LEFT HERO
+   ============================================================ */
+
+.login-hero {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  padding:
+    30px 5vw 30px 6vw;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+
+/* Decorative dots */
+
+.login-hero::before {
+  content: "";
+
+  position: absolute;
+
+  top: 70px;
+  left: 30px;
+
+  width: 100px;
+  height: 70px;
+
+  background-image:
+    radial-gradient(
+      #2d73ff 1.2px,
+      transparent 1.2px
+    );
+
+  background-size: 15px 15px;
+
+  opacity: 0.5;
+}
+
+
+/* Glow */
+
+.login-hero::after {
+  content: "";
+
+  position: absolute;
+
+  width: 380px;
+  height: 380px;
+
+  left: 20%;
+  top: 20%;
+
+  border-radius: 50%;
+
+  background:
+    rgba(41, 104, 255, 0.08);
+
+  filter: blur(50px);
+
+  pointer-events: none;
+}
+
+.hero-content {
+  width: 100%;
+  max-width: 720px;
+
+  position: relative;
+
+  z-index: 2;
+}
+
+
+/* ============================================================
+   HERO LABEL
+   ============================================================ */
+
+.hero-label {
+  color: #b46cff;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 2px;
+
+  margin-bottom: 14px;
+}
+
+
+/* ============================================================
+   HERO HEADING
+   ============================================================ */
+
+.hero-content h1 {
+  margin: 0;
+
+  font-size:
+    clamp(42px, 4.1vw, 64px);
+
+  line-height: 1.04;
+
+  letter-spacing: -2px;
+
+  font-weight: 800;
+
+  color: #ffffff;
+}
+
+.hero-content h1 span {
+  color: #b14cff;
+
+  background:
+    linear-gradient(
+      90deg,
+      #a942ff,
+      #d55cff
+    );
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+
+/* ============================================================
+   DESCRIPTION
+   ============================================================ */
+
+.hero-description {
+  max-width: 620px;
+
+  margin:
+    20px 0 25px;
+
+  color: #d0dcf7;
+
+  font-size: 15px;
+
+  line-height: 1.65;
+}
+
+
+/* ============================================================
+   FEATURES
+   ============================================================ */
+
+.hero-features {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(100px, 1fr));
+
+  gap: 18px;
+
+  max-width: 650px;
+
+  margin-bottom: 24px;
+}
+
+.feature-item {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  min-width: 0;
+}
+
+.feature-icon {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  border-radius: 11px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 17px;
+
+  background:
+    rgba(255, 255, 255, 0.05);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.15);
+}
+
+.feature-icon.purple {
+  color: #c36cff;
+}
+
+.feature-icon.green {
+  color: #32e6b3;
+}
+
+.feature-icon.orange {
+  color: #ff9b30;
+}
+
+.feature-icon.blue {
+  color: #55a0ff;
+}
+
+.feature-item div:last-child {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.feature-item strong {
+  font-size: 12px;
+
+  color: #ffffff;
+
+  white-space: nowrap;
+}
+
+.feature-item span {
+  font-size: 9px;
+
+  color: #9fb0d9;
+}
+
+
+/* ============================================================
+   LEARNING BOX
+   ============================================================ */
+
+.learning-box {
+  max-width: 620px;
+
+  min-height: 76px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+
+  padding:
+    12px 18px;
+
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(88, 57, 210, 0.25),
+      rgba(27, 43, 120, 0.28)
+    );
+
+  border:
+    1px solid
+    rgba(145, 91, 255, 0.4);
+
+  box-shadow:
+    inset 0 0 25px
+    rgba(85, 65, 255, 0.06);
+}
+
+.learning-box-icon {
+  width: 42px;
+  height: 42px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #d687ff;
+
+  background:
+    rgba(121, 69, 255, 0.2);
+
+  font-size: 18px;
+}
+
+.learning-box-content {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  width: 100%;
+}
+
+.learning-box-content p {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 12px;
+
+  line-height: 1.4;
+}
+
+.learning-box-content button {
+  border: none;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding:
+    9px 15px;
+
+  border-radius: 20px;
+
+  color: #ffffff;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ff982b,
+      #ff7135
+    );
+
+  cursor: pointer;
+
+  transition:
+    0.25s ease;
+}
+
+.learning-box-content button:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 7px 18px
+    rgba(255, 127, 44, 0.28);
+}
+
+
+/* ============================================================
+   RIGHT LOGIN PANEL
+   ============================================================ */
+
+.login-panel {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding:
+    18px 5vw 18px 2vw;
+
+  min-width: 0;
+
+  position: relative;
+}
+
+
+/* ============================================================
+   LOGIN CARD
+   ============================================================ */
+
+.login-card {
+  width: min(100%, 460px);
+
+  max-height:
+    calc(100vh - 108px);
+
+  padding:
+    18px 28px 18px;
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(61, 81, 135, 0.94),
+      rgba(35, 55, 108, 0.96)
+    );
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.25);
+
+  box-shadow:
+    0 25px 55px
+    rgba(0, 0, 0, 0.25);
+
+  backdrop-filter:
+    blur(14px);
+
+  /* Was overflow: hidden — that clipped the Sign In /
+     Create Account buttons whenever the content was
+     taller than the card. Scroll instead of clipping. */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Thin, unobtrusive scrollbar for the login card */
+
+.login-card::-webkit-scrollbar {
+  width: 5px;
+}
+
+.login-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.login-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+}
+
+
+/* ============================================================
+   LOGIN TITLE (heading with inline cap icon)
+   ============================================================ */
+
+.login-title {
+  margin: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  text-align: center;
+
+  color: #ffffff;
+
+  font-size: 24px;
+
+  font-weight: 800;
+
+  letter-spacing: -0.8px;
+}
+
+.login-title-icon {
+  flex-shrink: 0;
+
+  width: 28px;
+  height: 28px;
+
+  padding: 6px;
+
+  border-radius: 50%;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #a343ff,
+      #7e3ff0
+    );
+
+  box-shadow:
+    0 8px 22px
+    rgba(160, 63, 255, 0.45);
+}
+
+
+/* ============================================================
+   LOGIN TITLE LINE (divider under heading)
+   ============================================================ */
+
+.login-title-line {
+  width: 56px;
+  height: 3px;
+
+  margin:
+    6px auto 6px;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #a54bff,
+      #d16cff
+    );
+}
+
+.login-subtitle {
+  margin:
+    0 0 10px;
+
+  text-align: center;
+
+  color: #d3ddf5;
+
+  font-size: 11px;
+}
+
+
+/* ============================================================
+   ERROR
+   ============================================================ */
+
+.login-error {
+  padding:
+    8px 11px;
+
+  margin-bottom: 12px;
+
+  border-radius: 8px;
+
+  background:
+    rgba(255, 84, 84, 0.14);
+
+  border:
+    1px solid
+    rgba(255, 100, 100, 0.45);
+
+  color: #ffb4b4;
+
+  text-align: center;
+
+  font-size: 11px;
+}
+
+
+/* ============================================================
+   INPUT GROUP
+   ============================================================ */
+
+.input-group {
+  margin-bottom: 8px;
+}
+
+.input-group label,
+.role-title {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #ffffff;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.4px;
+}
+
+
+/* ============================================================
+   PASSWORD LABEL
+   ============================================================ */
+
+.password-label-row {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 6px;
+}
+
+.password-label-row label {
+  margin: 0;
+}
+
+.forgot-password {
+  border: none;
+
+  background: none;
+
+  padding: 0;
+
+  color: #d28cff;
+
+  font-size: 10px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+/* ============================================================
+   INPUT WRAPPER
+   ============================================================ */
+
+.input-wrapper {
+  position: relative;
+
+  width: 100%;
+}
+
+.input-wrapper input {
+  width: 100%;
+
+  height: 40px;
+
+  padding:
+    0 38px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.2);
+
+  border-radius: 10px;
+
+  outline: none;
+
+  color: #18213c;
+
+  background:
+    #edf3ff;
+
+  font-size: 12px;
+
+  transition:
+    0.2s ease;
+}
+
+.input-wrapper input::placeholder {
+  color: #8491ad;
+}
+
+.input-wrapper input:focus {
+  border-color: #a95cff;
+
+  box-shadow:
+    0 0 0 2px
+    rgba(169, 92, 255, 0.15);
+}
+
+.input-icon {
+  position: absolute;
+
+  left: 14px;
+
+  top: 50%;
+
+  transform:
+    translateY(-50%);
+
+  color: #a9b7d3;
+
+  font-size: 13px;
+
+  pointer-events: none;
+}
+
+
+/* ============================================================
+   PASSWORD TOGGLE
+   ============================================================ */
+
+.password-toggle {
+  position: absolute;
+
+  right: 12px;
+  top: 50%;
+
+  transform:
+    translateY(-50%);
+
+  border: none;
+
+  background: transparent;
+
+  padding: 4px;
+
+  color: #91a1c1;
+
+  cursor: pointer;
+}
+
+
+/* ============================================================
+   ROLE SECTION
+   ============================================================ */
+
+.role-section {
+  margin-top: 2px;
+
+  margin-bottom: 8px;
+}
+
+
+/* ============================================================
+   ROLE OPTIONS
+   ============================================================ */
+
+.role-options {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 10px;
+}
+
+.role-card {
+  height: 52px;
+
+  position: relative;
+
+  border-radius: 10px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.2);
+
+  background:
+    rgba(255, 255, 255, 0.06);
+
+  color: #ffffff;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 4px;
+
+  cursor: pointer;
+
+  transition:
+    0.22s ease;
+}
+
+.role-card:hover {
+  background:
+    rgba(255, 255, 255, 0.11);
+
+  transform:
+    translateY(-1px);
+}
+
+.role-card.selected {
+  border-color: #b158ff;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(153, 67, 255, 0.3),
+      rgba(98, 67, 202, 0.25)
+    );
+
+  box-shadow:
+    inset 0 0 15px
+    rgba(177, 88, 255, 0.08);
+}
+
+.role-icon {
+  width: 21px;
+  height: 21px;
+
+  border-radius: 6px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    rgba(255, 255, 255, 0.1);
+
+  color: #c7d4ef;
+
+  font-size: 10px;
+}
+
+.role-card.selected .role-icon {
+  color: #dfb4ff;
+
+  background:
+    rgba(176, 78, 255, 0.2);
+}
+
+.role-card span {
+  font-size: 10px;
+
+  font-weight: 700;
+
+  color: #e4eafa;
+}
+
+.role-check {
+  position: absolute;
+
+  right: 6px;
+  top: 5px;
+
+  color: #e99cff;
+
+  font-size: 10px;
+}
+
+
+/* ============================================================
+   REMEMBER ME
+   ============================================================ */
+
+.login-options {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin:
+    0 0 8px;
+}
+
+.remember-me {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  color: #d4def1;
+
+  font-size: 10px;
+
+  cursor: pointer;
+}
+
+.remember-me input {
+  display: none;
+}
+
+.custom-checkbox {
+  width: 15px;
+  height: 15px;
+
+  border-radius: 4px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.35);
+
+  display: block;
+
+  position: relative;
+}
+
+.remember-me input:checked + .custom-checkbox {
+  background:
+    #7751ff;
+
+  border-color:
+    #7751ff;
+}
+
+.remember-me input:checked + .custom-checkbox::after {
+  content: "✓";
+
+  position: absolute;
+
+  left: 3px;
+  top: -1px;
+
+  color: #ffffff;
+
+  font-size: 10px;
+
+  font-weight: 800;
+}
+
+.forgot-link {
+  border: none;
+
+  background: none;
+
+  color: #d38cff;
+
+  font-size: 10px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+/* ============================================================
+   SIGN IN BUTTON
+   ============================================================ */
+
+.sign-in-button {
+  width: 100%;
+
+  height: 40px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 12px;
+
+  color: #ffffff;
+
+  font-size: 13px;
+
+  font-weight: 800;
+
+  background:
+    linear-gradient(
+      90deg,
+      #2c64ee,
+      #7b3ff0
+    );
+
+  box-shadow:
+    0 8px 20px
+    rgba(68, 83, 255, 0.24);
+
+  cursor: pointer;
+
+  transition:
+    0.25s ease;
+}
+
+.sign-in-button:hover:not(:disabled) {
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 12px 25px
+    rgba(68, 83, 255, 0.35);
+}
+
+.sign-in-button:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+}
+
+
+/* ============================================================
+   SPINNER
+   ============================================================ */
+
+.button-spinner {
+  width: 15px;
+  height: 15px;
+
+  border:
+    2px solid
+    rgba(255, 255, 255, 0.4);
+
+  border-top-color:
+    #ffffff;
+
+  border-radius: 50%;
+
+  animation:
+    spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform:
+      rotate(360deg);
+  }
+}
+
+
+/* ============================================================
+   DIVIDER
+   ============================================================ */
+
+.login-divider {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin:
+    8px 0;
+}
+
+.login-divider span {
+  flex: 1;
+
+  height: 1px;
+
+  background:
+    rgba(255, 255, 255, 0.16);
+}
+
+.login-divider strong {
+  color: #c6d0e6;
+
+  font-size: 9px;
+
+  font-weight: 600;
+}
+
+
+/* ============================================================
+   CREATE ACCOUNT
+   ============================================================ */
+
+.create-account-button {
+  width: 100%;
+
+  height: 36px;
+
+  border:
+    1px solid
+    #b45cff;
+
+  border-radius: 8px;
+
+  background:
+    rgba(255, 255, 255, 0.03);
+
+  color: #f1d9ff;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 9px;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    0.25s ease;
+}
+
+.create-account-button:hover {
+  background:
+    rgba(174, 84, 255, 0.12);
+
+  transform:
+    translateY(-1px);
+}
+
+
+/* ============================================================
+   MOBILE POPUP
+   ============================================================ */
+
+.mobile-popup-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 99999;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    rgba(0, 0, 0, 0.7);
+
+  backdrop-filter:
+    blur(7px);
+}
+
+.mobile-popup-card {
+  width: 100%;
+
+  max-width: 350px;
+
+  padding:
+    35px 25px 25px;
+
+  border-radius: 20px;
+
+  background:
+    #ffffff;
+
+  color: #1a2140;
+
+  text-align: center;
+
+  position: relative;
+
+  box-shadow:
+    0 25px 70px
+    rgba(0, 0, 0, 0.4);
+}
+
+.mobile-popup-close {
+  position: absolute;
+
+  right: 15px;
+  top: 12px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #777;
+
+  cursor: pointer;
+
+  font-size: 16px;
+}
+
+.mobile-popup-icon {
+  width: 65px;
+  height: 65px;
+
+  margin:
+    0 auto 17px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #ffffff;
+
+  font-size: 25px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #3167ff,
+      #8a3ffc
+    );
+}
+
+.mobile-popup-card h2 {
+  margin:
+    0 0 10px;
+
+  font-size: 21px;
+}
+
+.mobile-popup-card p {
+  margin:
+    0 0 8px;
+
+  color: #444;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+.mobile-popup-card span {
+  display: block;
+
+  margin-bottom: 22px;
+
+  color: #888;
+
+  font-size: 11px;
+}
+
+.mobile-popup-button {
+  width: 100%;
+
+  border: none;
+
+  padding:
+    12px;
+
+  border-radius: 30px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #3167ff,
+      #8a3ffc
+    );
+
+  color: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 1100px) {
+
+  .login-main {
+    grid-template-columns:
+      minmax(0, 1.15fr)
+      minmax(370px, 0.85fr);
+  }
+
+  .login-hero {
+    padding-left: 4vw;
+    padding-right: 2vw;
+  }
+
+  .hero-content h1 {
+    font-size: 46px;
+  }
+
+  .hero-description {
+    font-size: 13px;
+  }
+
+  .hero-features {
+    gap: 10px;
+  }
+
+  .feature-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .feature-item strong {
+    font-size: 10px;
+  }
+
+  .feature-item span {
+    font-size: 8px;
+  }
+
+  .login-panel {
+    padding-right: 3vw;
+  }
+
+  .login-card {
+    width: min(100%, 430px);
+    padding-left: 25px;
+    padding-right: 25px;
+  }
+}
+
+
+/* ============================================================
+   SMALL TABLET
+   ============================================================ */
+
+@media (max-width: 900px) {
+
+  .login-header {
+    padding:
+      0 25px;
+  }
+
+  .login-main {
+    grid-template-columns:
+      1fr 390px;
+  }
+
+  .login-hero {
+    padding-left: 30px;
+  }
+
+  .hero-content h1 {
+    font-size: 38px;
+  }
+
+  .hero-description {
+    font-size: 12px;
+  }
+
+  .hero-features {
+    grid-template-columns:
+      repeat(2, 1fr);
+
+    gap: 10px;
+  }
+
+  .learning-box {
+    max-width: 100%;
+  }
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 768px) {
+
+  .login-page {
+    min-height: 100vh;
+
+    overflow-y: auto;
+  }
+
+  .login-header {
+    height: 64px;
+
+    padding:
+      0 18px;
+  }
+
+  .brand-icon {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 11px;
+
+    font-size: 19px;
+  }
+
+  .brand-text h2 {
+    font-size: 16px;
+  }
+
+  .brand-text span {
+    font-size: 8px;
+  }
+
+  /* Hide the inline desktop nav links, show hamburger instead */
+
+  .login-navigation {
+    display: none;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .login-main {
+    height: auto;
+
+    min-height:
+      calc(100vh - 64px);
+
+    display: flex;
+
+    flex-direction: column;
+
+    overflow: visible;
+  }
+
+  .login-hero {
+    padding:
+      35px 22px 25px;
+
+    min-height: auto;
+  }
+
+  .login-hero::before {
+    top: 20px;
+    left: 15px;
+  }
+
+  .hero-content {
+    max-width: 100%;
+  }
+
+  .hero-label {
+    font-size: 9px;
+
+    letter-spacing: 1.5px;
+  }
+
+  .hero-content h1 {
+    font-size: 36px;
+
+    letter-spacing: -1.2px;
+  }
+
+  .hero-description {
+    font-size: 12px;
+
+    margin:
+      14px 0 20px;
+  }
+
+  .hero-features {
+    grid-template-columns:
+      repeat(2, 1fr);
+
+    gap: 12px;
+
+    margin-bottom: 20px;
+  }
+
+  .learning-box {
+    min-height: auto;
+
+    padding: 12px;
+  }
+
+  .learning-box-content {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 9px;
+  }
+
+  .learning-box-content p {
+    font-size: 11px;
+  }
+
+  .login-panel {
+    padding:
+      10px 20px 30px;
+
+    width: 100%;
+  }
+
+  .login-card {
+    width: 100%;
+
+    max-width: 430px;
+
+    max-height: none;
+
+    padding:
+      24px 22px;
+  }
+}
+
+
+/* ============================================================
+   SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 480px) {
+
+  .login-header {
+    height: 60px;
+
+    padding:
+      0 12px;
+  }
+
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+
+    font-size: 17px;
+  }
+
+  .brand-text h2 {
+    font-size: 14px;
+  }
+
+  .brand-text span {
+    display: none;
+  }
+
+  .login-navigation a {
+    font-size: 8px;
+
+    padding:
+      7px 7px;
+  }
+
+  .login-hero {
+    padding:
+      28px 18px 20px;
+  }
+
+  .hero-content h1 {
+    font-size: 31px;
+  }
+
+  .hero-description {
+    font-size: 11px;
+  }
+
+  .hero-features {
+    gap: 8px;
+  }
+
+  .feature-icon {
+    width: 32px;
+    height: 32px;
+
+    font-size: 14px;
+  }
+
+  .feature-item strong {
+    font-size: 9px;
+  }
+
+  .feature-item span {
+    font-size: 7px;
+  }
+
+  .login-panel {
+    padding:
+      5px 14px 25px;
+  }
+
+  .login-card {
+    padding:
+      22px 18px;
+  }
+
+  .login-title {
+    font-size: 25px;
+    gap: 9px;
+  }
+
+  .login-title-icon {
+    width: 28px;
+    height: 28px;
+    padding: 6px;
+  }
+
+  .role-options {
+    gap: 7px;
+  }
+
+  .role-card {
+    height: 60px;
+  }
+
+  .role-card span {
+    font-size: 9px;
+  }
+}
+
+
+/* ============================================================
+   VERY SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 360px) {
+
+  .login-navigation a {
+    padding:
+      6px 5px;
+
+    font-size: 7px;
+  }
+
+  .hero-content h1 {
+    font-size: 27px;
+  }
+
+  .hero-features {
+    grid-template-columns: 1fr;
+  }
+
+  .login-card {
+    padding:
+      20px 15px;
+  }
+
+  .role-card {
+    height: 57px;
+  }
+}
+
+
+/* ============================================================
+   FIX: FULL-BLEED LOGIN PAGE (no leftover white gap)
+   Overrides any spacing that App.js / layout.css inject
+   via the "login-main-wrapper" class used on the login route.
+   ============================================================ */
+
+.login-main-wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   LOGIN PAGE - REGISTER DROPDOWN
+   ============================================================ */
+
+.login-navigation {
+  position: relative;
+  z-index: 100;
+}
+
+
+/* Register dropdown wrapper */
+
+.login-register-dropdown {
+  position: relative;
+  z-index: 10001;
+}
+
+
+/* Register button */
+
+.login-register-button {
+  min-width: 115px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  padding: 11px 20px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 0.2px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.25s ease,
+    transform 0.25s ease;
+}
+
+
+.login-register-button:hover {
+  background:
+    rgba(255, 255, 255, 0.08);
+}
+
+
+/* Open register button */
+
+.login-register-button.open {
+  background:
+    rgba(255, 255, 255, 0.08);
+}
+
+
+/* Arrow */
+
+.login-register-arrow {
+  font-size: 11px;
+
+  transition:
+    transform 0.25s ease;
+}
+
+
+.login-register-arrow.rotate {
+  transform: rotate(180deg);
+}
+
+
+/* ============================================================
+   REGISTER DROPDOWN MENU
+   ============================================================ */
+
+.login-register-menu {
+  position: absolute;
+
+  top: calc(100% + 10px);
+  right: 0;
+
+  width: 165px;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 8px;
+
+  background: #ffffff;
+
+  border: 1px solid
+    rgba(214, 222, 240, 0.9);
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 18px 40px
+    rgba(0, 0, 0, 0.28);
+
+  z-index: 99999;
+}
+
+
+/* Dropdown links */
+
+.login-register-menu a {
+  width: 100%;
+
+  display: block;
+
+  padding: 12px 14px;
+
+  border-radius: 8px;
+
+  background: transparent !important;
+
+  color: #1f2a44 !important;
+
+  text-decoration: none;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  text-align: left;
+
+  box-shadow: none !important;
+
+  transform: none !important;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.login-register-menu a:hover {
+  background: #eef2ff !important;
+
+  color: #5d43c7 !important;
+}
+
+
+/* ============================================================
+   IMPORTANT - PREVENT DROPDOWN FROM BEING HIDDEN
+   ============================================================ */
+
+.login-page,
+.login-header,
+.login-navigation,
+.login-register-dropdown {
+  overflow: visible !important;
+}
+
+
+/* ============================================================
+   MOBILE REGISTER OPTIONS
+   ============================================================ */
+
+.mobile-register-button {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 12px 14px;
+
+  border: none;
+  border-radius: 8px;
+
+  background:
+    rgba(255, 255, 255, 0.05);
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+.mobile-register-options {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  padding-left: 14px;
+}
+
+
+.mobile-register-options a {
+  background:
+    rgba(255, 255, 255, 0.05) !important;
+
+  color: #dce5ff !important;
+}

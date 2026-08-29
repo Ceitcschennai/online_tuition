@@ -1,0 +1,213 @@
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Roboto",
+    sans-serif;
+
+  background: #f5f7fb;
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+   For logged-in pages with sidebar
+========================================================= */
+
+.main-content {
+  position: fixed;
+
+  top: 72px;
+  left: 70px;
+  right: 0;
+  bottom: 0;
+
+  margin: 0;
+  padding: 24px;
+
+  background: #f5f7fb;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  transition:
+    left 0.25s ease,
+    padding 0.25s ease;
+}
+
+
+/* =========================================================
+   SIDEBAR OPEN
+========================================================= */
+
+.main-content.sidebar-open {
+  left: 220px;
+}
+
+
+/* =========================================================
+   SIDEBAR COLLAPSED
+========================================================= */
+
+.main-content.sidebar-collapsed {
+  left: 70px;
+}
+
+
+/* =========================================================
+   PUBLIC PAGES
+   Home, Login, Teacher Register, Student Register
+========================================================= */
+
+.main-content.public-content {
+  position: fixed;
+
+  top: 67px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: calc(100vh - 67px);
+
+  margin: 0;
+  padding: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  background: #f5f7fb;
+}
+
+
+/* =========================================================
+   PAGE CONTENT
+========================================================= */
+
+.main-content > * {
+  width: 100%;
+  max-width: 100%;
+}
+
+
+/* =========================================================
+   DESKTOP
+========================================================= */
+
+@media (min-width: 769px) {
+
+  .main-content {
+    top: 72px;
+    left: 70px;
+    right: 0;
+    bottom: 0;
+
+    padding: 24px;
+  }
+
+  .main-content.sidebar-open {
+    left: 220px;
+  }
+
+  .main-content.sidebar-collapsed {
+    left: 70px;
+  }
+
+  /* Public pages full width */
+
+  .main-content.public-content {
+    top: 67px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 100%;
+    height: calc(100vh - 67px);
+
+    padding: 0;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .main-content,
+  .main-content.sidebar-open,
+  .main-content.sidebar-collapsed {
+    position: fixed;
+
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 100%;
+    height: calc(100vh - 64px);
+
+    margin: 0;
+    padding: 15px;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+
+  /* Public pages mobile */
+
+  .main-content.public-content {
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 100%;
+    height: calc(100vh - 64px);
+
+    margin: 0;
+    padding: 0;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .main-content,
+  .main-content.sidebar-open,
+  .main-content.sidebar-collapsed {
+    padding: 12px;
+  }
+
+  .main-content.public-content {
+    padding: 0;
+  }
+
+}

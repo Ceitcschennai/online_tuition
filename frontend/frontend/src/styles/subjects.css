@@ -1,0 +1,856 @@
+/* =========================================================
+   SUBJECTS PAGE
+========================================================= */
+
+.student-subjects-wrapper {
+  width: 100%;
+  max-width: 1400px;
+
+  margin: 0 auto;
+
+  padding: 30px 40px 50px;
+
+  box-sizing: border-box;
+
+  font-family:
+    "Segoe UI",
+    Tahoma,
+    Geneva,
+    Verdana,
+    sans-serif;
+
+  background: #f8fafc;
+
+  min-height: 100vh;
+}
+
+
+/* =========================================================
+   PAGE HEADER
+========================================================= */
+
+.student-subjects-page-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  background: #ffffff;
+
+  padding: 25px 28px;
+
+  margin-bottom: 30px;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 16px;
+
+  box-shadow:
+    0 5px 20px rgba(0, 0, 0, 0.06);
+
+  box-sizing: border-box;
+}
+
+
+/* PAGE TITLE */
+
+.student-subjects-page-header h2 {
+  margin: 0 0 6px;
+
+  font-size: 2rem;
+
+  font-weight: 800;
+
+  color: #111827;
+}
+
+
+/* PAGE SUBTITLE */
+
+.student-subjects-page-header p {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 1rem;
+}
+
+
+/* =========================================================
+   CLASS BADGE
+========================================================= */
+
+.student-class-badge {
+  background:
+    linear-gradient(
+      135deg,
+      #6366f1,
+      #8b5cf6
+    );
+
+  color: #ffffff;
+
+  padding: 10px 20px;
+
+  border-radius: 25px;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  box-shadow:
+    0 5px 15px rgba(
+      99,
+      102,
+      241,
+      0.20
+    );
+}
+
+
+/* =========================================================
+   SUBJECT GRID
+   DESKTOP = 4 CARDS PER ROW
+========================================================= */
+
+.student-subjects-list {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 28px;
+
+  width: 100%;
+
+  padding: 5px;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   SUBJECT CARD
+   SAME SIZE FOR EVERY CARD
+========================================================= */
+
+.student-subjects-card-horizontal {
+  width: 100%;
+
+  height: 380px;
+
+  min-height: 380px;
+
+  max-height: 380px;
+
+  background: #ffffff;
+
+  border: 2px solid #d1d5db;
+
+  border-radius: 18px;
+
+  overflow: hidden;
+
+  display: flex;
+
+  flex-direction: column;
+
+  box-sizing: border-box;
+
+  box-shadow:
+    0 5px 15px rgba(
+      0,
+      0,
+      0,
+      0.08
+    );
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+
+/* =========================================================
+   CARD HOVER
+========================================================= */
+
+.student-subjects-card-horizontal:hover {
+  transform: translateY(-5px);
+
+  border-color: #6366f1;
+
+  box-shadow:
+    0 12px 28px rgba(
+      0,
+      0,
+      0,
+      0.14
+    );
+}
+
+
+/* =========================================================
+   IMAGE SECTION
+   SAME HEIGHT FOR EVERY CARD
+========================================================= */
+
+.student-subjects-image-section {
+  width: 100%;
+
+  height: 190px;
+
+  min-height: 190px;
+
+  max-height: 190px;
+
+  flex-shrink: 0;
+
+  position: relative;
+
+  overflow: hidden;
+
+  border-bottom: 2px solid #e5e7eb;
+
+  background: #f1f5f9;
+}
+
+
+/* =========================================================
+   IMAGE CONTAINER
+========================================================= */
+
+.student-subjects-image-container-horizontal {
+  width: 100%;
+
+  height: 100%;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   SUBJECT IMAGE
+========================================================= */
+
+.student-subjects-image-horizontal {
+  width: 100%;
+
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+
+  transition:
+    transform 0.4s ease;
+}
+
+
+/* IMAGE HOVER */
+
+.student-subjects-card-horizontal:hover
+.student-subjects-image-horizontal {
+  transform: scale(1.04);
+}
+
+
+/* =========================================================
+   SUBJECT ICON
+========================================================= */
+
+.student-subjects-icon-overlay {
+  position: absolute;
+
+  right: 14px;
+
+  bottom: 14px;
+
+  width: 44px;
+
+  height: 44px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  box-shadow:
+    0 4px 12px rgba(
+      0,
+      0,
+      0,
+      0.18
+    );
+
+  z-index: 5;
+}
+
+
+.student-subjects-icon-horizontal {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  color: #6366f1;
+
+  font-size: 1.15rem;
+}
+
+
+/* =========================================================
+   LIVE INDICATOR
+========================================================= */
+
+.student-subjects-live-indicator-horizontal {
+  position: absolute;
+
+  top: 12px;
+
+  left: 12px;
+
+  z-index: 10;
+
+  display: flex;
+
+  align-items: center;
+
+  background: #ef4444;
+
+  color: #ffffff;
+
+  padding: 7px 12px;
+
+  border-radius: 20px;
+
+  font-size: 0.75rem;
+
+  font-weight: 800;
+
+  box-shadow:
+    0 3px 10px rgba(
+      239,
+      68,
+      68,
+      0.30
+    );
+}
+
+
+.student-subjects-live-dot {
+  margin-right: 5px;
+
+  font-size: 0.7rem;
+}
+
+
+/* =========================================================
+   LIVE CARD
+========================================================= */
+
+.student-subjects-live-card-horizontal {
+  border-color: #ef4444;
+}
+
+
+/* =========================================================
+   CARD CONTENT
+========================================================= */
+
+.student-subjects-content-section {
+  width: 100%;
+
+  height: 190px;
+
+  min-height: 190px;
+
+  max-height: 190px;
+
+  padding: 18px;
+
+  box-sizing: border-box;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+}
+
+
+/* =========================================================
+   SUBJECT NAME
+========================================================= */
+
+.student-subjects-name-horizontal {
+  margin: 0;
+
+  padding: 0;
+
+  font-size: 1.25rem;
+
+  font-weight: 800;
+
+  color: #111827;
+
+  text-transform: uppercase;
+
+  line-height: 1.3;
+
+  word-break: break-word;
+}
+
+
+/* =========================================================
+   BUTTON AREA
+========================================================= */
+
+.student-subjects-actions-horizontal {
+  width: 100%;
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  align-items: center;
+
+  margin-top: auto;
+}
+
+
+/* =========================================================
+   VIEW DETAILS BUTTON
+========================================================= */
+
+.student-subjects-details-btn-horizontal {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 10px 16px;
+
+  min-height: 40px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #6366f1,
+      #8b5cf6
+    );
+
+  color: #ffffff;
+
+  font-size: 0.82rem;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+/* VIEW DETAILS HOVER */
+
+.student-subjects-details-btn-horizontal:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 6px 18px rgba(
+      99,
+      102,
+      241,
+      0.35
+    );
+}
+
+
+/* =========================================================
+   JOIN LIVE CLASS BUTTON
+========================================================= */
+
+.student-subjects-join-btn-horizontal {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 10px 16px;
+
+  min-height: 40px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ef4444,
+      #dc2626
+    );
+
+  color: #ffffff;
+
+  font-size: 0.82rem;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+/* JOIN LIVE HOVER */
+
+.student-subjects-join-btn-horizontal:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 6px 18px rgba(
+      239,
+      68,
+      68,
+      0.35
+    );
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.student-subjects-empty {
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 16px;
+
+  padding: 60px 20px;
+
+  text-align: center;
+
+  color: #64748b;
+
+  box-shadow:
+    0 5px 20px rgba(
+      0,
+      0,
+      0,
+      0.05
+    );
+}
+
+
+.student-subjects-empty svg {
+  font-size: 40px;
+
+  color: #6366f1;
+
+  margin-bottom: 15px;
+}
+
+
+.student-subjects-empty h3 {
+  margin: 0 0 8px;
+
+  color: #1f2937;
+
+  font-size: 1.3rem;
+}
+
+
+.student-subjects-empty p {
+  margin: 0 0 8px;
+}
+
+
+/* =========================================================
+   TABLET
+   3 CARDS PER ROW
+========================================================= */
+
+@media (max-width: 1100px) {
+
+  .student-subjects-wrapper {
+    padding: 25px 25px 40px;
+  }
+
+  .student-subjects-list {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+
+    gap: 22px;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL TABLET
+   2 CARDS PER ROW
+========================================================= */
+
+@media (max-width: 800px) {
+
+  .student-subjects-wrapper {
+    padding: 20px 20px 35px;
+  }
+
+  .student-subjects-list {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 20px;
+  }
+
+  .student-subjects-page-header {
+    padding: 20px;
+  }
+
+  .student-subjects-page-header h2 {
+    font-size: 1.7rem;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+   1 CARD PER ROW
+========================================================= */
+
+@media (max-width: 550px) {
+
+  .student-subjects-wrapper {
+    padding: 15px 12px 30px;
+  }
+
+  .student-subjects-page-header {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 15px;
+
+    padding: 20px;
+  }
+
+  .student-subjects-page-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .student-subjects-page-header p {
+    font-size: 0.9rem;
+  }
+
+  .student-class-badge {
+    align-self: flex-start;
+  }
+
+  .student-subjects-list {
+    grid-template-columns: 1fr;
+
+    gap: 20px;
+
+    padding: 0;
+  }
+
+  .student-subjects-card-horizontal {
+    height: 380px;
+
+    min-height: 380px;
+
+    max-height: 380px;
+  }
+
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 380px) {
+
+  .student-subjects-image-section {
+    height: 175px;
+
+    min-height: 175px;
+
+    max-height: 175px;
+  }
+
+  .student-subjects-content-section {
+    height: 205px;
+
+    min-height: 205px;
+
+    max-height: 205px;
+
+    padding: 16px;
+  }
+
+  .student-subjects-name-horizontal {
+    font-size: 1.1rem;
+  }
+
+  .student-subjects-details-btn-horizontal,
+  .student-subjects-join-btn-horizontal {
+    font-size: 0.75rem;
+
+    padding: 9px 13px;
+  }
+
+  
+
+}
+
+/* =========================================================
+   FINAL SUBJECT GRID OVERRIDE
+   FORCE 4 EQUAL CARDS ON DESKTOP
+========================================================= */
+
+.student-subjects-list {
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr)) !important;
+
+  gap: 28px !important;
+
+  width: 100% !important;
+
+  padding: 5px !important;
+
+  box-sizing: border-box !important;
+}
+
+
+.student-subjects-card-horizontal {
+  width: 100% !important;
+
+  height: 380px !important;
+
+  min-height: 380px !important;
+
+  max-height: 380px !important;
+
+  box-sizing: border-box !important;
+
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  background: #ffffff !important;
+
+  border: 2px solid #d1d5db !important;
+
+  border-radius: 18px !important;
+
+  overflow: hidden !important;
+}
+
+
+/* Same image size */
+
+.student-subjects-image-section {
+  width: 100% !important;
+
+  height: 190px !important;
+
+  min-height: 190px !important;
+
+  max-height: 190px !important;
+
+  flex-shrink: 0 !important;
+}
+
+
+/* Same content size */
+
+.student-subjects-content-section {
+  width: 100% !important;
+
+  height: 190px !important;
+
+  min-height: 190px !important;
+
+  max-height: 190px !important;
+
+  box-sizing: border-box !important;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1100px) {
+
+  .student-subjects-list {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr)) !important;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL TABLET
+========================================================= */
+
+@media (max-width: 800px) {
+
+  .student-subjects-list {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 550px) {
+
+  .student-subjects-list {
+    grid-template-columns:
+      1fr !important;
+  }
+
+}

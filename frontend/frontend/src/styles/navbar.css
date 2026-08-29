@@ -1,0 +1,778 @@
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   NAVBAR
+========================================================= */
+
+.main-navbar {
+  width: 100%;
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 42px;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  z-index: 9999;
+
+  background: #07143d;
+
+  box-shadow:
+    0 4px 18px
+    rgba(0, 0, 0, 0.18);
+
+  font-family:
+    "Segoe UI",
+    Arial,
+    sans-serif;
+}
+
+
+/* =========================================================
+   NAVBAR LEFT
+========================================================= */
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+
+/* =========================================================
+   LOGO
+========================================================= */
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  text-decoration: none;
+}
+
+.logo-img {
+  width: 46px;
+  height: 46px;
+
+  object-fit: cover;
+
+  border-radius: 12px;
+
+  flex-shrink: 0;
+
+  box-shadow:
+    0 5px 18px
+    rgba(86, 72, 255, 0.4);
+}
+
+.nav-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-brand-text h2 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 20px;
+  font-weight: 800;
+
+  letter-spacing: 0.3px;
+
+  white-space: nowrap;
+}
+
+.nav-brand-text span {
+  margin-top: 2px;
+
+  color: #b8c7ef;
+
+  font-size: 10px;
+  font-weight: 500;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   NAVBAR RIGHT
+========================================================= */
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  list-style: none;
+
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links li {
+  position: relative;
+}
+
+
+/* =========================================================
+   NAVIGATION LINKS
+========================================================= */
+
+.nav-links li a,
+.register-link,
+.logout-link {
+  min-height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 20px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: #ffffff;
+
+  text-decoration: none;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    transform 0.2s ease;
+}
+
+.nav-links li a:hover,
+.register-link:hover,
+.logout-link:hover {
+  background:
+    rgba(255, 255, 255, 0.1);
+}
+
+
+/* ACTIVE PAGE */
+
+.nav-links li a.active {
+  background: #ff756c;
+  color: #ffffff;
+
+  box-shadow:
+    0 6px 18px
+    rgba(255, 117, 108, 0.35);
+}
+
+
+/* =========================================================
+   REGISTER BUTTON
+========================================================= */
+
+.register-link {
+  gap: 8px;
+}
+
+.register-link.active {
+  background:
+    rgba(255, 255, 255, 0.1);
+}
+
+.register-arrow {
+  font-size: 10px;
+
+  transition:
+    transform 0.25s ease;
+}
+
+.register-arrow.rotate {
+  transform: rotate(180deg);
+}
+
+
+/* =========================================================
+   REGISTER DROPDOWN - DESKTOP
+========================================================= */
+
+.register-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+
+  top: calc(100% + 8px);
+  right: 0;
+
+  min-width: 170px;
+
+  margin: 0;
+  padding: 7px 0;
+
+  list-style: none;
+
+  background: #ffffff;
+
+  border:
+    1px solid
+    #e5e7eb;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 14px 35px
+    rgba(0, 0, 0, 0.2);
+
+  z-index: 10001;
+
+  opacity: 0;
+  visibility: hidden;
+
+  pointer-events: none;
+
+  transform:
+    translateY(-8px);
+
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease,
+    transform 0.2s ease;
+}
+
+.dropdown-menu.dropdown-open {
+  opacity: 1;
+  visibility: visible;
+
+  pointer-events: auto;
+
+  transform:
+    translateY(0);
+}
+
+.dropdown-menu li {
+  width: 100%;
+}
+
+.dropdown-menu li a {
+  width: 100%;
+  min-height: auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  padding: 12px 18px;
+
+  color: #172554;
+
+  background: transparent;
+
+  border-radius: 0;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  box-shadow: none;
+}
+
+.dropdown-menu li a:hover,
+.dropdown-menu li a.active {
+  background: #eef4ff;
+  color: #2563eb;
+
+  box-shadow: none;
+}
+
+
+/* =========================================================
+   HAMBURGER
+========================================================= */
+
+.hamburger {
+  width: 42px;
+  height: 42px;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #ffffff;
+
+  font-size: 21px;
+
+  cursor: pointer;
+}
+
+.hamburger:hover {
+  background:
+    rgba(255, 255, 255, 0.1);
+}
+
+
+/* =========================================================
+   MOBILE SIDEBAR BUTTON
+========================================================= */
+
+.sidebar-toggle-mobile {
+  width: 38px;
+  height: 38px;
+
+  margin-right: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 8px;
+
+  color: #ffffff;
+
+  background:
+    rgba(255, 255, 255, 0.1);
+
+  cursor: pointer;
+}
+
+.sidebar-toggle-mobile:hover {
+  background:
+    rgba(255, 255, 255, 0.18);
+}
+
+
+/* =========================================================
+   LOGOUT POPUP
+========================================================= */
+
+.logout-confirm-overlay {
+  position: fixed;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    rgba(0, 0, 0, 0.65);
+
+  z-index: 30000;
+}
+
+.logout-confirm-dialog {
+  width: 100%;
+  max-width: 390px;
+
+  padding: 30px;
+
+  background: #ffffff;
+
+  border-radius: 16px;
+
+  text-align: center;
+
+  box-shadow:
+    0 20px 60px
+    rgba(0, 0, 0, 0.3);
+}
+
+.logout-confirm-dialog h3 {
+  margin: 0 0 10px;
+
+  color: #172554;
+
+  font-size: 22px;
+}
+
+.logout-confirm-dialog p {
+  margin: 0 0 25px;
+
+  color: #64748b;
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.logout-confirm-actions {
+  display: flex;
+
+  gap: 12px;
+}
+
+.logout-confirm-actions button {
+  flex: 1;
+
+  padding: 11px 16px;
+
+  border: none;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.logout-confirm-cancel {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.logout-confirm-ok {
+  background: #ff756c;
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+  .main-navbar {
+    padding: 0 24px;
+  }
+
+  .nav-links li a,
+  .register-link,
+  .logout-link {
+    padding: 0 14px;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  /* NAVBAR */
+
+  .main-navbar {
+    height: 64px;
+    padding: 0 18px;
+  }
+
+
+  /* LOGO */
+
+  .logo-img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .nav-brand-text h2 {
+    font-size: 16px;
+  }
+
+  .nav-brand-text span {
+    font-size: 9px;
+  }
+
+
+  /* NAVIGATION PANEL */
+
+  .nav-links {
+    position: fixed;
+
+    top: 64px;
+    left: 0;
+    right: 0;
+
+    display: none;
+
+    width: 100%;
+    height: auto;
+    min-height: 0;
+
+    flex-direction: column;
+    align-items: stretch;
+
+    gap: 8px;
+
+    margin: 0;
+    padding: 12px 16px;
+
+    background: #07143d;
+
+    box-shadow:
+      0 10px 25px
+      rgba(0, 0, 0, 0.25);
+
+    overflow: visible;
+
+    z-index: 9998;
+  }
+
+
+  /* MENU OPEN */
+
+  .nav-links.mobile-open {
+    display: flex;
+    height: auto;
+    min-height: 0;
+  }
+
+
+  /* NAVIGATION ITEMS */
+
+  .nav-links > li {
+    width: 100%;
+
+    margin: 0;
+    padding: 0;
+  }
+
+
+  /* HOME / LOGIN / LOGOUT */
+
+  .nav-links > li > a,
+  .logout-link {
+    width: 100%;
+
+    min-height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    padding: 10px 15px;
+
+    box-sizing: border-box;
+  }
+
+
+  /* REGISTER CONTAINER */
+
+  .register-dropdown {
+    width: 100%;
+
+    height: auto;
+    min-height: 0;
+
+    margin: 0;
+    padding: 0;
+
+    position: static;
+  }
+
+
+  /* REGISTER BUTTON */
+
+  .register-link {
+    width: 100%;
+
+    min-height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 10px 15px;
+
+    box-sizing: border-box;
+  }
+
+
+  /* =====================================================
+     MOBILE DROPDOWN CLOSED
+
+     IMPORTANT:
+     WHEN CLOSED, IT TAKES ZERO SPACE
+  ===================================================== */
+
+  .dropdown-menu {
+    display: none;
+
+    position: static;
+
+    width: 100%;
+    height: 0;
+    min-height: 0;
+
+    margin: 0;
+    padding: 0;
+
+    border: none;
+    border-radius: 0;
+
+    background: transparent;
+
+    box-shadow: none;
+
+    opacity: 0;
+    visibility: hidden;
+
+    pointer-events: none;
+
+    transform: none;
+
+    overflow: hidden;
+  }
+
+
+  /* =====================================================
+     MOBILE DROPDOWN OPEN
+
+     SPACE APPEARS ONLY WHEN REGISTER IS CLICKED
+  ===================================================== */
+
+  .dropdown-menu.dropdown-open {
+    display: flex;
+
+    width: 100%;
+    height: auto;
+
+    flex-direction: column;
+
+    gap: 6px;
+
+    margin-top: 6px;
+    padding: 0;
+
+    opacity: 1;
+    visibility: visible;
+
+    pointer-events: auto;
+
+    transform: none;
+
+    overflow: visible;
+  }
+
+
+  /* DROPDOWN LIST ITEMS */
+
+  .dropdown-menu li {
+    width: 100%;
+
+    margin: 0;
+    padding: 0;
+  }
+
+
+  /* TEACHER / STUDENT */
+
+  .dropdown-menu li a {
+    width: 100%;
+
+    min-height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    padding: 11px 20px;
+
+    background: #ffffff;
+
+    color: #172554;
+
+    border-radius: 8px;
+
+    box-sizing: border-box;
+  }
+
+  .dropdown-menu li a:hover,
+  .dropdown-menu li a.active {
+    background: #eef4ff;
+    color: #2563eb;
+  }
+
+
+  /* HAMBURGER */
+
+  .hamburger {
+    width: 52px !important;
+    height: 52px !important;
+
+    min-width: 52px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    padding: 0 !important;
+
+    font-size: 22px !important;
+
+    border-radius: 12px !important;
+
+    cursor: pointer;
+
+    flex-shrink: 0;
+  }
+
+  .hamburger svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .main-navbar {
+    padding: 0 10px;
+  }
+
+  .nav-logo {
+    gap: 8px;
+  }
+
+  .nav-brand-text h2 {
+    font-size: 14px;
+  }
+
+  .nav-brand-text span {
+    display: none;
+  }
+
+  .logo-img {
+    width: 38px;
+    height: 38px;
+  }
+
+}

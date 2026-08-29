@@ -1,0 +1,560 @@
+/* =========================================================
+   TEACHER SUBJECTS PAGE
+========================================================= */
+
+.teacher-subjects-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 30px;
+  background: #f8fafc;
+}
+
+
+/* =========================================================
+   MODAL OVERLAY
+========================================================= */
+
+.teacher-subjects-modal-overlay {
+  position: fixed;
+
+  /* Keep modal below the top navbar */
+  top: 70px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: calc(100vh - 70px);
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+
+  padding: 25px 16px;
+
+  background: rgba(15, 23, 42, 0.55);
+
+  z-index: 9999;
+
+  overflow-y: auto;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   MODAL BOX
+========================================================= */
+
+.teacher-subjects-modal {
+  width: 100%;
+  max-width: 460px;
+
+  position: relative;
+
+  margin: 0 auto 30px;
+
+  background: #ffffff;
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 20px 60px rgba(15, 23, 42, 0.3);
+
+  overflow: hidden;
+
+  animation: teacherModalOpen 0.25s ease;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   MODAL ANIMATION
+========================================================= */
+
+@keyframes teacherModalOpen {
+  from {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.teacher-subjects-modal-header {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 18px 22px;
+
+  border-bottom: 1px solid #e2e8f0;
+
+  background: #ffffff;
+}
+
+
+.teacher-subjects-modal-title {
+  margin: 0;
+
+  font-size: 20px;
+  font-weight: 700;
+
+  color: #1e293b;
+
+  display: flex;
+  align-items: center;
+}
+
+
+.teacher-subjects-close-btn {
+  width: 38px;
+  height: 38px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #64748b;
+
+  font-size: 20px;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: 0.2s;
+}
+
+
+.teacher-subjects-close-btn:hover {
+  background: #f1f5f9;
+
+  color: #ef4444;
+}
+
+
+/* =========================================================
+   MODAL BODY
+========================================================= */
+
+.teacher-subjects-modal-body {
+  padding: 20px 22px;
+
+  max-height: calc(100vh - 200px);
+
+  overflow-y: auto;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   SHARE CLASS INFORMATION BOX
+========================================================= */
+
+.share-class-info-box {
+  width: 100%;
+
+  padding: 12px 14px;
+
+  background: #f8fafc;
+
+  border: 1px solid #dbe4ee;
+
+  border-radius: 14px;
+
+  box-sizing: border-box;
+}
+
+
+.share-class-row {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 20px;
+
+  padding: 9px 0;
+
+  border-bottom: 1px solid #e8edf3;
+}
+
+
+.share-class-row:last-child {
+  border-bottom: none;
+}
+
+
+.share-class-label {
+  flex-shrink: 0;
+
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.6px;
+}
+
+
+.share-class-value {
+  text-align: right;
+
+  color: #1e293b;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  word-break: break-word;
+}
+
+
+/* =========================================================
+   SHARE LINK
+========================================================= */
+
+.share-class-link-title {
+  margin: 18px 0 8px;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  color: #334155;
+}
+
+
+.share-class-link-box {
+  width: 100%;
+
+  padding: 14px;
+
+  background: #eff6ff;
+
+  border: 1px solid #7dd3fc;
+
+  border-radius: 12px;
+
+  color: #0369a1;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+
+  word-break: break-all;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   SHARE MODAL BUTTONS
+========================================================= */
+
+.share-class-copy-btn {
+  width: 100%;
+
+  margin-top: 12px;
+
+  padding: 13px 18px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: linear-gradient(
+    135deg,
+    #0891b2,
+    #0e7490
+  );
+
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+
+.share-class-copy-btn:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 8px 18px
+    rgba(8, 145, 178, 0.25);
+}
+
+
+.share-class-details-btn {
+  width: 100%;
+
+  margin-top: 10px;
+
+  padding: 12px 18px;
+
+  border: 1px solid #cbd5e1;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  color: #475569;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+
+.share-class-details-btn:hover {
+  background: #f8fafc;
+
+  border-color: #94a3b8;
+}
+
+
+/* =========================================================
+   CREATE CLASS FORM
+========================================================= */
+
+.teacher-subjects-form-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 16px;
+}
+
+
+.teacher-subjects-form-group {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+
+.teacher-subjects-form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+
+.teacher-subjects-form-group label {
+  color: #475569;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+.teacher-subjects-input,
+.teacher-subjects-select,
+.teacher-subjects-textarea {
+  width: 100%;
+
+  padding: 11px 13px;
+
+  border: 1px solid #cbd5e1;
+
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  color: #1e293b;
+
+  font-size: 14px;
+
+  outline: none;
+
+  box-sizing: border-box;
+
+  transition: 0.2s;
+}
+
+
+.teacher-subjects-input:focus,
+.teacher-subjects-select:focus,
+.teacher-subjects-textarea:focus {
+  border-color: #0891b2;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(8, 145, 178, 0.1);
+}
+
+
+/* =========================================================
+   MODAL FOOTER
+========================================================= */
+
+.teacher-subjects-modal-footer {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 12px;
+
+  padding: 16px 22px;
+
+  border-top: 1px solid #e2e8f0;
+
+  background: #f8fafc;
+}
+
+
+.teacher-subjects-cancel-btn {
+  padding: 11px 18px;
+
+  border: 1px solid #cbd5e1;
+
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  color: #475569;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+.teacher-subjects-create-btn {
+  padding: 11px 18px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #0891b2,
+      #0e7490
+    );
+
+  color: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .teacher-subjects-page {
+    padding: 20px 15px;
+  }
+
+
+  .teacher-subjects-modal-overlay {
+    top: 64px;
+
+    height: calc(100vh - 64px);
+
+    padding: 15px 10px;
+  }
+
+
+  .teacher-subjects-modal {
+    max-width: 100%;
+
+    border-radius: 14px;
+  }
+
+
+  .teacher-subjects-modal-header {
+    padding: 15px 16px;
+  }
+
+
+  .teacher-subjects-modal-body {
+    padding: 16px;
+
+    max-height: calc(100vh - 150px);
+  }
+
+
+  .teacher-subjects-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .teacher-subjects-modal-footer {
+    padding: 14px 16px;
+  }
+
+
+  .share-class-row {
+    gap: 12px;
+  }
+}
+
+
+@media (max-width: 480px) {
+
+  .teacher-subjects-modal-overlay {
+    top: 60px;
+
+    height: calc(100vh - 60px);
+
+    padding: 10px 6px;
+  }
+
+
+  .teacher-subjects-modal-title {
+    font-size: 17px;
+  }
+
+
+  .share-class-row {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 4px;
+  }
+
+
+  .share-class-value {
+    text-align: left;
+  }
+
+
+  .teacher-subjects-modal-footer {
+    flex-direction: column;
+  }
+
+
+  .teacher-subjects-cancel-btn,
+  .teacher-subjects-create-btn {
+    width: 100%;
+  }
+}

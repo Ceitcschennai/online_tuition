@@ -1,0 +1,1066 @@
+/* =========================================================
+   STUDENT REGISTRATION PAGE
+
+   IMPORTANT:
+   This CSS does NOT hide or restyle .main-navbar.
+
+   StudentRegister.js renders the common Navbar itself,
+   exactly like TeacherRegister.js.
+========================================================= */
+
+
+/* =========================================================
+   BOX SIZING
+========================================================= */
+
+.register-page,
+.register-page * {
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   BODY
+========================================================= */
+
+body.register-active {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background: #f5f7fb;
+}
+
+
+/* =========================================================
+   MAIN PAGE
+========================================================= */
+
+.register-page {
+  width: 100%;
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  font-family:
+    "Segoe UI",
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  color: #1c2942;
+
+  background:
+    radial-gradient(
+      circle at 10% 25%,
+      rgba(70, 120, 255, 0.08),
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 90% 75%,
+      rgba(124, 58, 237, 0.07),
+      transparent 28%
+    ),
+    #f6f8fc;
+}
+
+
+/* =========================================================
+   COMMON NAVBAR SAFETY
+
+   Do not change navbar design here.
+========================================================= */
+
+.register-page > .main-navbar {
+  flex-shrink: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+
+/* =========================================================
+   MAIN REGISTRATION AREA
+
+   The top padding prevents the form from hiding behind
+   a fixed navbar.
+========================================================= */
+
+.register-main {
+  width: 100%;
+  min-height: 100vh;
+
+  padding:
+    112px
+    20px
+    50px;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+
+/* =========================================================
+   REGISTRATION CARD
+========================================================= */
+
+.register-card {
+  width: 100%;
+  max-width: 760px;
+
+  padding:
+    36px
+    38px
+    34px;
+
+  background: #ffffff;
+
+  border:
+    1px solid
+    #e5eaf3;
+
+  border-radius: 22px;
+
+  box-shadow:
+    0 16px 45px
+    rgba(20, 35, 70, 0.10);
+}
+
+
+/* =========================================================
+   CARD HEADER
+========================================================= */
+
+.register-card-header {
+  text-align: center;
+
+  margin-bottom: 30px;
+}
+
+
+.register-title-icon {
+  width: 42px;
+  height: 42px;
+
+  margin:
+    0
+    auto
+    12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #5967ff,
+      #7c3aed
+    );
+
+  color: #ffffff;
+
+  font-size: 18px;
+
+  box-shadow:
+    0 8px 20px
+    rgba(89, 103, 255, 0.20);
+}
+
+
+.register-card-header h1 {
+  margin: 0;
+
+  color: #17233f;
+
+  font-size: 27px;
+  font-weight: 750;
+
+  letter-spacing: -0.4px;
+}
+
+
+.register-card-header p {
+  margin:
+    8px
+    0
+    0;
+
+  color: #7b879d;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.register-form {
+  width: 100%;
+}
+
+
+/* =========================================================
+   FORM ROWS
+========================================================= */
+
+.form-row {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 14px;
+}
+
+
+.form-row.three-columns {
+  grid-template-columns:
+    120px
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+}
+
+
+/* =========================================================
+   INPUT GROUP
+========================================================= */
+
+.input-group {
+  width: 100%;
+
+  margin-bottom: 17px;
+}
+
+
+/* =========================================================
+   LABELS
+
+   These are the words you requested:
+
+   Title
+   First Name
+   Last Name
+   Mobile Number
+   Syllabus
+   Class
+   Timezone
+   Email Address
+   Password
+   Confirm Password
+   EMIS Number
+   Upload Student ID
+========================================================= */
+
+.input-group > label,
+.upload-label {
+  display: block;
+
+  margin:
+    0
+    0
+    7px;
+
+  color: #46546c;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+.optional-text {
+  color: #8d99aa;
+  font-weight: 500;
+}
+
+
+/* =========================================================
+   INPUT WRAPPER
+========================================================= */
+
+.input-wrapper {
+  position: relative;
+
+  width: 100%;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+}
+
+
+/* =========================================================
+   INPUT ICON
+========================================================= */
+
+.input-icon {
+  position: absolute;
+
+  left: 13px;
+
+  z-index: 2;
+
+  color: #9baac2;
+
+  font-size: 12px;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   INPUTS AND SELECTS
+========================================================= */
+
+.register-card input,
+.register-card select {
+  width: 100%;
+  height: 44px;
+
+  margin: 0;
+
+  padding:
+    0
+    13px;
+
+  border:
+    1px solid
+    rgba(204, 218, 244, 0.9);
+
+  border-radius: 10px;
+
+  outline: none;
+
+  background: #edf3ff;
+
+  color: #1a2949;
+
+  font-family: inherit;
+
+  font-size: 12px;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+
+/* =========================================================
+   INPUTS WITH LEFT ICON
+========================================================= */
+
+.input-wrapper input {
+  padding-left: 38px;
+}
+
+
+/* =========================================================
+   PASSWORD SPACE
+========================================================= */
+
+.input-wrapper input[name="password"],
+.input-wrapper input[name="confirmPassword"] {
+  padding-right: 48px;
+}
+
+
+/* =========================================================
+   PLACEHOLDER
+========================================================= */
+
+.register-card input::placeholder {
+  color: #8999b7;
+
+  opacity: 1;
+}
+
+
+/* =========================================================
+   FOCUS
+========================================================= */
+
+.register-card input:focus,
+.register-card select:focus {
+  border-color: #7b61e8;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(123, 97, 232, 0.12);
+
+  background: #f5f7ff;
+}
+
+
+/* =========================================================
+   SELECT
+========================================================= */
+
+.register-card select {
+  cursor: pointer;
+}
+
+
+.register-card select option {
+  background: #ffffff;
+  color: #18233e;
+}
+
+
+/* =========================================================
+   PASSWORD TOGGLE
+========================================================= */
+
+.password-toggle {
+  position: absolute;
+
+  top: 50%;
+  right: 8px;
+
+  width: 32px;
+  height: 32px;
+
+  transform:
+    translateY(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: none;
+
+  outline: none;
+
+  background: transparent;
+
+  color: #8fa0c1;
+
+  font-size: 13px;
+
+  cursor: pointer;
+}
+
+
+.password-toggle:hover {
+  color: #6f4ce5;
+}
+
+
+/* =========================================================
+   PASSWORD RULES
+========================================================= */
+
+.password-rules {
+  margin-top: 9px;
+
+  padding:
+    10px
+    13px;
+
+  background: #f8f9ff;
+
+  border:
+    1px solid
+    #e1e5f3;
+
+  border-radius: 9px;
+}
+
+
+.password-rules p {
+  margin:
+    4px
+    0;
+
+  color: #8a96a9;
+
+  font-size: 11px;
+}
+
+
+.password-rules p.valid {
+  color: #22a565;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   PASSWORD MATCH
+========================================================= */
+
+.password-match {
+  margin:
+    7px
+    0
+    0;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+
+.password-match.success {
+  color: #1c9b58;
+}
+
+
+.password-match.error {
+  color: #df4d5c;
+}
+
+
+/* =========================================================
+   FILE UPLOAD
+========================================================= */
+
+.upload-box {
+  width: 100%;
+  min-height: 47px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+
+  padding:
+    6px
+    12px;
+
+  border:
+    1px dashed
+    #cbd5e5;
+
+  border-radius: 10px;
+
+  background: #f8faff;
+
+  cursor: pointer;
+}
+
+
+.upload-box:hover {
+  border-color: #7b61e8;
+
+  background: #f4f2ff;
+}
+
+
+.upload-icon {
+  color: #6955d7;
+
+  font-size: 14px;
+  margin-right: 4px;
+}
+
+
+.upload-choose-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 30px;
+
+  padding:
+    0
+    12px;
+
+  border-radius: 7px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #5b5be5,
+      #7c3aed
+    );
+
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  white-space: nowrap;
+  margin-right: 6px;
+}
+
+
+.upload-filename {
+  min-width: 0;
+
+  overflow: hidden;
+
+  color: #7b879c;
+
+  font-size: 12px;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   HIDE REAL FILE INPUT
+========================================================= */
+
+.upload-input {
+  display: none !important;
+}
+
+
+/* =========================================================
+   REGISTER BUTTON
+
+   Red/pink button to match your current screenshot.
+========================================================= */
+
+.register-button {
+  width: 100%;
+  height: 50px;
+
+  margin-top: 5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  border: none;
+
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ff756c,
+      #6c3fd0
+    );
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 10px 22px
+    rgba(255, 93, 112, 0.22);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+
+.register-button:hover:not(:disabled) {
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 14px 28px
+    rgba(255, 93, 112, 0.30);
+}
+
+
+.register-button:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   BUTTON SPINNER
+========================================================= */
+
+.button-spinner {
+  width: 16px;
+  height: 16px;
+
+  border:
+    2px solid
+    rgba(255, 255, 255, 0.40);
+
+  border-top-color:
+    #ffffff;
+
+  border-radius: 50%;
+
+  animation:
+    register-spin
+    0.7s
+    linear
+    infinite;
+}
+
+
+@keyframes register-spin {
+
+  to {
+    transform:
+      rotate(360deg);
+  }
+
+}
+
+
+/* =========================================================
+   DIVIDER
+========================================================= */
+
+.register-divider {
+  width: 100%;
+
+  height: 1px;
+
+  margin:
+    24px
+    0
+    16px;
+
+  background:
+    #e9edf4;
+}
+
+
+/* =========================================================
+   LOGIN LINK
+========================================================= */
+
+.already-user {
+  margin: 0;
+
+  text-align: center;
+
+  color: #7c889d;
+
+  font-size: 13px;
+}
+
+
+.already-user a {
+  color: #5b5be5;
+
+  font-weight: 700;
+
+  text-decoration: none;
+}
+
+
+.already-user a:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   POPUP OVERLAY
+========================================================= */
+
+.register-popup-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 30000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    rgba(15, 23, 42, 0.45);
+
+  backdrop-filter:
+    blur(4px);
+}
+
+
+/* =========================================================
+   POPUP CARD
+========================================================= */
+
+.register-popup {
+  position: relative;
+
+  width: 100%;
+  max-width: 400px;
+
+  padding:
+    32px
+    28px
+    28px;
+
+  text-align: center;
+
+  background: #ffffff;
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 25px 70px
+    rgba(0, 0, 0, 0.28);
+
+  animation:
+    register-popup-in
+    0.25s
+    ease;
+}
+
+
+@keyframes register-popup-in {
+
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(10px)
+      scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+
+}
+
+
+/* =========================================================
+   POPUP CLOSE
+========================================================= */
+
+.register-popup-close {
+  position: absolute;
+
+  top: 13px;
+  right: 13px;
+
+  width: 31px;
+  height: 31px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  border-radius: 50%;
+
+  background: #f1f3f8;
+
+  color: #7b879d;
+
+  cursor: pointer;
+}
+
+
+.register-popup-close:hover {
+  background: #e8ebf2;
+
+  color: #334155;
+}
+
+
+/* =========================================================
+   POPUP ICON
+========================================================= */
+
+.register-popup-icon {
+  width: 58px;
+  height: 58px;
+
+  margin:
+    0
+    auto
+    18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  font-size: 24px;
+}
+
+
+.register-popup-icon.success {
+  background: #e3f8ed;
+
+  color: #22a566;
+}
+
+
+.register-popup-icon.error {
+  background: #ffebee;
+
+  color: #e34b5a;
+}
+
+
+/* =========================================================
+   POPUP TEXT
+========================================================= */
+
+.register-popup h2 {
+  margin:
+    0
+    0
+    10px;
+
+  color: #1d2942;
+
+  font-size: 21px;
+}
+
+
+.register-popup p {
+  margin:
+    0
+    0
+    22px;
+
+  color: #718096;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   POPUP BUTTON
+========================================================= */
+
+.register-popup-button {
+  width: 100%;
+
+  min-height: 43px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+.register-popup-button.success {
+  background:
+    linear-gradient(
+      135deg,
+      #31b66f,
+      #1c9c5a
+    );
+}
+
+
+.register-popup-button.error {
+  background:
+    linear-gradient(
+      135deg,
+      #ff756c,
+      #ff5d70
+    );
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .register-main {
+    padding:
+      100px
+      15px
+      40px;
+  }
+
+
+  .register-card {
+    padding:
+      28px
+      24px
+      26px;
+  }
+
+
+  .form-row,
+  .form-row.three-columns {
+    grid-template-columns:
+      1fr;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .register-main {
+    padding:
+      90px
+      10px
+      30px;
+  }
+
+
+  .register-card {
+    padding:
+      24px
+      16px;
+
+    border-radius: 17px;
+  }
+
+
+  .register-card-header h1 {
+    font-size: 23px;
+  }
+
+
+  .register-card-header p {
+    font-size: 12px;
+  }
+
+
+  .upload-box {
+    gap: 10px;
+  }
+
+
+  .upload-filename {
+    font-size: 11px;
+  }
+
+}
