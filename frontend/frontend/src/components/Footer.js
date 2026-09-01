@@ -21,8 +21,8 @@ const Footer = () => {
           </div>
           <div className="footer-contact">
             <h3>Contact Us</h3>
-            <p><span>Email:</span> support@onlinetuition.com</p>
-            <p><span>Phone:</span> +91 98765 43210</p>
+            <p><span>Email:</span> ceitcschennai@gmail.com</p>
+            <p><span>Phone:</span> +91 9791424421</p>
           </div>
         </div>
         <div className="footer-bottom">

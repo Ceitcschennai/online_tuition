@@ -309,9 +309,9 @@ const AppContent = () => {
       />
 
       <Route
-        path="/subject-details"
-        element={<SubjectDetails />}
-      />
+  path="/subjects/:subjectName"
+  element={<SubjectDetails />}
+/>
 
       <Route
         path="/teacher-subjects"
