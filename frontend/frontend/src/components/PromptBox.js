@@ -214,7 +214,7 @@ export default function PromptBox({ role = "student", suggestions = [] }) {
         localStorage.getItem("authToken") ||
         sessionStorage.getItem("token");
 
-      const res = await fetch("http://localhost:5000/api/prompt", {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/prompt`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

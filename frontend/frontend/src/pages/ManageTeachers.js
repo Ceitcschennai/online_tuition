@@ -95,7 +95,7 @@ const ManageTeachers = () => {
   const fetchTeachers = async () => {
   try {
     const res = await axios.get(
-      "http://localhost:5000/api/admin/teachers",
+      `${process.env.REACT_APP_API_URL}/api/admin/teachers`,
       {
         params: { search, filter },
       }
@@ -146,7 +146,7 @@ const ManageTeachers = () => {
   const updateStatus = async (id, status) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/admin/teachers/${id}/status`,
+        `${process.env.REACT_APP_API_URL}/api/admin/teachers/${id}/status`,
         { status }
       );
 
@@ -187,7 +187,7 @@ const ManageTeachers = () => {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/admin/teachers/${editingClassesFor._id}/classes`,
+        `${process.env.REACT_APP_API_URL}/api/admin/teachers/${editingClassesFor._id}/classes`,
         {
           classes: editClasses,
         }
@@ -388,7 +388,7 @@ const saveSubject = async () => {
 
   try {
     const response = await axios.put(
-      `http://localhost:5000/api/admin/teachers/${editingSubjectFor._id}/subject`,
+      `${process.env.REACT_APP_API_URL}/api/admin/teachers/${editingSubjectFor._id}/subject`,
       {
         subjectName: subjectName,
       }
