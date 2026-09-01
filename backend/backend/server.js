@@ -39,7 +39,7 @@ if (process.env.NODE_ENV !== "production") {
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://online-tutor-frontend-gamma.vercel.app",
+  process.env.FRONTEND_URL,
 ];
 
 app.use(
