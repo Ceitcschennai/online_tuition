@@ -1468,6 +1468,125 @@ router.get(
 );
 
 /* =================================================
+   GET TEACHER PROFILE
+================================================= */
+
+router.get(
+  "/profile/:teacherId",
+  async (req, res) => {
+    try {
+      const { teacherId } = req.params;
+
+      if (!isValidObjectId(teacherId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid teacher ID"
+        });
+      }
+
+      const teacher = await Teacher.findById(teacherId)
+        .select("-password")
+        .populate(
+          "subjects",
+          "name category classes"
+        );
+
+      if (!teacher) {
+        return res.status(404).json({
+          success: false,
+          message: "Teacher not found"
+        });
+      }
+
+      return res.json({
+        success: true,
+        teacher
+      });
+
+    } catch (error) {
+      console.error(
+        "Teacher profile fetch error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch teacher profile"
+      });
+    }
+  }
+);
+
+/* =================================================
+   UPDATE TEACHER BANK DETAILS
+================================================= */
+
+router.put(
+  "/profile/:teacherId/bank-details",
+  async (req, res) => {
+    try {
+      const { teacherId } = req.params;
+
+      const {
+        accountHolderName,
+        bankName,
+        accountNumber,
+        ifscCode,
+        accountType
+      } = req.body;
+
+      if (!isValidObjectId(teacherId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid teacher ID"
+        });
+      }
+
+      const teacher = await Teacher.findById(teacherId);
+
+      if (!teacher) {
+        return res.status(404).json({
+          success: false,
+          message: "Teacher not found"
+        });
+      }
+
+      teacher.bankDetails = {
+        accountHolderName:
+          accountHolderName?.trim() || "",
+        bankName:
+          bankName?.trim() || "",
+        accountNumber:
+          accountNumber?.trim() || "",
+        ifscCode:
+          ifscCode?.trim().toUpperCase() || "",
+        accountType:
+          accountType || ""
+      };
+
+      await teacher.save();
+
+      return res.json({
+        success: true,
+        message: "Bank details updated successfully",
+        bankDetails: teacher.bankDetails
+      });
+
+    } catch (error) {
+      console.error(
+        "Bank details update error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update bank details"
+      });
+    }
+  }
+);
+
+/* =================================================
    EXPORT ROUTER
 ================================================= */
 

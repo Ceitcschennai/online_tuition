@@ -626,3 +626,266 @@ body {
 .assignment-dashboard h3 {
   color: #263b58 !important;
 }
+
+/* =========================================================
+   ASSIGNMENTS PAGE - ASK YOUR DOUBTS STYLE
+========================================================= */
+
+.assignment-dashboard {
+  width: 100%;
+  min-height: 100%;
+  padding: 24px 30px 40px;
+  box-sizing: border-box;
+  background: #f8fafc;
+}
+
+/* =========================================================
+   BLUE HEADER
+========================================================= */
+
+.assignments-header {
+  width: 100%;
+  max-width: 1048px;
+  margin: 0 auto 18px;
+  padding: 28px 30px;
+  box-sizing: border-box;
+
+  background: linear-gradient(
+    135deg,
+    #3b82f6,
+    #4285f4
+  );
+
+  border-radius: 10px;
+  color: #ffffff;
+
+  position: relative;
+  overflow: hidden;
+
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.18);
+}
+
+.assignments-header::after {
+  content: "";
+  position: absolute;
+
+  width: 110px;
+  height: 110px;
+
+  right: -30px;
+  top: -45px;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.assignments-header::before {
+  content: "";
+  position: absolute;
+
+  width: 80px;
+  height: 80px;
+
+  right: 25px;
+  bottom: -55px;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.assignments-header > div {
+  position: relative;
+  z-index: 2;
+}
+
+.assignments-header h1 {
+  margin: 0 0 4px;
+
+  color: #ffffff;
+
+  font-size: 25px;
+  line-height: 1.2;
+
+  font-weight: 700;
+}
+
+.assignments-header p {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 13px;
+}
+
+/* =========================================================
+   SUBJECT FILTER CARD
+========================================================= */
+
+.assignment-filters {
+  width: 100%;
+  max-width: 1048px;
+
+  margin: 0 auto 18px;
+  padding: 18px 22px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  background: #ffffff;
+
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+}
+
+.assignment-filter-btn {
+  padding: 8px 18px;
+
+  border: 1px solid #d1ddeb;
+  border-radius: 20px;
+
+  background: #ffffff;
+  color: #526987;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.assignment-filter-btn:hover {
+  border-color: #3b82f6;
+  color: #2563eb;
+}
+
+.assignment-filter-btn.active {
+  border-color: transparent;
+
+  background: #3b82f6;
+  color: #ffffff;
+
+  box-shadow: 0 3px 8px rgba(59, 130, 246, 0.18);
+}
+
+/* =========================================================
+   ASSIGNMENT LIST
+========================================================= */
+
+.assignments-list {
+  width: 100%;
+  max-width: 1048px;
+
+  margin: 0 auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* =========================================================
+   ASSIGNMENT CARD
+========================================================= */
+
+.assignment-card {
+  padding: 22px 24px;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+
+  border: 1px solid #dbe4f0;
+  border-left-width: 4px;
+
+  border-radius: 10px;
+
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.assignment-card:hover {
+  transform: translateY(-1px);
+
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.assignment-card h3 {
+  color: #06245f;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.assignment-card p {
+  color: #526987;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.assignment-card strong {
+  color: #183a70;
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.assignment-dashboard > div:not(.assignments-header):not(.assignment-filters):not(.assignments-list) {
+  box-sizing: border-box;
+}
+
+.assignment-dashboard p {
+  font-size: 13px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+  .assignment-dashboard {
+    padding: 20px;
+  }
+
+  .assignments-header,
+  .assignment-filters,
+  .assignments-list {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .assignment-dashboard {
+    padding: 16px;
+  }
+
+  .assignments-header {
+    padding: 22px 20px;
+  }
+
+  .assignments-header h1 {
+    font-size: 22px;
+  }
+
+  .assignment-filters {
+    padding: 15px;
+  }
+
+  .assignment-card {
+    padding: 18px;
+  }
+}

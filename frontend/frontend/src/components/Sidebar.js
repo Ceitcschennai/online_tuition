@@ -8,7 +8,9 @@ import {
   FaCreditCard,
   FaChalkboardTeacher,
   FaUserGraduate,
-  FaUserCheck
+  FaUserCheck,
+  FaMoneyBillWave,
+  FaUser
 } from "react-icons/fa";
 
 import "../styles/sidebar.css";
@@ -58,6 +60,16 @@ const menuConfig = {
       to: "/student-queries",
       icon: FaQuestionCircle,
       label: "Queries"
+    },
+    {
+      to: "/teacher-payments",
+      icon: FaMoneyBillWave,
+      label: "Payments"
+    },
+    {
+      to: "/teacher-profile",
+      icon: FaUser,
+      label: "Profile"
     }
   ],
 

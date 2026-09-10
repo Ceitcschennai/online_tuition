@@ -6,6 +6,9 @@ const Teacher = require("../models/Teacher");
 const Subject = require("../models/Subject");
 const Activity = require("../models/Activity");
 const transporter = require("../config/email");
+const TeacherPayment = require("../models/TeacherPayment");
+const StudentPayment = require("../models/StudentPayment");
+const FeeStructure = require("../models/FeeStructure");
 
 /* =====================================================
    CLASS NORMALIZER
@@ -899,6 +902,256 @@ router.put("/teachers/:id/subject", async (req, res) => {
     });
   }
 });
+
+/* =====================================================
+   ADMIN — GET STUDENT PAYMENTS
+===================================================== */
+
+router.get("/payments/students", async (req, res) => {
+  try {
+    const payments = await StudentPayment.find()
+      .populate(
+        "student",
+        "firstName lastName email class"
+      )
+      .sort({
+        paymentMonth: -1,
+        createdAt: -1
+      });
+
+    return res.json({
+      success: true,
+      payments
+    });
+
+  } catch (error) {
+    console.error(
+      "Student payments fetch error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch student payments",
+      error: error.message
+    });
+  }
+});
+
+/* =====================================================
+   ADMIN — GET TEACHER PAYMENTS
+===================================================== */
+
+router.get("/payments/teachers", async (req, res) => {
+  try {
+    const payments = await TeacherPayment.find()
+      .populate(
+        "teacher",
+        "firstName lastName email"
+      )
+      .sort({
+        paymentMonth: -1,
+        createdAt: -1
+      });
+
+    return res.json({
+      success: true,
+      payments
+    });
+
+  } catch (error) {
+    console.error(
+      "Fetch teacher payments error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch teacher payments",
+      error: error.message
+    });
+  }
+});
+
+/* =====================================================
+   ADMIN — GET FEE STRUCTURE
+===================================================== */
+
+router.get("/payments/fees", async (req, res) => {
+  try {
+    const feeStructures = await FeeStructure.find()
+      .sort({
+        academicYear: -1,
+        className: 1
+      });
+
+    return res.json({
+      success: true,
+      feeStructures
+    });
+
+  } catch (error) {
+    console.error(
+      "Fetch fee structure error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch fee structure",
+      error: error.message
+    });
+  }
+});
+
+/* =====================================================
+   ADMIN — UPDATE FEE STRUCTURE
+===================================================== */
+
+/* =====================================================
+   ADMIN — UPDATE FEE STRUCTURE
+===================================================== */
+
+/* =====================================================
+   ADMIN — UPDATE FEE STRUCTURE
+===================================================== */
+
+router.put("/payments/fees/:feeId", async (req, res) => {
+  try {
+    const { feeId } = req.params;
+    const { academicYear, monthlyFee, isActive } = req.body;
+
+    const feeStructure = await FeeStructure.findById(feeId);
+
+    if (!feeStructure) {
+      return res.status(404).json({
+        success: false,
+        message: "Fee structure not found"
+      });
+    }
+
+    // Validate Academic Year
+    if (
+      academicYear === undefined ||
+      String(academicYear).trim() === ""
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Academic year is required"
+      });
+    }
+
+    // Validate Monthly Fee
+    if (
+      monthlyFee === undefined ||
+      monthlyFee === ""
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Monthly fee is required"
+      });
+    }
+
+    const fee = Number(monthlyFee);
+
+    if (Number.isNaN(fee) || fee < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Monthly fee must be a valid number"
+      });
+    }
+
+    // Update allowed fields
+    feeStructure.academicYear = String(academicYear).trim();
+    feeStructure.monthlyFee = fee;
+
+    if (typeof isActive === "boolean") {
+      feeStructure.isActive = isActive;
+    }
+
+    await feeStructure.save();
+
+    return res.json({
+      success: true,
+      message: "Fee structure updated successfully",
+      feeStructure
+    });
+
+  } catch (error) {
+    console.error(
+      "Update fee structure error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update fee structure",
+      error: error.message
+    });
+  }
+});
+
+/* =====================================================
+   ADMIN — MARK STUDENT PAYMENT AS PAID
+===================================================== */
+
+router.put(
+  "/payments/students/:paymentId/mark-paid",
+  async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+
+      const payment =
+        await StudentPayment.findById(paymentId);
+
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment record not found"
+        });
+      }
+
+      if (payment.status === "Paid") {
+        return res.status(400).json({
+          success: false,
+          message: "Payment is already marked as paid"
+        });
+      }
+
+      payment.amountPaid =
+        payment.monthlyFee;
+
+      payment.status =
+        "Paid";
+
+      payment.paidAt =
+        new Date();
+
+      await payment.save();
+
+      return res.json({
+        success: true,
+        message:
+          "Student payment marked as paid successfully",
+        payment
+      });
+
+    } catch (error) {
+      console.error(
+        "Mark student payment as paid error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Failed to mark payment as paid",
+        error: error.message
+      });
+    }
+  }
+);
+
 /* =====================================================
    DELETE TEACHER
 ===================================================== */
@@ -914,6 +1167,212 @@ router.delete("/teachers/:id", async (req, res) => {
   } catch (error) {
     console.error("Delete teacher error:", error);
     res.status(500).json({ success: false, message: "Delete failed" });
+  }
+});
+
+/* =====================================================
+   ADMIN — GENERATE CURRENT MONTH STUDENT PAYMENTS
+===================================================== */
+
+router.post("/payments/students/generate", async (req, res) => {
+  try {
+    const now = new Date();
+
+    const academicYear =
+      now.getMonth() + 1 >= 4
+        ? `${now.getFullYear()}-${now.getFullYear() + 1}`
+        : `${now.getFullYear() - 1}-${now.getFullYear()}`;
+
+    const paymentMonth =
+      `${now.getFullYear()}-${String(
+        now.getMonth() + 1
+      ).padStart(2, "0")}`;
+
+    // Get all approved and active students
+    const students = await Student.find({
+      approvalStatus: "Approved",
+      isActive: true
+    });
+
+    let createdCount = 0;
+
+    for (const student of students) {
+      const className = String(student.class || "")
+  .replace(/^Class\s*/i, "")
+  .replace(/th$|st$|nd$|rd$/i, "")
+  .trim();
+
+      // Get fee for student's class
+      const fee = await FeeStructure.findOne({
+        academicYear,
+        className,
+        isActive: true
+      });
+
+      // Skip students whose class has no fee structure
+      if (!fee) {
+        continue;
+      }
+
+      // Check whether this month's record already exists
+      const existingPayment = await StudentPayment.findOne({
+        student: student._id,
+        academicYear,
+        paymentMonth
+      });
+
+      // Don't create duplicates
+      if (existingPayment) {
+        continue;
+      }
+
+      await StudentPayment.create({
+        student: student._id,
+        className,
+        academicYear,
+        paymentMonth,
+        monthlyFee: fee.monthlyFee,
+        amountPaid: 0,
+        status: "Pending"
+      });
+
+      createdCount++;
+    }
+
+    return res.json({
+      success: true,
+      message: "Student payments generated successfully",
+      createdCount,
+      paymentMonth,
+      academicYear
+    });
+
+  } catch (error) {
+    console.error(
+      "Student payment generation error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate student payments",
+      error: error.message
+    });
+  }
+});
+
+/* =====================================================
+   ADMIN — CREATE CURRENT MONTH TEACHER PAYMENT
+===================================================== */
+
+router.post("/teacher-payments/:teacherId/generate", async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    const teacher = await Teacher.findById(teacherId);
+
+    if (!teacher) {
+      return res.status(404).json({
+        success: false,
+        message: "Teacher not found"
+      });
+    }
+
+    // Get current payment month
+    const now = new Date();
+
+    const paymentMonth =
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    const ratePerStudent = 1500;
+
+    // Get classes assigned to this teacher
+    const teacherClasses = Array.isArray(teacher.classesAssigned)
+      ? teacher.classesAssigned
+      : [];
+
+    if (teacherClasses.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No classes assigned to this teacher"
+      });
+    }
+
+    // Get active + approved students in those classes
+    const students = await Student.find({
+      class: { $in: teacherClasses },
+      approvalStatus: "Approved",
+      isActive: true
+    }).select("class");
+
+    // Class-wise student count
+    const classCounts = {};
+
+    students.forEach((student) => {
+      const className = student.class;
+
+      if (!classCounts[className]) {
+        classCounts[className] = 0;
+      }
+
+      classCounts[className]++;
+    });
+
+    // Create class-wise salary snapshot
+    const classBreakdown = Object.entries(classCounts)
+      .map(([className, studentCount]) => ({
+        className,
+        studentCount,
+        classSalary: studentCount * ratePerStudent
+      }))
+      .sort((a, b) =>
+        a.className.localeCompare(b.className, undefined, {
+          numeric: true
+        })
+      );
+
+    const studentCount = students.length;
+    const calculatedAmount = studentCount * ratePerStudent;
+
+    // Prevent duplicate monthly record
+    const existingPayment = await TeacherPayment.findOne({
+      teacher: teacherId,
+      paymentMonth
+    });
+
+    if (existingPayment) {
+      return res.status(409).json({
+        success: false,
+        message: "Teacher payment already generated for this month",
+        payment: existingPayment
+      });
+    }
+
+    // Save monthly snapshot
+    const payment = await TeacherPayment.create({
+      teacher: teacherId,
+      paymentMonth,
+      studentCount,
+      classBreakdown,
+      ratePerStudent,
+      calculatedAmount,
+      status: "Pending"
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Teacher payment generated successfully",
+      payment
+    });
+
+  } catch (error) {
+    console.error("Teacher payment generation error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate teacher payment",
+      error: error.message
+    });
   }
 });
 

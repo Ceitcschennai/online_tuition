@@ -88,6 +88,34 @@ const teacherSchema = new mongoose.Schema(
       min: [0, "Experience cannot be negative"]
     },
 
+    bankDetails: {
+  accountHolderName: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  bankName: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  accountNumber: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  ifscCode: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  accountType: {
+    type: String,
+    enum: ["Savings", "Current", ""],
+    default: ""
+  }
+},
+
     subjects: [
       {
         type: mongoose.Schema.Types.ObjectId,

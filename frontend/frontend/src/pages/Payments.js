@@ -1,273 +1,593 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import '../styles/payments.css';
-import {
-  FaCreditCard,
-  FaHistory,
-  FaCheckCircle,
-  FaClock,
-  FaExclamationTriangle,
-  FaCalendarAlt,
-  FaRupeeSign,
-  FaUser,
-  FaFileInvoice
-} from 'react-icons/fa';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../styles/payments.css";
 
 const Payments = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('payment');
 
-  // Mock data for demonstration
-  const [paymentHistory] = useState([
-    {
-      id: 'PAY001',
-      date: '2025-01-15',
-      amount: 5000,
-      status: 'Completed',
-      method: 'Credit Card',
-      description: 'Monthly Tuition Fee - January 2025',
-      transactionId: 'TXN123456789'
-    },
-    {
-      id: 'PAY002',
-      date: '2024-12-15',
-      amount: 5000,
-      status: 'Completed',
-      method: 'UPI',
-      description: 'Monthly Tuition Fee - December 2024',
-      transactionId: 'TXN123456788'
-    },
-    {
-      id: 'PAY003',
-      date: '2024-11-15',
-      amount: 5000,
-      status: 'Completed',
-      method: 'Net Banking',
-      description: 'Monthly Tuition Fee - November 2024',
-      transactionId: 'TXN123456787'
+  const [payment, setPayment] = useState(null);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [student, setStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  /* =========================================================
+     LOAD CURRENT PAYMENT DETAILS
+  ========================================================= */
+
+  useEffect(() => {
+    const loadPaymentDetails = async () => {
+      try {
+        const storedStudent = localStorage.getItem("user");
+
+        if (!storedStudent) {
+          setLoading(false);
+          return;
+        }
+
+        const storedUser = JSON.parse(storedStudent);
+
+        setStudent(storedUser);
+
+        const studentId =
+          storedUser._id ||
+          storedUser.id ||
+          storedUser.studentId;
+
+        if (!studentId) {
+          console.error("Student ID not found");
+          setLoading(false);
+          return;
+        }
+
+        const API_BASE_URL =
+          process.env.REACT_APP_API_URL;
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/payments/student/${studentId}/current`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          console.error(
+            "Failed to load payment details:",
+            data.message
+          );
+          return;
+        }
+
+        /*
+          IMPORTANT:
+          Always use the current FeeStructure amount
+          returned by the backend.
+
+          This prevents an old monthlyFee value inside
+          StudentPayment from being displayed.
+        */
+
+        setPayment({
+          ...data.payment,
+          monthlyFee: Number(
+            data.fee?.monthlyFee ??
+              data.payment?.monthlyFee ??
+              0
+          ),
+          academicYear:
+            data.fee?.academicYear ??
+            data.payment?.academicYear,
+          paymentMonth:
+            data.fee?.paymentMonth ??
+            data.payment?.paymentMonth
+        });
+
+        /*
+          Use the backend class value when available.
+        */
+
+        if (data.student) {
+          setStudent((previousStudent) => ({
+            ...previousStudent,
+            ...data.student
+          }));
+        }
+      } catch (error) {
+        console.error(
+          "Payment details error:",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPaymentDetails();
+  }, []);
+
+  /* =========================================================
+     LOAD PAYMENT HISTORY
+  ========================================================= */
+
+  useEffect(() => {
+    const loadPaymentHistory = async () => {
+      try {
+        const storedStudent = localStorage.getItem("user");
+
+        if (!storedStudent) {
+          setHistoryLoading(false);
+          return;
+        }
+
+        const storedUser = JSON.parse(storedStudent);
+
+        const studentId =
+          storedUser._id ||
+          storedUser.id ||
+          storedUser.studentId;
+
+        if (!studentId) {
+          setHistoryLoading(false);
+          return;
+        }
+
+        const API_BASE_URL =
+          process.env.REACT_APP_API_URL;
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/payments/student/${studentId}/history`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          console.error(
+            "Failed to load payment history:",
+            data.message
+          );
+          return;
+        }
+
+        setPaymentHistory(
+          Array.isArray(data.payments)
+            ? data.payments
+            : []
+        );
+      } catch (error) {
+        console.error(
+          "Payment history error:",
+          error
+        );
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    loadPaymentHistory();
+  }, []);
+
+  /* =========================================================
+     FORMAT PAYMENT MONTH
+     Example:
+     2026-09 -> September 2026
+  ========================================================= */
+
+  const formatPaymentMonth = (paymentMonth) => {
+    if (!paymentMonth) {
+      return "--";
     }
-  ]);
 
-  const [pendingPayments] = useState([
-    {
-      id: 'DUE001',
-      dueDate: '2025-02-15',
-      amount: 5000,
-      description: 'Monthly Tuition Fee - February 2025',
-      status: 'Pending'
+    const parts = String(paymentMonth).split("-");
+
+    if (parts.length !== 2) {
+      return paymentMonth;
     }
-  ]);
 
-  const handlePayment = (paymentId) => {
-    // Navigate to payment gateway or show payment modal
-    navigate('/payment-gateway', { state: { paymentId } });
+    const year = Number(parts[0]);
+    const month = Number(parts[1]);
+
+    if (!year || !month) {
+      return paymentMonth;
+    }
+
+    const date = new Date(
+      year,
+      month - 1,
+      1
+    );
+
+    return date.toLocaleString("en-US", {
+      month: "long",
+      year: "numeric"
+    });
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Completed':
-        return <FaCheckCircle className="status-icon completed" />;
-      case 'Pending':
-        return <FaClock className="status-icon pending" />;
-      case 'Failed':
-        return <FaExclamationTriangle className="status-icon failed" />;
-      default:
-        return <FaClock className="status-icon pending" />;
+  /* =========================================================
+     FORMAT DATE
+  ========================================================= */
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) {
+      return "-";
     }
+
+    const date = new Date(dateValue);
+
+    if (Number.isNaN(date.getTime())) {
+      return "-";
+    }
+
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
   };
+
+  /* =========================================================
+     STATUS CLASS
+  ========================================================= */
 
   const getStatusClass = (status) => {
-    return status.toLowerCase();
+    const normalizedStatus = String(
+      status || "Pending"
+    ).toLowerCase();
+
+    if (
+      normalizedStatus === "paid" ||
+      normalizedStatus === "completed"
+    ) {
+      return "paid";
+    }
+
+    if (
+      normalizedStatus === "failed" ||
+      normalizedStatus === "refunded"
+    ) {
+      return "failed";
+    }
+
+    if (
+      normalizedStatus === "submitted"
+    ) {
+      return "submitted";
+    }
+
+    return "pending";
   };
 
+  /* =========================================================
+     HANDLE PAY NOW
+  ========================================================= */
+
+  const handlePayment = () => {
+    const className =
+      student?.class ||
+      student?.className ||
+      "--";
+
+    const monthlyFee = Number(
+      payment?.monthlyFee || 0
+    );
+
+    navigate("/fee-payment", {
+      state: {
+        className,
+        monthlyFee,
+        payment
+      }
+    });
+  };
+
+  /* =========================================================
+     CURRENT MONTH
+  ========================================================= */
+
+  const currentMonth = payment?.paymentMonth
+    ? formatPaymentMonth(payment.paymentMonth)
+    : new Date().toLocaleString("en-US", {
+        month: "long",
+        year: "numeric"
+      });
+
+  /* =========================================================
+     CURRENT CLASS
+  ========================================================= */
+
+  const currentClass =
+    student?.class ||
+    student?.className ||
+    "--";
+
+  /* =========================================================
+     CURRENT FEE
+  ========================================================= */
+
+  const currentFee = Number(
+    payment?.monthlyFee || 0
+  );
+
+  /* =========================================================
+     CURRENT STATUS
+  ========================================================= */
+
+  const currentStatus =
+    payment?.status || "Pending";
+
+  /* =========================================================
+     LOADING
+  ========================================================= */
+
+  if (loading) {
+    return (
+      <div className="payments-page">
+        <div className="payments-loading">
+          Loading payment details...
+        </div>
+      </div>
+    );
+  }
+
+  /* =========================================================
+     PAGE
+  ========================================================= */
+
   return (
-    <div className="payments-container">
+    <div className="payments-page">
+
+      {/* =====================================================
+          PAGE HEADER
+      ===================================================== */}
+
       <div className="payments-header">
-        <h1>Payments</h1>
-        <p>Manage your fee payments and view payment history</p>
+        <div>
+          <h1>Payments</h1>
+          <p>
+            Manage your monthly tuition fee payments
+          </p>
+        </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="tab-navigation">
-        <button 
-          className={`tab-button ${activeTab === 'payment' ? 'active' : ''}`}
-          onClick={() => setActiveTab('payment')}
-        >
-          <FaCreditCard className="tab-icon" />
-          Make Payment
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
-        >
-          <FaHistory className="tab-icon" />
-          Payment History
-        </button>
-      </div>
+      {/* =====================================================
+          CURRENT MONTH FEE
+      ===================================================== */}
 
-      {/* Tab Content */}
-      <div className="tab-content">
-        {activeTab === 'payment' && (
-          <div className="payment-tab">
-            {/* Outstanding Payments */}
-            <div className="section">
-              <h2 className="section-title">
-                <FaExclamationTriangle className="section-icon" />
-                Outstanding Payments
-              </h2>
-              {pendingPayments.length > 0 ? (
-                <div className="payments-grid">
-                  {pendingPayments.map((payment) => (
-                    <div key={payment.id} className="payment-card pending">
-                      <div className="payment-header">
-                        <div className="payment-info">
-                          <h3>{payment.description}</h3>
-                          <p className="payment-id">Payment ID: {payment.id}</p>
-                        </div>
-                        {getStatusIcon(payment.status)}
-                      </div>
-                      
-                      <div className="payment-details">
-                        <div className="detail-item">
-                          <FaCalendarAlt className="detail-icon" />
-                          <span>Due Date: {new Date(payment.dueDate).toLocaleDateString()}</span>
-                        </div>
-                        <div className="detail-item">
-                          <FaRupeeSign className="detail-icon" />
-                          <span>Amount: ₹{payment.amount.toLocaleString()}</span>
-                        </div>
-                      </div>
+      <div className="payment-current-card">
 
-                      <div className="payment-actions">
-                        <button 
-                          className="pay-button"
-                          onClick={() => handlePayment(payment.id)}
-                        >
-                          Pay Now
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="no-payments">
-                  <FaCheckCircle className="no-payments-icon" />
-                  <h3>All payments are up to date!</h3>
-                  <p>You have no outstanding payments at this time.</p>
-                </div>
-              )}
-            </div>
+        <div className="payment-card-header">
 
-            {/* Payment Methods */}
-            <div className="section">
-              <h2 className="section-title">
-                <FaCreditCard className="section-icon" />
-                Payment Methods
-              </h2>
-              <div className="payment-methods">
-                <div className="method-card">
-                  <FaCreditCard className="method-icon" />
-                  <h4>Credit/Debit Card</h4>
-                  <p>Pay securely with your card</p>
-                </div>
-                <div className="method-card">
-                  <FaRupeeSign className="method-icon" />
-                  <h4>UPI</h4>
-                  <p>Quick payment via UPI apps</p>
-                </div>
-                <div className="method-card">
-                  <FaUser className="method-icon" />
-                  <h4>Net Banking</h4>
-                  <p>Direct bank transfer</p>
-                </div>
-              </div>
-            </div>
+          <div>
+            <h2>Current Month Fee</h2>
+
+            <p>
+              Monthly tuition fee
+            </p>
           </div>
+
+          <span
+            className={`payment-status ${getStatusClass(
+              currentStatus
+            )}`}
+          >
+            {currentStatus}
+          </span>
+
+        </div>
+
+        <div className="payment-details">
+
+          {/* MONTH */}
+
+          <div className="payment-detail-item">
+
+            <span>Month</span>
+
+            <strong>
+              {currentMonth}
+            </strong>
+
+          </div>
+
+          {/* CLASS */}
+
+          <div className="payment-detail-item">
+
+            <span>Class</span>
+
+            <strong>
+              {currentClass}
+            </strong>
+
+          </div>
+
+          {/* MONTHLY FEE */}
+
+          <div className="payment-detail-item">
+
+            <span>Monthly Fee</span>
+
+            <strong>
+              {currentFee > 0
+                ? `₹${currentFee.toLocaleString(
+                    "en-IN"
+                  )}`
+                : "₹ --"}
+            </strong>
+
+          </div>
+
+        </div>
+
+        {/* PAY NOW */}
+
+        <button
+  className="pay-now-btn"
+  onClick={handlePayment}
+  disabled={currentFee <= 0}
+>
+  Pay Now
+</button>
+
+      </div>
+
+      {/* =====================================================
+          PAYMENT HISTORY
+      ===================================================== */}
+
+      <div className="payment-history-section">
+
+        <div className="section-header">
+
+          <h2>
+            Payment History
+          </h2>
+
+          <p>
+            Your previous monthly payments
+          </p>
+
+        </div>
+
+        {/* HISTORY LOADING */}
+
+        {historyLoading ? (
+          <div className="no-payment-history">
+            <p>
+              Loading payment history...
+            </p>
+          </div>
+        ) : paymentHistory.length === 0 ? (
+
+          /* NO HISTORY */
+
+          <div className="no-payment-history">
+
+            <h3>
+              No payment history
+            </h3>
+
+            <p>
+              Your completed monthly payments
+              will appear here.
+            </p>
+
+          </div>
+
+        ) : (
+
+          /* HISTORY TABLE */
+
+          <div className="payment-history-table-wrapper">
+
+            <table className="payment-history-table">
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    Month
+                  </th>
+
+                  <th>
+                    Amount
+                  </th>
+
+                  <th>
+                    Status
+                  </th>
+
+                  <th>
+                    Payment Date
+                  </th>
+
+                  <th>
+                    Payment ID
+                  </th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {paymentHistory.map((item) => (
+
+                  <tr
+                    key={
+                      item._id ||
+                      item.id ||
+                      `${item.paymentMonth}-${item.createdAt}`
+                    }
+                  >
+
+                    {/* MONTH */}
+
+                    <td>
+                      {formatPaymentMonth(
+                        item.paymentMonth
+                      )}
+                    </td>
+
+                    {/* AMOUNT */}
+
+                    <td>
+                      ₹
+                      {Number(
+                        item.amountPaid ||
+                          item.monthlyFee ||
+                          0
+                      ).toLocaleString(
+                        "en-IN"
+                      )}
+                    </td>
+
+                    {/* STATUS */}
+
+                    <td>
+
+                      <span
+                        className={`history-status ${getStatusClass(
+                          item.status
+                        )}`}
+                      >
+                        {item.status ||
+                          "Pending"}
+                      </span>
+
+                    </td>
+
+                    {/* PAYMENT DATE */}
+
+                    <td>
+                      {formatDate(
+                        item.paidAt ||
+                          item.paymentDate ||
+                          item.updatedAt
+                      )}
+                    </td>
+
+                    {/* PAYMENT ID */}
+
+                    <td>
+                      {item.razorpayPaymentId ||
+                        item.transactionReference ||
+                        "-"}
+                    </td>
+
+                  </tr>
+
+                ))}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
         )}
 
-        {activeTab === 'history' && (
-          <div className="history-tab">
-            <div className="section">
-              <h2 className="section-title">
-                <FaHistory className="section-icon" />
-                Payment History
-              </h2>
-              
-              {paymentHistory.length > 0 ? (
-                <div className="history-table-container">
-                  <table className="history-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Description</th>
-                        <th>Amount</th>
-                        <th>Method</th>
-                        <th>Status</th>
-                        <th>Transaction ID</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paymentHistory.map((payment) => (
-                        <tr key={payment.id}>
-                          <td>{new Date(payment.date).toLocaleDateString()}</td>
-                          <td>{payment.description}</td>
-                          <td className="amount">₹{payment.amount.toLocaleString()}</td>
-                          <td>{payment.method}</td>
-                          <td>
-                            <span className={`status-badge ${getStatusClass(payment.status)}`}>
-                              {getStatusIcon(payment.status)}
-                              {payment.status}
-                            </span>
-                          </td>
-                          <td className="transaction-id">{payment.transactionId}</td>
-                          <td>
-                            <button className="download-button">
-                              <FaFileInvoice />
-                              Receipt
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="no-history">
-                  <FaHistory className="no-history-icon" />
-                  <h3>No payment history found</h3>
-                  <p>Your payment history will appear here once you make payments.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Payment Summary */}
-            <div className="section">
-              <h2 className="section-title">
-                <FaRupeeSign className="section-icon" />
-                Payment Summary
-              </h2>
-              <div className="summary-grid">
-                <div className="summary-card">
-                  <h3>Total Paid</h3>
-                  <p className="summary-amount">₹{paymentHistory.reduce((sum, payment) => sum + payment.amount, 0).toLocaleString()}</p>
-                  <span className="summary-period">This Year</span>
-                </div>
-                <div className="summary-card">
-                  <h3>Pending Payments</h3>
-                  <p className="summary-amount">₹{pendingPayments.reduce((sum, payment) => sum + payment.amount, 0).toLocaleString()}</p>
-                  <span className="summary-period">Outstanding</span>
-                </div>
-                <div className="summary-card">
-                  <h3>Last Payment</h3>
-                  <p className="summary-amount">₹{paymentHistory[0]?.amount.toLocaleString() || '0'}</p>
-                  <span className="summary-period">{paymentHistory[0] ? new Date(paymentHistory[0].date).toLocaleDateString() : 'N/A'}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
     </div>
   );
 };

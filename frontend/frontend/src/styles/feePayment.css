@@ -735,3 +735,248 @@ html {
     transform: translateY(0);
   }
 }
+
+/* =========================================================
+   MONTHLY PAYMENT PAGE
+========================================================= */
+
+.fee-payment-page {
+  width: 100%;
+  height: calc(100vh - 118px);
+  padding: 22px 30px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.monthly-payment-container {
+  width: 100%;
+  height: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  box-sizing: border-box;
+
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.monthly-payment-container .payment-gateway {
+  margin: 0 auto;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+  .fee-payment-page {
+    height: calc(100vh - 118px);
+    padding: 16px;
+    overflow-y: auto;
+  }
+
+  .monthly-payment-container {
+    height: auto;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .fee-payment-page {
+    padding: 12px;
+  }
+}
+
+/* =========================================================
+   PAYMENT PAGE SCREEN CONTROL
+========================================================= */
+
+.fee-payment-page {
+  width: 100%;
+  height: calc(100vh - 118px);
+  padding: 18px 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.monthly-payment-container {
+  width: 100%;
+  height: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  box-sizing: border-box;
+  overflow: hidden;
+
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Keep the payment card inside the screen */
+.monthly-payment-container .payment-gateway {
+  width: 100%;
+  max-width: 700px;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+  .fee-payment-page {
+    height: calc(100vh - 118px);
+    padding: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .monthly-payment-container {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .monthly-payment-container .payment-gateway {
+    max-height: none;
+  }
+}
+
+/* =========================================================
+   FIX DESKTOP PAYMENT PAGE SCROLLBAR
+========================================================= */
+
+@media (min-width: 769px) {
+  .main-content:has(.fee-payment-page) {
+    overflow: hidden;
+  }
+
+  .fee-payment-page {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .monthly-payment-container {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
+/* Mobile can scroll normally when needed */
+@media (max-width: 768px) {
+  .main-content:has(.fee-payment-page) {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
+/* =========================================================
+   FINAL PAYMENT PAGE LAYOUT FIX
+========================================================= */
+
+.fee-payment-page {
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.monthly-payment-container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0;
+  min-height: 0;
+  height: auto;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  background: transparent;
+  border: none;
+  box-shadow: none;
+
+  overflow: visible;
+}
+
+/* The ONE page scrollbar */
+.main-content:has(.fee-payment-page) {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+
+/* =========================================================
+   DESKTOP
+========================================================= */
+
+@media (min-width: 769px) {
+
+  .fee-payment-page {
+    min-height: 100%;
+    padding: 24px;
+  }
+
+  .monthly-payment-container {
+    max-width: 1100px;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .fee-payment-page {
+    min-height: 100%;
+    height: auto;
+    padding: 16px;
+    overflow: visible;
+  }
+
+  .monthly-payment-container {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .main-content:has(.fee-payment-page) {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .fee-payment-page {
+    padding: 12px;
+  }
+
+}

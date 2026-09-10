@@ -114,6 +114,16 @@ app.use("/api/student", require("./routes/studentRoutes"));
 // Teacher
 app.use("/api/teacher", require("./routes/teacherRoutes"));
 
+app.use(
+  "/api/payments",
+  require("./routes/paymentRoutes")
+);
+
+app.use(
+  "/api/teacher-payments",
+  require("./routes/teacherPaymentRoutes")
+);
+
 // Subjects
 app.use("/api/subjects", require("./routes/subjectRoutes"));
 

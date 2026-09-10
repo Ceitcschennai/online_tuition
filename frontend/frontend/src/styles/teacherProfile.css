@@ -1,0 +1,274 @@
+.teacher-profile-page {
+  padding: 28px;
+  color: #173b67;
+}
+
+.teacher-profile-header {
+  margin-bottom: 24px;
+}
+
+.teacher-profile-header span {
+  color: #0876d1;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.teacher-profile-header h1 {
+  margin: 6px 0;
+  font-size: 28px;
+  color: #123f70;
+}
+
+.teacher-profile-header p {
+  margin: 0;
+  color: #718096;
+  font-size: 14px;
+}
+
+.teacher-profile-section {
+  background: #ffffff;
+  border: 1px solid #e5eaf2;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.teacher-profile-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  color: #0876d1;
+}
+
+.teacher-profile-section-title h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #173b67;
+}
+
+.teacher-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 30px;
+}
+
+.teacher-profile-grid label {
+  display: block;
+  margin-bottom: 6px;
+  color: #718096;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.teacher-profile-grid p {
+  margin: 0;
+  color: #173b67;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.bank-details-message {
+  margin: -8px 0 22px;
+  color: #718096;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .teacher-profile-page {
+    padding: 18px;
+  }
+
+  .teacher-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =================================================
+   BANK DETAILS HEADER
+================================================= */
+
+.bank-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.bank-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bank-title svg {
+  color: #0876d1;
+}
+
+
+/* =================================================
+   EDIT BUTTON
+================================================= */
+
+.edit-bank-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 16px;
+
+  border: 1px solid #0876d1;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #0876d1;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.edit-bank-button:hover {
+  background: #0876d1;
+  color: #ffffff;
+
+  box-shadow: 0 4px 12px rgba(8, 118, 209, 0.18);
+}
+
+
+/* =================================================
+   BANK FORM
+================================================= */
+
+.bank-form {
+  margin-top: 10px;
+}
+
+.bank-form input,
+.bank-form select {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 12px 14px;
+
+  border: 1px solid #d7dfeb;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #173b67;
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.bank-form input:focus,
+.bank-form select:focus {
+  border-color: #0876d1;
+
+  box-shadow:
+    0 0 0 3px rgba(8, 118, 209, 0.10);
+}
+
+.bank-form input::placeholder {
+  color: #9aa7b8;
+}
+
+
+/* =================================================
+   FORM BUTTONS
+================================================= */
+
+.bank-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+
+  margin-top: 24px;
+}
+
+.cancel-bank-button,
+.save-bank-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 11px 18px;
+
+  border-radius: 8px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.cancel-bank-button {
+  border: 1px solid #d7dfeb;
+  background: #ffffff;
+  color: #5f7188;
+}
+
+.cancel-bank-button:hover {
+  background: #f5f7fa;
+}
+
+.save-bank-button {
+  border: 1px solid #0876d1;
+  background: #0876d1;
+  color: #ffffff;
+}
+
+.save-bank-button:hover {
+  background: #0668b9;
+
+  box-shadow:
+    0 4px 12px rgba(8, 118, 209, 0.22);
+}
+
+.cancel-bank-button:disabled,
+.save-bank-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+/* =================================================
+   MOBILE
+================================================= */
+
+@media (max-width: 768px) {
+
+  .bank-title-row {
+    align-items: flex-start;
+  }
+
+  .edit-bank-button {
+    padding: 9px 12px;
+  }
+
+  .bank-form-actions {
+    justify-content: stretch;
+  }
+
+  .cancel-bank-button,
+  .save-bank-button {
+    flex: 1;
+  }
+}

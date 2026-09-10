@@ -400,31 +400,28 @@ const Assignments = () => {
   // UI
   //////////////////////////////////////////////////////////
   return (
-    <div className="assignment-dashboard">
-      <h1>My Assignments</h1>
+  <div className="assignment-dashboard">
+
+    <div className="assignments-header">
+      <div>
+        <h1>My Assignments</h1>
+        <p>View assignments given by your teachers</p>
+      </div>
+    </div>
 
       {/* ✅ Subject filter tabs — click a subject to see only its assignments */}
       {!loading && !error && assignments.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+        <div className="assignment-filters">
           {subjectTabs.map((subject) => (
             <button
-              key={subject}
-              onClick={() => setSelectedSubject(subject)}
-              style={{
-                padding: "7px 16px",
-                borderRadius: 20,
-                border: selectedSubject === subject ? "1.5px solid transparent" : "1.5px solid #d1d5db",
-                background: selectedSubject === subject
-                  ? "linear-gradient(135deg, #6366f1, #7c3aed)"
-                  : "#fff",
-                color: selectedSubject === subject ? "#fff" : "#4b5563",
-                fontSize: 13.5,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {subject}
-            </button>
+  key={subject}
+  className={`assignment-filter-btn ${
+    selectedSubject === subject ? "active" : ""
+  }`}
+  onClick={() => setSelectedSubject(subject)}
+>
+  {subject}
+</button>
           ))}
         </div>
       )}

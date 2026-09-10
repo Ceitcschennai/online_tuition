@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -38,7 +39,9 @@ import RaiseQuery from "./pages/RaiseQuery";
 import ManageStudents from "./pages/ManageStudents";
 import ManageTeachers from "./pages/ManageTeachers";
 import ManagePayments from "./pages/ManagePayments";
+import TeacherProfile from "./pages/TeacherProfile";
 import ManageSubjects from "./pages/ManageSubjects";
+import TeacherPayments from "./pages/TeacherPayments";
 
 import FeePayment from "./pages/FeePayment";
 import PaymentHistory from "./pages/PaymentHistory";
@@ -437,7 +440,16 @@ const AppContent = () => {
       <Route
         path="/payment-history"
         element={<PaymentHistory />}
+
+        
       />
+
+      <Route path="/teacher-payments" element={<TeacherPayments />} />
+
+      <Route
+  path="/teacher-profile"
+  element={<TeacherProfile />}
+/>
 
       {/* =================================================
           LIVE CLASS
