@@ -39,7 +39,7 @@ if (process.env.NODE_ENV !== "production") {
 
 const allowedOrigins = [
   "https://online-tuition-1wvb.vercel.app",
-  process.env.FRONTEND_URL,
+  "https://online-tuition-1wvb-57jit0uff-ceitcs-s-projects.vercel.app",
 ];
 
 app.use(
