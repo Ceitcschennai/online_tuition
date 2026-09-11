@@ -47,8 +47,26 @@ if (process.env.NODE_ENV !== "production") {
    CORS
 ========================================================= */
 
-// Allow frontend requests from any origin
-app.use(cors());
+const allowedOrigins = [
+  "https://online-tuition-1wvb.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:5173",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 /* =========================================================
    BODY PARSERS
