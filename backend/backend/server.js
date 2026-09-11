@@ -13,15 +13,24 @@ const app = express();
    DATABASE CONNECTION
 ========================================================= */
 
-connectDB();
+connectDB()
+  .then(() => {
+    console.log("✅ MongoDB connection initialized");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err.message);
+  });
 
 /* =========================================================
-   UPLOAD FOLDERS - LOCAL DEVELOPMENT
+   UPLOAD FOLDERS - LOCAL DEVELOPMENT ONLY
 ========================================================= */
 
 if (process.env.NODE_ENV !== "production") {
   const uploadsPath = path.join(__dirname, "uploads");
-  const assignmentsPath = path.join(uploadsPath, "assignments");
+  const assignmentsPath = path.join(
+    uploadsPath,
+    "assignments"
+  );
 
   if (!fs.existsSync(uploadsPath)) {
     fs.mkdirSync(uploadsPath, { recursive: true });
@@ -30,60 +39,26 @@ if (process.env.NODE_ENV !== "production") {
   if (!fs.existsSync(assignmentsPath)) {
     fs.mkdirSync(assignmentsPath, { recursive: true });
   }
+
+  console.log("📁 Local upload folders ready");
 }
 
 /* =========================================================
    CORS
 ========================================================= */
 
-/* =========================================================
-   CORS
-========================================================= */
-
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:5173",
-
-  "https://online-tuition-1wvb.vercel.app",
-  "https://online-tuition-1wvb-57jit0uff-ceitcs-s-projects.vercel.app",
-];
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests without an origin
-      // Example: Postman / server-to-server requests
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      console.log("❌ CORS blocked origin:", origin);
-      return callback(new Error("Not allowed by CORS"));
-    },
-
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-    ],
-
-    credentials: true,
-  })
-);
-
-
+// Allow frontend requests from any origin
+app.use(cors());
 
 /* =========================================================
    BODY PARSERS
 ========================================================= */
 
-app.use(express.json({ limit: "10mb" }));
+app.use(
+  express.json({
+    limit: "10mb",
+  })
+);
 
 app.use(
   express.urlencoded({
@@ -98,17 +73,21 @@ app.use(
 
 app.use(
   "/uploads",
-  express.static(path.join(__dirname, "uploads"))
+  express.static(
+    path.join(__dirname, "uploads")
+  )
 );
 
 /* =========================================================
-   BASE ROUTE
+   BASE ROUTE / HEALTH CHECK
 ========================================================= */
 
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "API is running",
+    message: "Online Tuition API is running",
+    environment:
+      process.env.NODE_ENV || "development",
   });
 });
 
@@ -116,41 +95,49 @@ app.get("/", (req, res) => {
    ROUTE LOADER
 ========================================================= */
 
-// Some route files may export:
-// module.exports = router
-//
-// Others may export:
-// module.exports = { router }
-//
-// Or:
-// module.exports = { default: router }
-//
-// This function supports all three formats.
-
 function loadRoute(routePath) {
-  const route = require(routePath);
+  try {
+    const route = require(routePath);
 
-  // Normal Express Router
-  if (typeof route === "function") {
-    return route;
+    // Normal Express Router
+    if (typeof route === "function") {
+      return route;
+    }
+
+    // { router: router }
+    if (
+      route &&
+      typeof route.router === "function"
+    ) {
+      return route.router;
+    }
+
+    // { default: router }
+    if (
+      route &&
+      typeof route.default === "function"
+    ) {
+      return route.default;
+    }
+
+    console.error(
+      `❌ Invalid Express router export: ${routePath}`
+    );
+
+    console.error("Received:", route);
+
+    throw new TypeError(
+      `Route ${routePath} does not export an Express router`
+    );
+  } catch (error) {
+    console.error(
+      `❌ Failed to load route: ${routePath}`
+    );
+
+    console.error(error);
+
+    throw error;
   }
-
-  // { router: router }
-  if (route && typeof route.router === "function") {
-    return route.router;
-  }
-
-  // { default: router }
-  if (route && typeof route.default === "function") {
-    return route.default;
-  }
-
-  console.error(`❌ Invalid Express router export: ${routePath}`);
-  console.error("Received:", route);
-
-  throw new TypeError(
-    `Route ${routePath} does not export an Express router`
-  );
 }
 
 /* =========================================================
@@ -254,7 +241,8 @@ app.use(
 app.use("/api", (req, res) => {
   res.status(404).json({
     success: false,
-    message: `API route not found: ${req.method} ${req.originalUrl}`,
+    message:
+      `API route not found: ${req.method} ${req.originalUrl}`,
   });
 });
 
@@ -274,7 +262,11 @@ app.use((req, res) => {
 ========================================================= */
 
 app.use((err, req, res, next) => {
-  console.error("Server Error:", err);
+  console.error("====================================");
+  console.error("❌ SERVER ERROR");
+  console.error("====================================");
+  console.error(err);
+  console.error("====================================");
 
   // Multer upload errors
   if (err.name === "MulterError") {
@@ -286,19 +278,22 @@ app.use((err, req, res, next) => {
 
   // MongoDB duplicate key error
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue || {})[0];
+    const field = Object.keys(
+      err.keyValue || {}
+    )[0];
 
     return res.status(400).json({
       success: false,
-      message: `${field || "Field"} already exists`,
+      message:
+        `${field || "Field"} already exists`,
     });
   }
 
   // Mongoose validation error
   if (err.name === "ValidationError") {
-    const errors = Object.values(err.errors).map(
-      (error) => error.message
-    );
+    const errors = Object.values(
+      err.errors
+    ).map((error) => error.message);
 
     return res.status(400).json({
       success: false,
@@ -306,27 +301,54 @@ app.use((err, req, res, next) => {
     });
   }
 
+  // CORS error
+  if (
+    err.message &&
+    err.message.includes("CORS")
+  ) {
+    return res.status(403).json({
+      success: false,
+      message: "CORS error",
+    });
+  }
+
   // General server error
-  res.status(err.status || 500).json({
+  return res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Internal server error",
+    message:
+      err.message ||
+      "Internal server error",
   });
 });
 
 /* =========================================================
-   EXPORT FOR VERCEL
+   EXPORT EXPRESS APP
 ========================================================= */
 
 module.exports = app;
 
 /* =========================================================
-   START SERVER - LOCAL DEVELOPMENT ONLY
+   LOCAL DEVELOPMENT SERVER
 ========================================================= */
 
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 5000;
+// Vercel runs the exported Express app as a
+// Serverless Function, so app.listen() is NOT used
+// in production.
+
+if (
+  process.env.NODE_ENV !== "production" &&
+  !process.env.VERCEL
+) {
+  const PORT =
+    process.env.PORT || 5000;
 
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(
+      `🚀 Server running on port ${PORT}`
+    );
+
+    console.log(
+      `🌐 http://localhost:${PORT}`
+    );
   });
 }
