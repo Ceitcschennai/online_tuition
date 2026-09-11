@@ -6,7 +6,6 @@ const fs = require("fs");
 const path = require("path");
 
 const connectDB = require("./config/db");
-const validateRoute = require("./routes/validate");
 
 const app = express();
 
@@ -37,7 +36,15 @@ if (process.env.NODE_ENV !== "production") {
    CORS
 ========================================================= */
 
+/* =========================================================
+   CORS
+========================================================= */
+
 const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:5173",
+
   "https://online-tuition-1wvb.vercel.app",
   "https://online-tuition-1wvb-57jit0uff-ceitcs-s-projects.vercel.app",
 ];
@@ -46,12 +53,17 @@ app.use(
   cors({
     origin: function (origin, callback) {
       // Allow requests without an origin
-      // Example: Postman, server-to-server requests
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+      // Example: Postman / server-to-server requests
+      if (!origin) {
+        return callback(null, true);
       }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.log("❌ CORS blocked origin:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
 
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -64,6 +76,8 @@ app.use(
     credentials: true,
   })
 );
+
+
 
 /* =========================================================
    BODY PARSERS
@@ -99,68 +113,143 @@ app.get("/", (req, res) => {
 });
 
 /* =========================================================
+   ROUTE LOADER
+========================================================= */
+
+// Some route files may export:
+// module.exports = router
+//
+// Others may export:
+// module.exports = { router }
+//
+// Or:
+// module.exports = { default: router }
+//
+// This function supports all three formats.
+
+function loadRoute(routePath) {
+  const route = require(routePath);
+
+  // Normal Express Router
+  if (typeof route === "function") {
+    return route;
+  }
+
+  // { router: router }
+  if (route && typeof route.router === "function") {
+    return route.router;
+  }
+
+  // { default: router }
+  if (route && typeof route.default === "function") {
+    return route.default;
+  }
+
+  console.error(`❌ Invalid Express router export: ${routePath}`);
+  console.error("Received:", route);
+
+  throw new TypeError(
+    `Route ${routePath} does not export an Express router`
+  );
+}
+
+/* =========================================================
    API ROUTES
 ========================================================= */
 
 // Authentication
-app.use("/api/auth", require("./routes/authRoutes"));
-
-// Admin
-app.use("/api/admin", require("./routes/adminRoutes"));
-
-// Student
-app.use("/api/student", require("./routes/studentRoutes"));
-
-// Teacher
-app.use("/api/teacher", require("./routes/teacherRoutes"));
-
 app.use(
-  "/api/payments",
-  require("./routes/paymentRoutes")
+  "/api/auth",
+  loadRoute("./routes/authRoutes")
 );
 
+// Admin
+app.use(
+  "/api/admin",
+  loadRoute("./routes/adminRoutes")
+);
+
+// Student
+app.use(
+  "/api/student",
+  loadRoute("./routes/studentRoutes")
+);
+
+// Teacher
+app.use(
+  "/api/teacher",
+  loadRoute("./routes/teacherRoutes")
+);
+
+// Payments
+app.use(
+  "/api/payments",
+  loadRoute("./routes/paymentRoutes")
+);
+
+// Teacher Payments
 app.use(
   "/api/teacher-payments",
-  require("./routes/teacherPaymentRoutes")
+  loadRoute("./routes/teacherPaymentRoutes")
 );
 
 // Subjects
-app.use("/api/subjects", require("./routes/subjectRoutes"));
+app.use(
+  "/api/subjects",
+  loadRoute("./routes/subjectRoutes")
+);
 
 // Queries
-app.use("/api/queries", require("./routes/queryRoutes"));
+app.use(
+  "/api/queries",
+  loadRoute("./routes/queryRoutes")
+);
 
 // Assignments
-app.use("/api/assignments", require("./routes/assignmentRoutes"));
+app.use(
+  "/api/assignments",
+  loadRoute("./routes/assignmentRoutes")
+);
 
 // Live Classes
-app.use("/api/live-classes", require("./routes/liveClassRoutes"));
+app.use(
+  "/api/live-classes",
+  loadRoute("./routes/liveClassRoutes")
+);
 
 // Class Requests
 app.use(
   "/api/class-requests",
-  require("./routes/classRequests")
+  loadRoute("./routes/classRequests")
 );
 
 // Attendance
-app.use("/api", require("./routes/attendanceRoutes"));
+app.use(
+  "/api",
+  loadRoute("./routes/attendanceRoutes")
+);
 
 // Prompt
-app.use("/api/prompt", require("./routes/promptRoutes"));
+app.use(
+  "/api/prompt",
+  loadRoute("./routes/promptRoutes")
+);
 
 // Validation
-app.use("/api/validate", validateRoute);
+app.use(
+  "/api/validate",
+  loadRoute("./routes/validate")
+);
 
 // Customer / Crew
-app.use("/api/crew", require("./routes/customerRoutes"));
+app.use(
+  "/api/crew",
+  loadRoute("./routes/customerRoutes")
+);
 
 /* =========================================================
    API NOT FOUND HANDLER
 ========================================================= */
-
-// IMPORTANT:
-// If the frontend calls a wrong API URL,
-// this returns JSON instead of an HTML page.
 
 app.use("/api", (req, res) => {
   res.status(404).json({
