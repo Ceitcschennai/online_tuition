@@ -861,7 +861,7 @@ const Login = () => {
 
                 </label>
 
-                <button
+                {/* <button
                   type="button"
                   className="forgot-link"
                   onClick={() =>
@@ -871,7 +871,7 @@ const Login = () => {
                   }
                 >
                   Forgot Password?
-                </button>
+                </button> */}
 
               </div>
 
