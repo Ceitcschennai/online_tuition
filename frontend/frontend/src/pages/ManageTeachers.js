@@ -428,26 +428,28 @@ const saveSubject = async () => {
   // =====================================================
 
   const getTeacherSubject = (teacher) => {
-    if (
-      !teacher.subjects ||
-      !Array.isArray(teacher.subjects) ||
-      teacher.subjects.length === 0
-    ) {
-      return "No subject assigned";
-    }
-
+  // First show the subject assigned by Admin
+  if (
+    Array.isArray(teacher.subjects) &&
+    teacher.subjects.length > 0
+  ) {
     const subject = teacher.subjects[0];
 
     if (typeof subject === "object") {
       return subject.name || "No subject assigned";
     }
 
-    /*
-     * If backend only returned ObjectId,
-     * don't display the ID to the admin.
-     */
     return "Subject assigned";
-  };
+  }
+
+  // If Admin has not assigned a subject,
+  // show the subject selected during registration
+  if (teacher.preferredSubject) {
+    return teacher.preferredSubject;
+  }
+
+  return "No subject assigned";
+};
 
   // =====================================================
   // UI
@@ -557,13 +559,7 @@ const saveSubject = async () => {
                   : "Pending"}
               </p>
 
-              <p>
-                <strong>Assigned:</strong>{" "}
-
-                {teacher.classAssigned
-                  ? "Yes"
-                  : "No"}
-              </p>
+              
 
               {/* CLASSES */}
 

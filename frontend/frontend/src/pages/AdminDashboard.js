@@ -933,9 +933,9 @@ const AdminDashboard = () => {
                   <div style={{ marginTop: "10px" }}>
                     <strong>Student Proof:</strong><br />
                     {selectedStudent.proof.endsWith(".pdf") ? (
-                      <iframe src={`${API_BASE_URL}/uploads/${selectedStudent.proof}`} title="Student proof document" width="100%" height="400px" style={{ marginTop: "8px", borderRadius: "10px" }} />
+                      <iframe src={selectedStudent.proof} title="Student proof document" width="100%" height="400px" style={{ marginTop: "8px", borderRadius: "10px" }} />
                     ) : (
-                      <img src={`${API_BASE_URL}/uploads/${selectedStudent.proof}`} alt="Student Proof" style={{ width: "100%", maxHeight: "300px", objectFit: "cover", borderRadius: "10px", marginTop: "10px" }} />
+                      <img src={selectedStudent.proof} alt="Student Proof" style={{ width: "100%", maxHeight: "300px", objectFit: "cover", borderRadius: "10px", marginTop: "10px" }} />
                     )}
                   </div>
                 ) : (
