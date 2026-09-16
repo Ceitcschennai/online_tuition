@@ -454,6 +454,52 @@ const ManagePayments = () => {
   };
 
   // =====================================================
+// GENERATE ALL TEACHER PAYMENTS
+// =====================================================
+
+const generateTeacherPayments = async () => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/admin/teacher-payments/generate-all`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      alert(
+        data.message ||
+          "Failed to generate teacher payments"
+      );
+      return;
+    }
+
+    await fetchTeacherPayments();
+
+    alert(
+      `Teacher payments generated successfully!\n\n` +
+      `Created: ${data.createdCount}\n` +
+      `Skipped: ${data.skippedCount}`
+    );
+
+  } catch (error) {
+    console.error(
+      "Generate teacher payments error:",
+      error
+    );
+
+    alert(
+      "Failed to generate teacher payments"
+    );
+  }
+};
+
+  // =====================================================
   // DOWNLOAD STUDENT RECEIPT
   // =====================================================
 
@@ -1015,21 +1061,25 @@ ${payment._id || "-"}
           <div className="table-card">
 
             <div className="table-card-header">
+  <div>
+    <h3>
+      Teacher Payments
+    </h3>
 
-              <div>
+    <p>
+      Monthly teacher salary
+      payments
+    </p>
+  </div>
 
-                <h3>
-                  Teacher Payments
-                </h3>
-
-                <p>
-                  Monthly teacher salary
-                  payments
-                </p>
-
-              </div>
-
-            </div>
+  <button
+    type="button"
+    className="generate-btn"
+    onClick={generateTeacherPayments}
+  >
+    Generate Teacher Payments
+  </button>
+</div>
 
             <div className="table-wrapper">
 
@@ -1289,11 +1339,18 @@ ${payment._id || "-"}
                   {feeStructures
                     .slice()
                     .sort((a, b) => {
-                      return (
-                        Number(a.className) -
-                        Number(b.className)
-                      );
-                    })
+  const classA = parseInt(
+    String(a.className).replace(/^Class\s*/i, ""),
+    10
+  );
+
+  const classB = parseInt(
+    String(b.className).replace(/^Class\s*/i, ""),
+    10
+  );
+
+  return classA - classB;
+})
                     .map((fee) => {
 
                       const isEditing =

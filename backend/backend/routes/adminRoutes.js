@@ -1004,6 +1004,48 @@ router.get("/payments/fees", async (req, res) => {
   }
 });
 
+// =====================================================
+// ADMIN — ADD CLASS 5 FEE STRUCTURE
+// =====================================================
+
+router.post("/payments/fees/add-class-5", async (req, res) => {
+  try {
+    const existingFee = await FeeStructure.findOne({
+      academicYear: "2026-2027",
+      className: "Class 5"
+    });
+
+    if (existingFee) {
+      return res.status(400).json({
+        success: false,
+        message: "Class 5 fee structure already exists"
+      });
+    }
+
+    const feeStructure = await FeeStructure.create({
+      academicYear: "2026-2027",
+      className: "Class 5",
+      monthlyFee: 2000,
+      isActive: true
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Class 5 fee structure added successfully",
+      feeStructure
+    });
+
+  } catch (error) {
+    console.error("Add Class 5 fee error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add Class 5 fee structure",
+      error: error.message
+    });
+  }
+});
+
 /* =====================================================
    ADMIN — UPDATE FEE STRUCTURE
 ===================================================== */
@@ -1265,20 +1307,8 @@ router.post("/payments/students/generate", async (req, res) => {
    ADMIN — CREATE CURRENT MONTH TEACHER PAYMENT
 ===================================================== */
 
-router.post("/teacher-payments/:teacherId/generate", async (req, res) => {
+router.post("/teacher-payments/generate-all", async (req, res) => {
   try {
-    const { teacherId } = req.params;
-
-    const teacher = await Teacher.findById(teacherId);
-
-    if (!teacher) {
-      return res.status(404).json({
-        success: false,
-        message: "Teacher not found"
-      });
-    }
-
-    // Get current payment month
     const now = new Date();
 
     const paymentMonth =
@@ -1286,83 +1316,96 @@ router.post("/teacher-payments/:teacherId/generate", async (req, res) => {
 
     const ratePerStudent = 1500;
 
-    // Get classes assigned to this teacher
-    const teacherClasses = Array.isArray(teacher.classesAssigned)
-      ? teacher.classesAssigned
-      : [];
+    const teachers = await Teacher.find({
+      isApproved: true
+    });
 
-    if (teacherClasses.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No classes assigned to this teacher"
-      });
-    }
+    const createdPayments = [];
+    const skippedPayments = [];
 
-    // Get active + approved students in those classes
-    const students = await Student.find({
-      class: { $in: teacherClasses },
-      approvalStatus: "Approved",
-      isActive: true
-    }).select("class");
+    for (const teacher of teachers) {
 
-    // Class-wise student count
-    const classCounts = {};
+      const teacherClasses = Array.isArray(teacher.classesAssigned)
+        ? teacher.classesAssigned
+        : [];
 
-    students.forEach((student) => {
-      const className = student.class;
-
-      if (!classCounts[className]) {
-        classCounts[className] = 0;
+      if (teacherClasses.length === 0) {
+        skippedPayments.push({
+          teacherId: teacher._id,
+          reason: "No classes assigned"
+        });
+        continue;
       }
 
-      classCounts[className]++;
-    });
-
-    // Create class-wise salary snapshot
-    const classBreakdown = Object.entries(classCounts)
-      .map(([className, studentCount]) => ({
-        className,
-        studentCount,
-        classSalary: studentCount * ratePerStudent
-      }))
-      .sort((a, b) =>
-        a.className.localeCompare(b.className, undefined, {
-          numeric: true
-        })
-      );
-
-    const studentCount = students.length;
-    const calculatedAmount = studentCount * ratePerStudent;
-
-    // Prevent duplicate monthly record
-    const existingPayment = await TeacherPayment.findOne({
-      teacher: teacherId,
-      paymentMonth
-    });
-
-    if (existingPayment) {
-      return res.status(409).json({
-        success: false,
-        message: "Teacher payment already generated for this month",
-        payment: existingPayment
+      const existingPayment = await TeacherPayment.findOne({
+        teacher: teacher._id,
+        paymentMonth
       });
-    }
 
-    // Save monthly snapshot
-    const payment = await TeacherPayment.create({
-      teacher: teacherId,
-      paymentMonth,
-      studentCount,
-      classBreakdown,
-      ratePerStudent,
-      calculatedAmount,
-      status: "Pending"
-    });
+      if (existingPayment) {
+        skippedPayments.push({
+          teacherId: teacher._id,
+          reason: "Payment already generated"
+        });
+        continue;
+      }
+
+      const students = await Student.find({
+        class: { $in: teacherClasses },
+        approvalStatus: "Approved",
+        isActive: true
+      }).select("class");
+
+      const classCounts = {};
+
+      students.forEach((student) => {
+        const className = student.class;
+
+        if (!classCounts[className]) {
+          classCounts[className] = 0;
+        }
+
+        classCounts[className]++;
+      });
+
+      const classBreakdown = Object.entries(classCounts)
+        .map(([className, studentCount]) => ({
+          className,
+          studentCount,
+          classSalary: studentCount * ratePerStudent
+        }))
+        .sort((a, b) =>
+          a.className.localeCompare(
+            b.className,
+            undefined,
+            { numeric: true }
+          )
+        );
+
+      const studentCount = students.length;
+      const calculatedAmount = studentCount * ratePerStudent;
+
+      const payment = await TeacherPayment.create({
+        teacher: teacher._id,
+        paymentMonth,
+        studentCount,
+        classBreakdown,
+        ratePerStudent,
+        calculatedAmount,
+        status: "Pending"
+      });
+
+      createdPayments.push(payment);
+    }
 
     return res.status(201).json({
       success: true,
-      message: "Teacher payment generated successfully",
-      payment
+      message: "Teacher payments generated successfully",
+      paymentMonth,
+      createdCount: createdPayments.length,
+      skippedCount: skippedPayments.length,
+      payments: createdPayments,
+      skipped: skippedPayments
     });
 
   } catch (error) {
@@ -1370,7 +1413,117 @@ router.post("/teacher-payments/:teacherId/generate", async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to generate teacher payment",
+      message: "Failed to generate teacher payments",
+      error: error.message
+    });
+  }
+});router.post("/teacher-payments/generate-all", async (req, res) => {
+  try {
+    const now = new Date();
+
+    const paymentMonth =
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    const ratePerStudent = 1500;
+
+    const teachers = await Teacher.find({
+      isApproved: true
+    });
+
+    const createdPayments = [];
+    const skippedPayments = [];
+
+    for (const teacher of teachers) {
+
+      const teacherClasses = Array.isArray(teacher.classesAssigned)
+        ? teacher.classesAssigned
+        : [];
+
+      if (teacherClasses.length === 0) {
+        skippedPayments.push({
+          teacherId: teacher._id,
+          reason: "No classes assigned"
+        });
+        continue;
+      }
+
+      const existingPayment = await TeacherPayment.findOne({
+        teacher: teacher._id,
+        paymentMonth
+      });
+
+      if (existingPayment) {
+        skippedPayments.push({
+          teacherId: teacher._id,
+          reason: "Payment already generated"
+        });
+        continue;
+      }
+
+      const students = await Student.find({
+        class: { $in: teacherClasses },
+        approvalStatus: "Approved",
+        isActive: true
+      }).select("class");
+
+      const classCounts = {};
+
+      students.forEach((student) => {
+        const className = student.class;
+
+        if (!classCounts[className]) {
+          classCounts[className] = 0;
+        }
+
+        classCounts[className]++;
+      });
+
+      const classBreakdown = Object.entries(classCounts)
+        .map(([className, studentCount]) => ({
+          className,
+          studentCount,
+          classSalary: studentCount * ratePerStudent
+        }))
+        .sort((a, b) =>
+          a.className.localeCompare(
+            b.className,
+            undefined,
+            { numeric: true }
+          )
+        );
+
+      const studentCount = students.length;
+      const calculatedAmount = studentCount * ratePerStudent;
+
+      const payment = await TeacherPayment.create({
+        teacher: teacher._id,
+        paymentMonth,
+        studentCount,
+        classBreakdown,
+        ratePerStudent,
+        calculatedAmount,
+        status: "Pending"
+      });
+
+      createdPayments.push(payment);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Teacher payments generated successfully",
+      paymentMonth,
+      createdCount: createdPayments.length,
+      skippedCount: skippedPayments.length,
+      payments: createdPayments,
+      skipped: skippedPayments
+    });
+
+  } catch (error) {
+    console.error("Teacher payment generation error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate teacher payments",
       error: error.message
     });
   }
