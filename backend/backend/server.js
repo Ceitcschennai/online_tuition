@@ -48,7 +48,7 @@ if (process.env.NODE_ENV !== "production") {
 ========================================================= */
 
 const allowedOrigins = [
-  "http://localhost:3000",
+  "https://online-tuition-1wvb.vercel.app",
   
 ];
 
