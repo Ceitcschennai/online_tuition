@@ -13,6 +13,7 @@ import {
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
 
 import Subjects from "./pages/Subjects";
 import SubjectDetails from "./pages/SubjectDetails";
@@ -282,6 +283,11 @@ const AppContent = () => {
         path="/login"
         element={<Login />}
       />
+
+      <Route
+  path="/forgot-password"
+  element={<ForgotPassword />}
+/>
 
       {/* =================================================
           REGISTRATION

@@ -242,37 +242,53 @@ if (historyResponse.ok && historyData.success) {
             </thead>
 
             <tbody>
-              {paymentHistory.map((payment, index) => (
-                <tr key={index}>
+  {paymentHistory.map((payment, index) => (
+    <tr key={payment._id || index}>
 
-                  <td>
-                    <strong>{payment.month}</strong>
-                  </td>
+      <td>
+        <strong>
+          {payment.paymentMonth || "-"}
+        </strong>
+      </td>
 
-                  <td>{payment.students}</td>
+      <td>
+        {payment.studentCount ?? 0}
+      </td>
 
-                  <td>
-                    ₹{payment.rate.toLocaleString("en-IN")}
-                  </td>
+      <td>
+        ₹{(payment.ratePerStudent ?? 1500).toLocaleString("en-IN")}
+      </td>
 
-                  <td>
-                    <strong>
-                      ₹{payment.amount.toLocaleString("en-IN")}
-                    </strong>
-                  </td>
+      <td>
+        <strong>
+          ₹{(payment.calculatedAmount ?? 0).toLocaleString("en-IN")}
+        </strong>
+      </td>
 
-                  <td>
-                    <span className="payment-status paid">
-                      <FaCheckCircle />
-                      {payment.status}
-                    </span>
-                  </td>
+      <td>
+        <span
+          className={`payment-status ${
+            payment.status?.toLowerCase() || "pending"
+          }`}
+        >
+          {payment.status === "Paid" ? (
+            <FaCheckCircle />
+          ) : (
+            <FaClock />
+          )}
+          {payment.status || "Pending"}
+        </span>
+      </td>
 
-                  <td>{payment.paymentDate}</td>
+      <td>
+        {payment.paymentDate
+          ? new Date(payment.paymentDate).toLocaleDateString("en-IN")
+          : "-"}
+      </td>
 
-                </tr>
-              ))}
-            </tbody>
+    </tr>
+  ))}
+</tbody>
 
           </table>
         </div>

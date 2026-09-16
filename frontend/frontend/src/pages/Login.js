@@ -97,27 +97,14 @@ const Login = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [role, setRole] = useState("admin");
-
-  const [showPassword, setShowPassword] =
-    useState(false);
-
-  const [rememberMe, setRememberMe] =
-    useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
-
   const [loading, setLoading] = useState(false);
-
-  const [showMobilePopup, setShowMobilePopup] =
-    useState(false);
-
-  const [mobileMenuOpen, setMobileMenuOpen] =
-    useState(false);
-
-  const [registerMenuOpen, setRegisterMenuOpen] =
-    useState(false);
+  const [showMobilePopup, setShowMobilePopup] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [registerMenuOpen, setRegisterMenuOpen] = useState(false);
 
   // ==========================================================
   // CLOSE MENUS
@@ -138,21 +125,18 @@ const Login = () => {
     setError("");
 
     // Participant cannot login from mobile
-
     if (role === "student" && isMobileDevice()) {
       setShowMobilePopup(true);
       return;
     }
 
     // Email validation
-
     if (!email.trim()) {
       setError("Please enter your email address.");
       return;
     }
 
     // Password validation
-
     if (!password.trim()) {
       setError("Please enter your password.");
       return;
@@ -206,9 +190,7 @@ const Login = () => {
           email
         );
       } else {
-        localStorage.removeItem(
-          "rememberEmail"
-        );
+        localStorage.removeItem("rememberEmail");
       }
 
       // ======================================================
@@ -216,20 +198,14 @@ const Login = () => {
       // ======================================================
 
       if (role === "admin") {
-        window.location.href =
-          "/admin-dashboard";
+        window.location.href = "/admin-dashboard";
       } else if (role === "teacher") {
-        window.location.href =
-          "/teacher-dashboard";
+        window.location.href = "/teacher-dashboard";
       } else {
-        window.location.href =
-          "/student-dashboard";
+        window.location.href = "/student-dashboard";
       }
     } catch (err) {
-      console.error(
-        "Login error:",
-        err
-      );
+      console.error("Login error:", err);
 
       setError(
         err.response?.data?.message ||
@@ -245,14 +221,10 @@ const Login = () => {
   // ==========================================================
 
   React.useEffect(() => {
-    document.body.classList.add(
-      "login-active"
-    );
+    document.body.classList.add("login-active");
 
     return () => {
-      document.body.classList.remove(
-        "login-active"
-      );
+      document.body.classList.remove("login-active");
     };
   }, []);
 
@@ -262,9 +234,7 @@ const Login = () => {
 
   React.useEffect(() => {
     const savedEmail =
-      localStorage.getItem(
-        "rememberEmail"
-      );
+      localStorage.getItem("rememberEmail");
 
     if (savedEmail) {
       setEmail(savedEmail);
@@ -294,9 +264,7 @@ const Login = () => {
 
       {showMobilePopup && (
         <MobilePopup
-          onClose={() =>
-            setShowMobilePopup(false)
-          }
+          onClose={() => setShowMobilePopup(false)}
         />
       )}
 
@@ -368,9 +336,7 @@ const Login = () => {
 
               <FaChevronDown
                 className={`login-register-arrow ${
-                  registerMenuOpen
-                    ? "rotate"
-                    : ""
+                  registerMenuOpen ? "rotate" : ""
                 }`}
               />
             </button>
@@ -471,9 +437,7 @@ const Login = () => {
 
               <FaChevronDown
                 className={`login-register-arrow ${
-                  registerMenuOpen
-                    ? "rotate"
-                    : ""
+                  registerMenuOpen ? "rotate" : ""
                 }`}
               />
             </button>
@@ -675,72 +639,63 @@ const Login = () => {
 
               </div>
 
-              {/* PASSWORD */}
+             {/* PASSWORD */}
 
-              <div className="input-group">
+<div className="input-group">
 
-                <div className="password-label-row">
+  <div className="password-label-row">
 
-                  <label>PASSWORD</label>
+    <label>PASSWORD</label>
 
-                  <button
-                    type="button"
-                    className="forgot-password"
-                    onClick={() =>
-                      alert(
-                        "Please contact the administrator to reset your password."
-                      )
-                    }
-                  >
-                    Forgot Password?
-                  </button>
+    <button
+      type="button"
+      className="forgot-password"
+      onClick={() => {
+  window.location.href = "/forgot-password";
+}}
+    >
+      Forgot Password?
+    </button>
 
-                </div>
+  </div>
 
-                <div className="input-wrapper">
+  <div className="input-wrapper">
 
-                  <FaLock className="input-icon" />
+    <FaLock className="input-icon" />
 
-                  <input
-                    type={
-                      showPassword
-                        ? "text"
-                        : "password"
-                    }
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) =>
-                      setPassword(e.target.value)
-                    }
-                    autoComplete="current-password"
-                    required
-                  />
+    <input
+      type={showPassword ? "text" : "password"}
+      placeholder="Enter your password"
+      value={password}
+      onChange={(e) =>
+        setPassword(e.target.value)
+      }
+      autoComplete="current-password"
+      required
+    />
 
-                  <button
-                    type="button"
-                    className="password-toggle"
-                    onClick={() =>
-                      setShowPassword(
-                        !showPassword
-                      )
-                    }
-                    aria-label={
-                      showPassword
-                        ? "Hide password"
-                        : "Show password"
-                    }
-                  >
-                    {showPassword ? (
-                      <FaEyeSlash />
-                    ) : (
-                      <FaEye />
-                    )}
-                  </button>
+    <button
+      type="button"
+      className="password-toggle"
+      onClick={() =>
+        setShowPassword(!showPassword)
+      }
+      aria-label={
+        showPassword
+          ? "Hide password"
+          : "Show password"
+      }
+    >
+      {showPassword ? (
+        <FaEyeSlash />
+      ) : (
+        <FaEye />
+      )}
+    </button>
 
-                </div>
+  </div>
 
-              </div>
-
+</div>
               {/* LOGIN AS */}
 
               <div className="role-section">
@@ -861,18 +816,6 @@ const Login = () => {
 
                 </label>
 
-                {/* <button
-                  type="button"
-                  className="forgot-link"
-                  onClick={() =>
-                    alert(
-                      "Please contact the administrator to reset your password."
-                    )
-                  }
-                >
-                  Forgot Password?
-                </button> */}
-
               </div>
 
               {/* SIGN IN */}
@@ -882,7 +825,6 @@ const Login = () => {
                 className="sign-in-button"
                 disabled={loading}
               >
-
                 {loading ? (
                   <>
                     <span className="button-spinner"></span>
@@ -894,7 +836,6 @@ const Login = () => {
                     <FaArrowRight />
                   </>
                 )}
-
               </button>
 
               {/* DIVIDER */}

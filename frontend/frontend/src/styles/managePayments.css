@@ -281,13 +281,13 @@
 }
 
 .filter-select {
-  width: 150px;
-
-  min-width: 150px;
+  width: 170px !important;
+  min-width: 170px !important;
+  max-width: 170px !important;
 
   height: 40px;
 
-  padding: 0 30px 0 14px;
+  padding: 0 35px 0 14px;
 
   border: 1px solid #d8e0eb;
 
@@ -295,7 +295,7 @@
 
   border-radius: 7px;
 
-  font-size: 13px;
+  font-size: 14px;
 
   color: #26344d;
 
@@ -304,6 +304,10 @@
   cursor: pointer;
 
   appearance: auto;
+
+  white-space: nowrap;
+
+  overflow: visible;
 }
 
 .search-input:focus,
@@ -1307,4 +1311,57 @@
     font-size: 13px;
   }
 
+}
+
+.status-filter {
+  width: 150px;
+  min-width: 150px;
+  height: 40px;
+  padding: 0 32px 0 14px;
+  box-sizing: border-box;
+  font-size: 14px;
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+}
+
+.status-filter:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* =====================================================
+   FIX STATUS DROPDOWN
+===================================================== */
+
+.payment-controls .search-filter .filter-select {
+  flex: 0 0 180px !important;
+  width: 180px !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
+
+  height: 40px !important;
+
+  padding: 0 36px 0 14px !important;
+
+  box-sizing: border-box !important;
+
+  border: 1px solid #d8e0eb !important;
+  border-radius: 7px !important;
+
+  background-color: #ffffff !important;
+
+  color: #26344d !important;
+
+  font-size: 14px !important;
+  font-weight: 500 !important;
+
+  white-space: nowrap !important;
+
+  overflow: visible !important;
+
+  cursor: pointer !important;
 }

@@ -1,6 +1,4 @@
 const express = require("express");
-const crypto = require("crypto");
-const Razorpay = require("razorpay");
 
 const Student = require("../models/Student");
 const FeeStructure = require("../models/FeeStructure");
@@ -8,14 +6,6 @@ const StudentPayment = require("../models/StudentPayment");
 
 const router = express.Router();
 
-/* =========================================================
-   RAZORPAY
-========================================================= */
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
 
 /* =========================================================
    HELPERS
@@ -35,6 +25,7 @@ const normalizeClass = (value) => {
     .replace(/th$|st$|nd$|rd$/i, "")
     .trim();
 };
+
 
 /*
   Academic year:
@@ -57,6 +48,7 @@ const getAcademicYear = () => {
   return `${year - 1}-${year}`;
 };
 
+
 /*
   Payment month:
 
@@ -71,15 +63,20 @@ const getPaymentMonth = () => {
   ).padStart(2, "0")}`;
 };
 
+
 /* =========================================================
    GET CURRENT STUDENT FEE
+
    GET /api/payments/student/:studentId/current
+
+   Used by Student Payments page.
 ========================================================= */
 
 router.get(
   "/student/:studentId/current",
   async (req, res) => {
     try {
+
       /* -----------------------------------------------------
          FIND STUDENT
       ----------------------------------------------------- */
@@ -91,9 +88,10 @@ router.get(
       if (!student) {
         return res.status(404).json({
           success: false,
-          message: "Student not found"
+          message: "Student not found",
         });
       }
+
 
       /* -----------------------------------------------------
          NORMALIZE CLASS
@@ -106,81 +104,89 @@ router.get(
       if (!className) {
         return res.status(400).json({
           success: false,
-          message: "Student class is not configured"
+          message: "Student class is not configured",
         });
       }
+
 
       /* -----------------------------------------------------
          CURRENT ACADEMIC YEAR
       ----------------------------------------------------- */
 
-      const academicYear = getAcademicYear();
+      const academicYear =
+        getAcademicYear();
+
 
       /* -----------------------------------------------------
          CURRENT PAYMENT MONTH
       ----------------------------------------------------- */
 
-      const paymentMonth = getPaymentMonth();
+      const paymentMonth =
+        getPaymentMonth();
+
 
       /* -----------------------------------------------------
          GET CURRENT FEE STRUCTURE
 
-         Always use the latest active fee configured
-         by Admin.
+         Always use the latest active fee
+         configured by Admin.
       ----------------------------------------------------- */
 
-      const fee = await FeeStructure.findOne({
-        academicYear,
-        className,
-        isActive: true
-      });
+      const fee =
+        await FeeStructure.findOne({
+          academicYear,
+          className,
+          isActive: true,
+        });
+
 
       if (!fee) {
         return res.status(404).json({
           success: false,
           message:
-            `Fee structure not configured for Class ${className}`
+            `Fee structure not configured for Class ${className}`,
         });
       }
+
 
       /* -----------------------------------------------------
          FIND CURRENT MONTH PAYMENT
       ----------------------------------------------------- */
 
-      let payment = await StudentPayment.findOne({
-        student: student._id,
-        academicYear,
-        paymentMonth
-      });
+      let payment =
+        await StudentPayment.findOne({
+          student: student._id,
+          academicYear,
+          paymentMonth,
+        });
+
 
       /* -----------------------------------------------------
          CREATE PAYMENT IF IT DOES NOT EXIST
       ----------------------------------------------------- */
 
       if (!payment) {
-        payment = await StudentPayment.create({
-          student: student._id,
-          className,
-          academicYear,
-          paymentMonth,
-          monthlyFee: fee.monthlyFee,
-          amountPaid: 0,
-          status: "Pending"
-        });
+
+        payment =
+          await StudentPayment.create({
+            student: student._id,
+            className,
+            academicYear,
+            paymentMonth,
+            monthlyFee: fee.monthlyFee,
+            amountPaid: 0,
+            status: "Pending",
+          });
+
       }
+
 
       /* -----------------------------------------------------
          SYNC CURRENT UNPAID PAYMENT WITH FEE STRUCTURE
 
-         Example:
+         If Admin changes the current fee, the unpaid
+         payment should use the latest fee.
 
-         Admin changes Class 9:
-         ₹3,000 -> ₹2,000
-
-         If the student's current payment is still unpaid,
-         update the payment to ₹2,000.
-
-         IMPORTANT:
          Paid historical payments are NEVER changed.
       ----------------------------------------------------- */
 
@@ -191,11 +197,17 @@ router.get(
           payment.className !== className
         )
       ) {
-        payment.monthlyFee = fee.monthlyFee;
-        payment.className = className;
+
+        payment.monthlyFee =
+          fee.monthlyFee;
+
+        payment.className =
+          className;
 
         await payment.save();
+
       }
+
 
       /* -----------------------------------------------------
          RETURN CURRENT PAYMENT
@@ -206,21 +218,26 @@ router.get(
 
         student: {
           id: student._id,
+
           name:
-            `${student.firstName || ""} ${student.lastName || ""}`.trim(),
-          className
+            `${student.firstName || ""} ${
+              student.lastName || ""
+            }`.trim(),
+
+          className,
         },
 
         fee: {
           monthlyFee: fee.monthlyFee,
           academicYear,
-          paymentMonth
+          paymentMonth,
         },
 
-        payment
+        payment,
       });
 
     } catch (error) {
+
       console.error(
         "Current student fee error:",
         error
@@ -228,399 +245,71 @@ router.get(
 
       return res.status(500).json({
         success: false,
-        message: "Failed to load student fee"
+        message:
+          "Failed to load student fee",
       });
     }
   }
 );
 
-/* =========================================================
-   CREATE RAZORPAY ORDER
-   POST /api/payments/student/:studentId/create-order
-========================================================= */
-
-router.post(
-  "/student/:studentId/create-order",
-  async (req, res) => {
-    try {
-      /* -----------------------------------------------------
-         FIND STUDENT
-      ----------------------------------------------------- */
-
-      const student = await Student.findById(
-        req.params.studentId
-      );
-
-      if (!student) {
-        return res.status(404).json({
-          success: false,
-          message: "Student not found"
-        });
-      }
-
-      /* -----------------------------------------------------
-         ONLY APPROVED STUDENTS CAN PAY
-      ----------------------------------------------------- */
-
-      if (
-        student.approvalStatus !== "Approved"
-      ) {
-        return res.status(403).json({
-          success: false,
-          message:
-            "Student account is not approved"
-        });
-      }
-
-      /* -----------------------------------------------------
-         CLASS
-      ----------------------------------------------------- */
-
-      const className = normalizeClass(
-        student.class
-      );
-
-      if (!className) {
-        return res.status(400).json({
-          success: false,
-          message: "Student class is not configured"
-        });
-      }
-
-      /* -----------------------------------------------------
-         CURRENT ACADEMIC YEAR
-      ----------------------------------------------------- */
-
-      const academicYear = getAcademicYear();
-
-      /* -----------------------------------------------------
-         CURRENT PAYMENT MONTH
-      ----------------------------------------------------- */
-
-      const paymentMonth = getPaymentMonth();
-
-      /* -----------------------------------------------------
-         GET LATEST FEE STRUCTURE
-      ----------------------------------------------------- */
-
-      const fee = await FeeStructure.findOne({
-        academicYear,
-        className,
-        isActive: true
-      });
-
-      if (!fee) {
-        return res.status(404).json({
-          success: false,
-          message:
-            `Fee structure not configured for Class ${className}`
-        });
-      }
-
-      /* -----------------------------------------------------
-         FIND CURRENT PAYMENT
-      ----------------------------------------------------- */
-
-      let payment = await StudentPayment.findOne({
-        student: student._id,
-        academicYear,
-        paymentMonth
-      });
-
-      /* -----------------------------------------------------
-         DO NOT ALLOW PAYMENT IF ALREADY PAID
-      ----------------------------------------------------- */
-
-      if (
-        payment &&
-        payment.status === "Paid"
-      ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "This month's fee is already paid"
-        });
-      }
-
-      /* -----------------------------------------------------
-         CREATE PAYMENT IF NECESSARY
-      ----------------------------------------------------- */
-
-      if (!payment) {
-        payment = await StudentPayment.create({
-          student: student._id,
-          className,
-          academicYear,
-          paymentMonth,
-          monthlyFee: fee.monthlyFee,
-          amountPaid: 0,
-          status: "Pending"
-        });
-      }
-
-      /* -----------------------------------------------------
-         SYNC PAYMENT WITH LATEST FEE
-
-         This protects against Admin changing the fee
-         after the payment record was created.
-      ----------------------------------------------------- */
-
-      if (
-        payment.status !== "Paid" &&
-        (
-          payment.monthlyFee !== fee.monthlyFee ||
-          payment.className !== className
-        )
-      ) {
-        payment.monthlyFee = fee.monthlyFee;
-        payment.className = className;
-
-        await payment.save();
-      }
-
-      /* -----------------------------------------------------
-         CREATE RAZORPAY ORDER
-
-         Always use the latest FeeStructure amount.
-      ----------------------------------------------------- */
-
-      const order = await razorpay.orders.create({
-        amount: fee.monthlyFee * 100,
-        currency: "INR",
-
-        receipt:
-          `student_${student._id}_${paymentMonth}`,
-
-        notes: {
-          studentId: String(student._id),
-          paymentMonth,
-          academicYear,
-          className
-        }
-      });
-
-      /* -----------------------------------------------------
-         SAVE RAZORPAY ORDER ID
-      ----------------------------------------------------- */
-
-      payment.razorpayOrderId =
-        order.id;
-
-      payment.status = "Created";
-
-      await payment.save();
-
-      /* -----------------------------------------------------
-         RETURN ORDER
-      ----------------------------------------------------- */
-
-      return res.json({
-        success: true,
-
-        // Public Razorpay key only
-        key:
-          process.env.RAZORPAY_KEY_ID,
-
-        order: {
-          id: order.id,
-          amount: order.amount,
-          currency: order.currency
-        },
-
-        student: {
-          name:
-            `${student.firstName || ""} ${student.lastName || ""}`.trim(),
-          email: student.email,
-          mobile: student.mobile
-        }
-      });
-
-    } catch (error) {
-      console.error(
-        "Razorpay order error:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Failed to create payment order"
-      });
-    }
-  }
-);
-
-/* =========================================================
-   VERIFY RAZORPAY PAYMENT
-   POST /api/payments/student/:studentId/verify
-========================================================= */
-
-router.post(
-  "/student/:studentId/verify",
-  async (req, res) => {
-    try {
-      const {
-        razorpay_order_id,
-        razorpay_payment_id,
-        razorpay_signature
-      } = req.body;
-
-      /* -----------------------------------------------------
-         VALIDATE RAZORPAY RESPONSE
-      ----------------------------------------------------- */
-
-      if (
-        !razorpay_order_id ||
-        !razorpay_payment_id ||
-        !razorpay_signature
-      ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Incomplete payment response"
-        });
-      }
-
-      /* -----------------------------------------------------
-         FIND PAYMENT
-      ----------------------------------------------------- */
-
-      const payment =
-        await StudentPayment.findOne({
-          student:
-            req.params.studentId,
-
-          razorpayOrderId:
-            razorpay_order_id
-        });
-
-      if (!payment) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "Payment record not found"
-        });
-      }
-
-      /* -----------------------------------------------------
-         GENERATE SIGNATURE
-      ----------------------------------------------------- */
-
-      const generatedSignature =
-        crypto
-          .createHmac(
-            "sha256",
-            process.env.RAZORPAY_KEY_SECRET
-          )
-          .update(
-            `${razorpay_order_id}|${razorpay_payment_id}`
-          )
-          .digest("hex");
-
-      /* -----------------------------------------------------
-         VERIFY SIGNATURE
-      ----------------------------------------------------- */
-
-      if (
-        generatedSignature !==
-        razorpay_signature
-      ) {
-        payment.status = "Failed";
-
-        await payment.save();
-
-        return res.status(400).json({
-          success: false,
-          message:
-            "Payment signature verification failed"
-        });
-      }
-
-      /* -----------------------------------------------------
-         PAYMENT SUCCESSFUL
-      ----------------------------------------------------- */
-
-      payment.razorpayPaymentId =
-        razorpay_payment_id;
-
-      payment.razorpaySignature =
-        razorpay_signature;
-
-      payment.amountPaid =
-        payment.monthlyFee;
-
-      payment.status = "Paid";
-
-      payment.paidAt =
-        new Date();
-
-      await payment.save();
-
-      /* -----------------------------------------------------
-         RETURN SUCCESS
-      ----------------------------------------------------- */
-
-      return res.json({
-        success: true,
-
-        message:
-          "Payment verified successfully",
-
-        payment
-      });
-
-    } catch (error) {
-      console.error(
-        "Payment verification error:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Failed to verify payment"
-      });
-    }
-  }
-);
 
 /* =========================================================
    SUBMIT QR PAYMENT
+
    POST /api/payments/student/:studentId/submit
+
+   Student:
+   1. Scans institute QR
+   2. Makes payment
+   3. Enters UTR / transaction reference
+   4. Uploads payment screenshot
+   5. Submits payment
+
+   Admin later verifies the payment.
 ========================================================= */
 
 router.post(
   "/student/:studentId/submit",
   async (req, res) => {
+
     try {
+
       const {
         transactionReference,
-        paymentScreenshot
+        paymentScreenshot,
       } = req.body;
+
 
       /* -----------------------------------------------------
          VALIDATE TRANSACTION REFERENCE
       ----------------------------------------------------- */
 
-      if (!transactionReference) {
+      if (
+        !transactionReference ||
+        !transactionReference.trim()
+      ) {
+
         return res.status(400).json({
           success: false,
           message:
-            "Transaction reference is required"
+            "Transaction reference is required",
         });
       }
+
 
       /* -----------------------------------------------------
          VALIDATE SCREENSHOT
       ----------------------------------------------------- */
 
       if (!paymentScreenshot) {
+
         return res.status(400).json({
           success: false,
           message:
-            "Payment screenshot is required"
+            "Payment screenshot is required",
         });
       }
+
 
       /* -----------------------------------------------------
          CURRENT MONTH
@@ -632,42 +321,83 @@ router.post(
       const academicYear =
         getAcademicYear();
 
+
       /* -----------------------------------------------------
          FIND STUDENT
       ----------------------------------------------------- */
 
-      const student = await Student.findById(
-        req.params.studentId
-      );
+      const student =
+        await Student.findById(
+          req.params.studentId
+        );
+
 
       if (!student) {
+
         return res.status(404).json({
           success: false,
-          message: "Student not found"
+          message: "Student not found",
         });
       }
+
+
+      /* -----------------------------------------------------
+         ONLY APPROVED STUDENTS CAN SUBMIT
+      ----------------------------------------------------- */
+
+      if (
+        student.approvalStatus !== "Approved"
+      ) {
+
+        return res.status(403).json({
+          success: false,
+          message:
+            "Student account is not approved",
+        });
+      }
+
+
+      /* -----------------------------------------------------
+         NORMALIZE CLASS
+      ----------------------------------------------------- */
+
+      const className =
+        normalizeClass(
+          student.class
+        );
+
+
+      if (!className) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Student class is not configured",
+        });
+      }
+
 
       /* -----------------------------------------------------
          FIND CURRENT FEE
       ----------------------------------------------------- */
 
-      const className = normalizeClass(
-        student.class
-      );
+      const fee =
+        await FeeStructure.findOne({
+          academicYear,
+          className,
+          isActive: true,
+        });
 
-      const fee = await FeeStructure.findOne({
-        academicYear,
-        className,
-        isActive: true
-      });
 
       if (!fee) {
+
         return res.status(404).json({
           success: false,
           message:
-            `Fee structure not configured for Class ${className}`
+            `Fee structure not configured for Class ${className}`,
         });
       }
+
 
       /* -----------------------------------------------------
          FIND CURRENT PAYMENT
@@ -675,67 +405,134 @@ router.post(
 
       let payment =
         await StudentPayment.findOne({
-          student: req.params.studentId,
-          academicYear,
-          paymentMonth
-        });
-
-      if (!payment) {
-        payment = await StudentPayment.create({
           student: student._id,
-          className,
           academicYear,
           paymentMonth,
-          monthlyFee: fee.monthlyFee,
-          amountPaid: 0,
-          status: "Pending"
         });
+
+
+      /* -----------------------------------------------------
+         CREATE PAYMENT IF NECESSARY
+      ----------------------------------------------------- */
+
+      if (!payment) {
+
+        payment =
+          await StudentPayment.create({
+            student: student._id,
+            className,
+            academicYear,
+            paymentMonth,
+            monthlyFee: fee.monthlyFee,
+            amountPaid: 0,
+            status: "Pending",
+          });
+
       }
+
 
       /* -----------------------------------------------------
          DO NOT ALLOW DUPLICATE PAYMENT
       ----------------------------------------------------- */
 
-      if (payment.status === "Paid") {
+      if (
+        payment.status === "Paid"
+      ) {
+
         return res.status(400).json({
           success: false,
           message:
-            "This month's fee is already paid"
+            "This month's fee is already paid",
         });
       }
+
+
+      /* -----------------------------------------------------
+         DO NOT CREATE MULTIPLE SUBMISSIONS
+
+         If already Submitted, tell student that
+         admin verification is pending.
+      ----------------------------------------------------- */
+
+      if (
+        payment.status === "Submitted"
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Payment has already been submitted and is awaiting admin verification",
+        });
+      }
+
 
       /* -----------------------------------------------------
          SYNC CURRENT FEE
 
-         If Admin changed the fee before the student
-         submits the QR payment, use the latest amount.
+         If Admin changed the fee before submission,
+         use the latest fee.
       ----------------------------------------------------- */
 
-      if (
-        payment.monthlyFee !== fee.monthlyFee ||
-        payment.className !== className
-      ) {
-        payment.monthlyFee = fee.monthlyFee;
-        payment.className = className;
-      }
+      payment.monthlyFee =
+        fee.monthlyFee;
+
+      payment.className =
+        className;
+
 
       /* -----------------------------------------------------
-         SAVE QR PAYMENT DETAILS
+         SAVE TRANSACTION REFERENCE
       ----------------------------------------------------- */
 
       payment.transactionReference =
         transactionReference.trim();
 
+
+      /* -----------------------------------------------------
+         SAVE PAYMENT SCREENSHOT
+      ----------------------------------------------------- */
+
       payment.paymentScreenshot =
         paymentScreenshot;
+
+
+      /* -----------------------------------------------------
+         SUBMISSION DATE
+      ----------------------------------------------------- */
 
       payment.submittedAt =
         new Date();
 
+
+      /* -----------------------------------------------------
+         PAYMENT STATUS
+
+         Important:
+         Student submission is NOT automatically Paid.
+
+         Admin must verify it first.
+      ----------------------------------------------------- */
+
       payment.status =
         "Submitted";
 
+
+      /* -----------------------------------------------------
+         AMOUNT PAID
+
+         Keep amountPaid as 0 until Admin verifies
+         the payment.
+      ----------------------------------------------------- */
+
+      payment.amountPaid = 0;
+
+
+      /* -----------------------------------------------------
+         SAVE
+      ----------------------------------------------------- */
+
       await payment.save();
+
 
       /* -----------------------------------------------------
          RETURN SUCCESS
@@ -747,10 +544,11 @@ router.post(
         message:
           "Payment submitted successfully. Admin will verify your payment.",
 
-        payment
+        payment,
       });
 
     } catch (error) {
+
       console.error(
         "QR payment submission error:",
         error
@@ -759,36 +557,41 @@ router.post(
       return res.status(500).json({
         success: false,
         message:
-          "Failed to submit payment"
+          "Failed to submit payment",
       });
     }
   }
 );
 
+
 /* =========================================================
    STUDENT PAYMENT HISTORY
+
    GET /api/payments/student/:studentId/history
 ========================================================= */
 
 router.get(
   "/student/:studentId/history",
   async (req, res) => {
+
     try {
+
       const payments =
         await StudentPayment.find({
           student:
-            req.params.studentId
-        })
-          .sort({
-            paymentMonth: -1
-          });
+            req.params.studentId,
+        }).sort({
+          paymentMonth: -1,
+        });
+
 
       return res.json({
         success: true,
-        payments
+        payments,
       });
 
     } catch (error) {
+
       console.error(
         "Payment history error:",
         error
@@ -797,11 +600,12 @@ router.get(
       return res.status(500).json({
         success: false,
         message:
-          "Failed to load payment history"
+          "Failed to load payment history",
       });
     }
   }
 );
+
 
 /* =========================================================
    EXPORT ROUTER

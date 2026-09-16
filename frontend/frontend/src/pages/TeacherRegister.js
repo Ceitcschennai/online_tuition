@@ -17,6 +17,10 @@ import {
 import "../styles/teacherRegister.css";
 
 
+/* =========================================================
+   TEACHABLE CLASSES
+========================================================= */
+
 const TEACHABLE_CLASSES = [
   "Class 5",
   "Class 6",
@@ -28,6 +32,10 @@ const TEACHABLE_CLASSES = [
   "Class 12",
 ];
 
+
+/* =========================================================
+   TIMEZONE OPTIONS
+========================================================= */
 
 const TIMEZONE_OPTIONS = [
   {
@@ -53,6 +61,10 @@ const TIMEZONE_OPTIONS = [
 ];
 
 
+/* =========================================================
+   QUALIFICATION OPTIONS
+========================================================= */
+
 const QUALIFICATION_OPTIONS = [
   "B.Ed",
   "M.Ed",
@@ -63,7 +75,15 @@ const QUALIFICATION_OPTIONS = [
 ];
 
 
+/* =========================================================
+   TEACHER REGISTER COMPONENT
+========================================================= */
+
 const TeacherRegister = () => {
+
+  /* =======================================================
+     FORM STATE
+  ======================================================= */
 
   const [form, setForm] = useState({
     salutation: "Mr.",
@@ -80,14 +100,33 @@ const TeacherRegister = () => {
   });
 
 
+  /* =======================================================
+     FILE STATE
+  ======================================================= */
+
   const [degreeFile, setDegreeFile] =
     useState(null);
+
+
+  /* =======================================================
+     CLASS DROPDOWN
+  ======================================================= */
 
   const [classesOpen, setClassesOpen] =
     useState(false);
 
+
+  /* =======================================================
+     PASSWORD RULES
+  ======================================================= */
+
   const [showPasswordRules, setShowPasswordRules] =
     useState(false);
+
+
+  /* =======================================================
+     PASSWORD VISIBILITY
+  ======================================================= */
 
   const [showPassword, setShowPassword] =
     useState(false);
@@ -95,9 +134,18 @@ const TeacherRegister = () => {
   const [showConfirmPassword, setShowConfirmPassword] =
     useState(false);
 
+
+  /* =======================================================
+     LOADING
+  ======================================================= */
+
   const [loading, setLoading] =
     useState(false);
 
+
+  /* =======================================================
+     POPUP
+  ======================================================= */
 
   const [popup, setPopup] = useState({
     show: false,
@@ -107,9 +155,9 @@ const TeacherRegister = () => {
   });
 
 
-  // =========================================================
-  // POPUP
-  // =========================================================
+  /* =========================================================
+     POPUP
+  ========================================================= */
 
   const showPopup = (type, title, message) => {
     setPopup({
@@ -131,9 +179,9 @@ const TeacherRegister = () => {
   };
 
 
-  // =========================================================
-  // FORM CHANGE
-  // =========================================================
+  /* =========================================================
+     FORM CHANGE
+  ========================================================= */
 
   const handleChange = (event) => {
     const {
@@ -148,9 +196,9 @@ const TeacherRegister = () => {
   };
 
 
-  // =========================================================
-  // CLASS SELECTION
-  // =========================================================
+  /* =========================================================
+     CLASS SELECTION
+  ========================================================= */
 
   const toggleClass = (className) => {
     setForm((previous) => {
@@ -179,11 +227,12 @@ const TeacherRegister = () => {
   };
 
 
-  // =========================================================
-  // FILE CHANGE
-  // =========================================================
+  /* =========================================================
+     FILE CHANGE
+  ========================================================= */
 
   const handleFileChange = (event) => {
+
     if (
       event.target.files &&
       event.target.files[0]
@@ -195,9 +244,9 @@ const TeacherRegister = () => {
   };
 
 
-  // =========================================================
-  // PASSWORD CHECKS
-  // =========================================================
+  /* =========================================================
+     PASSWORD CHECKS
+  ========================================================= */
 
   const passwordChecks = {
     length:
@@ -217,17 +266,22 @@ const TeacherRegister = () => {
   };
 
 
+  /* =========================================================
+     PASSWORD MATCH
+  ========================================================= */
+
   const passwordsMatch =
     form.confirmPassword.length === 0
       ? null
       : form.password === form.confirmPassword;
 
 
-  // =========================================================
-  // RESET FORM
-  // =========================================================
+  /* =========================================================
+     RESET FORM
+  ========================================================= */
 
   const resetForm = () => {
+
     setForm({
       salutation: "Mr.",
       firstName: "",
@@ -263,16 +317,18 @@ const TeacherRegister = () => {
   };
 
 
-  // =========================================================
-  // SUBMIT
-  // =========================================================
+  /* =========================================================
+     SUBMIT
+  ========================================================= */
 
   const handleSubmit = async (event) => {
 
     event.preventDefault();
 
 
-    // REQUIRED FIELDS
+    /* =======================================================
+       REQUIRED FIELDS
+    ======================================================= */
 
     if (
       !form.firstName.trim() ||
@@ -296,7 +352,9 @@ const TeacherRegister = () => {
     }
 
 
-    // MOBILE NUMBER
+    /* =======================================================
+       MOBILE NUMBER
+    ======================================================= */
 
     if (
       form.mobile.trim().length < 7 ||
@@ -313,7 +371,9 @@ const TeacherRegister = () => {
     }
 
 
-    // PASSWORD MATCH
+    /* =======================================================
+       PASSWORD MATCH
+    ======================================================= */
 
     if (
       form.password !==
@@ -330,7 +390,9 @@ const TeacherRegister = () => {
     }
 
 
-    // CLASS REQUIRED
+    /* =======================================================
+       CLASS REQUIRED
+    ======================================================= */
 
     if (
       form.classes.length === 0
@@ -346,7 +408,9 @@ const TeacherRegister = () => {
     }
 
 
-    // PASSWORD VALIDATION
+    /* =======================================================
+       PASSWORD VALIDATION
+    ======================================================= */
 
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
@@ -370,7 +434,9 @@ const TeacherRegister = () => {
     }
 
 
-    // DEGREE CERTIFICATE
+    /* =======================================================
+       DEGREE CERTIFICATE
+    ======================================================= */
 
     if (!degreeFile) {
 
@@ -384,9 +450,9 @@ const TeacherRegister = () => {
     }
 
 
-    // =======================================================
-    // CREATE FORM DATA
-    // =======================================================
+    /* =======================================================
+       CREATE FORM DATA
+    ======================================================= */
 
     const formData =
       new FormData();
@@ -453,9 +519,9 @@ const TeacherRegister = () => {
     );
 
 
-    // =======================================================
-    // API CALL
-    // =======================================================
+    /* =======================================================
+       API CALL
+    ======================================================= */
 
     try {
 
@@ -474,9 +540,12 @@ const TeacherRegister = () => {
       let data = {};
 
       try {
+
         data =
           await response.json();
+
       } catch (jsonError) {
+
         console.error(
           "Unable to read server response:",
           jsonError
@@ -484,7 +553,9 @@ const TeacherRegister = () => {
       }
 
 
-      // SUCCESS
+      /* =====================================================
+         SUCCESS
+      ===================================================== */
 
       if (response.ok) {
 
@@ -506,7 +577,9 @@ const TeacherRegister = () => {
       }
 
 
-      // BACKEND ERROR
+      /* =====================================================
+         BACKEND ERROR
+      ===================================================== */
 
       if (data.errors) {
 
@@ -528,8 +601,8 @@ const TeacherRegister = () => {
           data.message ||
             "Registration failed. Please try again."
         );
-
       }
+
 
     } catch (error) {
 
@@ -553,16 +626,24 @@ const TeacherRegister = () => {
   };
 
 
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
   return (
 
     <div className="teacher-register-page">
 
-      {/* NAVBAR */}
+      {/* =====================================================
+          NAVBAR
+      ===================================================== */}
 
       <Navbar />
 
 
-      {/* POPUP */}
+      {/* =====================================================
+          POPUP
+      ===================================================== */}
 
       {popup.show && (
 
@@ -590,10 +671,12 @@ const TeacherRegister = () => {
             <div
               className={`teacher-popup-icon ${popup.type}`}
             >
+
               {popup.type === "success"
                 ? <FaCheckCircle />
                 : <FaTimesCircle />
               }
+
             </div>
 
 
@@ -612,10 +695,12 @@ const TeacherRegister = () => {
               className={`teacher-popup-button ${popup.type}`}
               onClick={closePopup}
             >
+
               {popup.type === "success"
                 ? "Continue"
                 : "Try Again"
               }
+
             </button>
 
           </div>
@@ -625,14 +710,18 @@ const TeacherRegister = () => {
       )}
 
 
-      {/* MAIN */}
+      {/* =====================================================
+          MAIN
+      ===================================================== */}
 
       <main className="teacher-register-main">
 
         <div className="teacher-register-card">
 
 
-          {/* HEADER */}
+          {/* =================================================
+              HEADER
+          ================================================= */}
 
           <div className="teacher-register-heading">
 
@@ -647,7 +736,9 @@ const TeacherRegister = () => {
           </div>
 
 
-          {/* FORM */}
+          {/* =================================================
+              FORM
+          ================================================= */}
 
           <form
             className="teacher-register-form"
@@ -657,18 +748,27 @@ const TeacherRegister = () => {
           >
 
 
-            {/* TITLE + FIRST + LAST */}
+            {/* ===============================================
+                TITLE + FIRST + LAST
+            =============================================== */}
 
             <div className="teacher-name-row">
 
+
+              {/* TITLE */}
+
               <div className="teacher-form-group">
-                <label>Title</label>
+
+                <label>
+                  Title
+                </label>
 
                 <select
                   name="salutation"
                   value={form.salutation}
                   onChange={handleChange}
                 >
+
                   <option value="Mr.">
                     Mr.
                   </option>
@@ -684,12 +784,19 @@ const TeacherRegister = () => {
                   <option value="Dr.">
                     Dr.
                   </option>
+
                 </select>
+
               </div>
 
 
+              {/* FIRST NAME */}
+
               <div className="teacher-form-group">
-                <label>First Name</label>
+
+                <label>
+                  First Name
+                </label>
 
                 <input
                   type="text"
@@ -698,11 +805,17 @@ const TeacherRegister = () => {
                   onChange={handleChange}
                   placeholder="Enter first name"
                 />
+
               </div>
 
 
+              {/* LAST NAME */}
+
               <div className="teacher-form-group">
-                <label>Last Name</label>
+
+                <label>
+                  Last Name
+                </label>
 
                 <input
                   type="text"
@@ -711,12 +824,15 @@ const TeacherRegister = () => {
                   onChange={handleChange}
                   placeholder="Enter last name"
                 />
+
               </div>
 
             </div>
 
 
-            {/* MOBILE */}
+            {/* ===============================================
+                MOBILE
+            =============================================== */}
 
             <div className="teacher-form-group">
 
@@ -735,9 +851,14 @@ const TeacherRegister = () => {
             </div>
 
 
-            {/* TIMEZONE + QUALIFICATION */}
+            {/* ===============================================
+                TIMEZONE + QUALIFICATION
+            =============================================== */}
 
             <div className="timezone-qualification-row">
+
+
+              {/* TIMEZONE */}
 
               <div className="teacher-form-group">
 
@@ -772,6 +893,8 @@ const TeacherRegister = () => {
 
               </div>
 
+
+              {/* QUALIFICATION */}
 
               <div className="teacher-form-group">
 
@@ -809,7 +932,9 @@ const TeacherRegister = () => {
             </div>
 
 
-            {/* EMAIL */}
+            {/* ===============================================
+                EMAIL
+            =============================================== */}
 
             <div className="teacher-form-group">
 
@@ -828,7 +953,9 @@ const TeacherRegister = () => {
             </div>
 
 
-            {/* PASSWORD */}
+            {/* ===============================================
+                PASSWORD
+            =============================================== */}
 
             <div className="teacher-form-group">
 
@@ -836,9 +963,13 @@ const TeacherRegister = () => {
                 Password
               </label>
 
+
               <div className="teacher-password-wrapper">
 
-                <FaLock className="teacher-password-icon" />
+                <FaLock
+                  className="teacher-password-icon"
+                />
+
 
                 <input
                   type={
@@ -849,73 +980,176 @@ const TeacherRegister = () => {
                   name="password"
                   value={form.password}
                   onChange={handleChange}
-                  onFocus={() =>
-                    setShowPasswordRules(true)
-                  }
                   placeholder="Enter password"
+
+                  /* Show rules when password is focused */
+                  onFocus={() => {
+                    setShowPasswordRules(true);
+                  }}
+
+                  /*
+                    Hide rules when leaving password.
+
+                    The eye button uses onMouseDown
+                    with preventDefault(), so clicking
+                    the eye will NOT trigger this blur.
+                  */
+                  onBlur={() => {
+                    setShowPasswordRules(false);
+                  }}
+
+                  autoComplete="new-password"
                 />
+
+
+                {/* =========================================
+                    PASSWORD EYE BUTTON
+                ========================================= */}
 
                 <button
                   type="button"
                   className="teacher-eye-button"
+
+                  /*
+                    Keep password input focused
+                    when clicking the eye.
+                  */
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                  }}
+
                   onClick={() =>
                     setShowPassword(
-                      !showPassword
+                      (previous) =>
+                        !previous
                     )
                   }
+
+                  aria-label={
+                    showPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
                 >
+
                   {showPassword
                     ? <FaEyeSlash />
                     : <FaEye />
                   }
+
                 </button>
 
               </div>
 
 
+              {/* =========================================
+                  PASSWORD RULES BOX
+              ========================================= */}
+
               {showPasswordRules && (
 
                 <div className="teacher-password-rules">
 
-                  <div className={
-                    passwordChecks.length
-                      ? "valid"
-                      : ""
-                  }>
+
+                  {/* LENGTH */}
+
+                  <div
+                    className={
+                      passwordChecks.length
+                        ? "valid"
+                        : ""
+                    }
+                  >
+
+                    {passwordChecks.length
+                      ? "✓"
+                      : "•"
+                    }{" "}
+
                     At least 8 characters
+
                   </div>
 
-                  <div className={
-                    passwordChecks.upper
-                      ? "valid"
-                      : ""
-                  }>
+
+                  {/* UPPERCASE */}
+
+                  <div
+                    className={
+                      passwordChecks.upper
+                        ? "valid"
+                        : ""
+                    }
+                  >
+
+                    {passwordChecks.upper
+                      ? "✓"
+                      : "•"
+                    }{" "}
+
                     One uppercase letter
+
                   </div>
 
-                  <div className={
-                    passwordChecks.lower
-                      ? "valid"
-                      : ""
-                  }>
+
+                  {/* LOWERCASE */}
+
+                  <div
+                    className={
+                      passwordChecks.lower
+                        ? "valid"
+                        : ""
+                    }
+                  >
+
+                    {passwordChecks.lower
+                      ? "✓"
+                      : "•"
+                    }{" "}
+
                     One lowercase letter
+
                   </div>
 
-                  <div className={
-                    passwordChecks.number
-                      ? "valid"
-                      : ""
-                  }>
+
+                  {/* NUMBER */}
+
+                  <div
+                    className={
+                      passwordChecks.number
+                        ? "valid"
+                        : ""
+                    }
+                  >
+
+                    {passwordChecks.number
+                      ? "✓"
+                      : "•"
+                    }{" "}
+
                     One number
+
                   </div>
 
-                  <div className={
-                    passwordChecks.special
-                      ? "valid"
-                      : ""
-                  }>
+
+                  {/* SPECIAL CHARACTER */}
+
+                  <div
+                    className={
+                      passwordChecks.special
+                        ? "valid"
+                        : ""
+                    }
+                  >
+
+                    {passwordChecks.special
+                      ? "✓"
+                      : "•"
+                    }{" "}
+
                     One special character
+
                   </div>
+
 
                 </div>
 
@@ -924,7 +1158,9 @@ const TeacherRegister = () => {
             </div>
 
 
-            {/* CONFIRM PASSWORD */}
+            {/* ===============================================
+                CONFIRM PASSWORD
+            =============================================== */}
 
             <div className="teacher-form-group">
 
@@ -932,9 +1168,13 @@ const TeacherRegister = () => {
                 Confirm Password
               </label>
 
+
               <div className="teacher-password-wrapper">
 
-                <FaLock className="teacher-password-icon" />
+                <FaLock
+                  className="teacher-password-icon"
+                />
+
 
                 <input
                   type={
@@ -946,25 +1186,45 @@ const TeacherRegister = () => {
                   value={form.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm password"
+                  autoComplete="new-password"
                 />
+
+
+                {/* CONFIRM PASSWORD EYE */}
 
                 <button
                   type="button"
                   className="teacher-eye-button"
+
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                  }}
+
                   onClick={() =>
                     setShowConfirmPassword(
-                      !showConfirmPassword
+                      (previous) =>
+                        !previous
                     )
                   }
+
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
                 >
+
                   {showConfirmPassword
                     ? <FaEyeSlash />
                     : <FaEye />
                   }
+
                 </button>
 
               </div>
 
+
+              {/* PASSWORD MATCH MESSAGE */}
 
               {passwordsMatch !== null && (
 
@@ -975,10 +1235,12 @@ const TeacherRegister = () => {
                       : "teacher-password-match invalid"
                   }
                 >
+
                   {passwordsMatch
-                    ? "Passwords match"
-                    : "Passwords do not match"
+                    ? "✓ Passwords match"
+                    : "✕ Passwords do not match"
                   }
+
                 </small>
 
               )}
@@ -986,7 +1248,9 @@ const TeacherRegister = () => {
             </div>
 
 
-            {/* PREFERRED SUBJECT */}
+            {/* ===============================================
+                PREFERRED SUBJECT
+            =============================================== */}
 
             <div className="teacher-form-group">
 
@@ -1005,7 +1269,9 @@ const TeacherRegister = () => {
             </div>
 
 
-            {/* CLASSES */}
+            {/* ===============================================
+                CLASSES
+            =============================================== */}
 
             <div className="teacher-form-group">
 
@@ -1013,11 +1279,14 @@ const TeacherRegister = () => {
                 Classes You Can Teach
               </label>
 
+
               <div className="teacher-classes-dropdown">
+
 
                 <button
                   type="button"
                   className="teacher-classes-button"
+
                   onClick={() =>
                     setClassesOpen(
                       !classesOpen
@@ -1026,11 +1295,14 @@ const TeacherRegister = () => {
                 >
 
                   <span>
+
                     {form.classes.length === 0
                       ? "Select classes"
                       : form.classes.join(", ")
                     }
+
                   </span>
+
 
                   <FaChevronDown
                     className={
@@ -1069,6 +1341,7 @@ const TeacherRegister = () => {
                             }
                           />
 
+
                           <span>
                             {className}
                           </span>
@@ -1087,13 +1360,16 @@ const TeacherRegister = () => {
             </div>
 
 
-            {/* CERTIFICATE */}
+            {/* ===============================================
+                CERTIFICATE
+            =============================================== */}
 
             <div className="teacher-form-group">
 
               <label>
                 Degree Certificate
               </label>
+
 
               <label
                 className="teacher-file-upload"
@@ -1102,18 +1378,23 @@ const TeacherRegister = () => {
 
                 <FaUpload />
 
+
                 <span className="teacher-file-button">
                   Choose File
                 </span>
 
+
                 <span className="teacher-file-name">
+
                   {degreeFile
                     ? degreeFile.name
                     : "No file selected"
                   }
+
                 </span>
 
               </label>
+
 
               <input
                 id="degreeCertificate"
@@ -1126,7 +1407,9 @@ const TeacherRegister = () => {
             </div>
 
 
-            {/* REGISTER */}
+            {/* ===============================================
+                REGISTER
+            =============================================== */}
 
             <button
               type="submit"
@@ -1141,16 +1424,17 @@ const TeacherRegister = () => {
 
             </button>
 
-{/* =============================================
+
+            {/* ===============================================
                 DIVIDER
-            ============================================= */}
+            =============================================== */}
 
             <div className="register-divider"></div>
 
 
-            {/* =============================================
+            {/* ===============================================
                 LOGIN LINK
-            ============================================= */}
+            =============================================== */}
 
             <p className="already-user">
 
@@ -1162,11 +1446,10 @@ const TeacherRegister = () => {
 
             </p>
 
+
           </form>
 
         </div>
-
-          
 
       </main>
 
@@ -1174,5 +1457,6 @@ const TeacherRegister = () => {
 
   );
 };
+
 
 export default TeacherRegister;

@@ -416,8 +416,28 @@ body.register-active {
 
 /* =========================================================
    PASSWORD TOGGLE
+   Keep only the custom React eye icon
 ========================================================= */
 
+/* Hide browser's built-in password reveal icon */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none !important;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Password input appearance */
+input[type="password"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Custom React eye button */
 .password-toggle {
   position: absolute;
 
@@ -427,8 +447,7 @@ body.register-active {
   width: 32px;
   height: 32px;
 
-  transform:
-    translateY(-50%);
+  transform: translateY(-50%);
 
   display: flex;
   align-items: center;
@@ -437,7 +456,6 @@ body.register-active {
   padding: 0;
 
   border: none;
-
   outline: none;
 
   background: transparent;
@@ -447,8 +465,9 @@ body.register-active {
   font-size: 13px;
 
   cursor: pointer;
-}
 
+  z-index: 5;
+}
 
 .password-toggle:hover {
   color: #6f4ce5;

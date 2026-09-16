@@ -995,28 +995,48 @@ body.login-active #root {
 
 /* ============================================================
    PASSWORD TOGGLE
+   Keep only the custom React eye icon
    ============================================================ */
 
+/* Hide Microsoft Edge's built-in password reveal icon */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none !important;
+}
+
+/* Hide browser credential/autofill button */
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Remove browser password styling */
+input[type="password"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Custom React eye icon */
 .password-toggle {
   position: absolute;
-
   right: 12px;
   top: 50%;
-
-  transform:
-    translateY(-50%);
+  transform: translateY(-50%);
 
   border: none;
-
   background: transparent;
-
   padding: 4px;
 
   color: #91a1c1;
-
   cursor: pointer;
+
+  z-index: 5;
 }
 
+.password-toggle:hover {
+  color: #a95cff;
+}
 
 /* ============================================================
    ROLE SECTION

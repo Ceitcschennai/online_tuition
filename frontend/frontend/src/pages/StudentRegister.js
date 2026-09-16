@@ -20,7 +20,6 @@ import {
 
 import "../styles/register.css";
 
-
 /* =========================================================
    DROPDOWN OPTIONS
 ========================================================= */
@@ -60,7 +59,6 @@ const TIMEZONE_OPTIONS = [
   "GST (GMT +4:00)",
 ];
 
-
 /* =========================================================
    STUDENT REGISTER COMPONENT
 ========================================================= */
@@ -86,25 +84,20 @@ const StudentRegister = () => {
     emisNumber: "",
   });
 
-
   /* =======================================================
      FILE STATE
   ======================================================= */
 
-  const [studentIdFile, setStudentIdFile] =
-    useState(null);
-
+  const [studentIdFile, setStudentIdFile] = useState(null);
 
   /* =======================================================
      PASSWORD VISIBILITY
   ======================================================= */
 
-  const [showPassword, setShowPassword] =
-    useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [showConfirmPassword, setShowConfirmPassword] =
     useState(false);
-
 
   /* =======================================================
      PASSWORD RULES
@@ -113,14 +106,11 @@ const StudentRegister = () => {
   const [showPasswordRules, setShowPasswordRules] =
     useState(false);
 
-
   /* =======================================================
      LOADING
   ======================================================= */
 
-  const [loading, setLoading] =
-    useState(false);
-
+  const [loading, setLoading] = useState(false);
 
   /* =======================================================
      POPUP
@@ -133,156 +123,102 @@ const StudentRegister = () => {
     message: "",
   });
 
-
   /* =======================================================
      BODY CLASS
   ======================================================= */
 
   useEffect(() => {
-
-    document.body.classList.add(
-      "register-active"
-    );
+    document.body.classList.add("register-active");
 
     return () => {
-
-      document.body.classList.remove(
-        "register-active"
-      );
-
+      document.body.classList.remove("register-active");
     };
-
   }, []);
-
 
   /* =======================================================
      SHOW POPUP
   ======================================================= */
 
-  const showPopup = (
-    type,
-    title,
-    message
-  ) => {
-
+  const showPopup = (type, title, message) => {
     setPopup({
       show: true,
       type,
       title,
       message,
     });
-
   };
-
 
   /* =======================================================
      CLOSE POPUP
   ======================================================= */
 
   const closePopup = () => {
-
     setPopup({
       show: false,
       type: "",
       title: "",
       message: "",
     });
-
   };
-
 
   /* =======================================================
      HANDLE INPUT CHANGE
   ======================================================= */
 
   const handleChange = (event) => {
-
     const {
       name,
       value,
     } = event.target;
 
-
     setFormData((previous) => {
-
       const updatedData = {
         ...previous,
         [name]: value,
       };
 
-
-      /*
-         If user selects Others,
-         show another input.
-
-         If user changes to another class,
-         clear the custom class.
-      */
-
       if (
         name === "studentClass" &&
         value !== "Others"
       ) {
-
         updatedData.otherClass = "";
-
       }
 
-
       return updatedData;
-
     });
-
   };
-
 
   /* =======================================================
      HANDLE FILE CHANGE
   ======================================================= */
 
   const handleFileChange = (event) => {
-
     const selectedFile =
       event.target.files?.[0] || null;
 
-    setStudentIdFile(
-      selectedFile
-    );
-
+    setStudentIdFile(selectedFile);
   };
-
 
   /* =======================================================
      PASSWORD VALIDATION
   ======================================================= */
 
   const passwordChecks = {
-
     length:
       formData.password.length >= 8,
 
     uppercase:
-      /[A-Z]/.test(
-        formData.password
-      ),
+      /[A-Z]/.test(formData.password),
 
     lowercase:
-      /[a-z]/.test(
-        formData.password
-      ),
+      /[a-z]/.test(formData.password),
 
     number:
-      /\d/.test(
-        formData.password
-      ),
+      /\d/.test(formData.password),
 
     special:
-      /[@$!%*?&]/.test(
-        formData.password
-      ),
-
+      /[@$!%*?&]/.test(formData.password),
   };
-
 
   /* =======================================================
      VALIDATE FORM
@@ -290,124 +226,68 @@ const StudentRegister = () => {
 
   const validateForm = () => {
 
-    if (
-      !formData.firstName.trim()
-    ) {
-
+    if (!formData.firstName.trim()) {
       return "Please enter your first name.";
-
     }
 
-
-    if (
-      !formData.lastName.trim()
-    ) {
-
+    if (!formData.lastName.trim()) {
       return "Please enter your last name.";
-
     }
 
-
-    if (
-      !formData.mobile.trim()
-    ) {
-
+    if (!formData.mobile.trim()) {
       return "Please enter your mobile number.";
-
     }
 
-
-    if (
-      !/^\d{10}$/.test(
-        formData.mobile.trim()
-      )
-    ) {
-
+    if (!/^\d{10}$/.test(formData.mobile.trim())) {
       return "Please enter a valid 10-digit mobile number.";
-
     }
 
-
-    if (
-      !formData.syllabus
-    ) {
-
+    if (!formData.syllabus) {
       return "Please select a syllabus.";
-
     }
 
-
-    if (
-      !formData.studentClass
-    ) {
-
+    if (!formData.studentClass) {
       return "Please select a class.";
-
     }
-
 
     if (
       formData.studentClass === "Others" &&
       !formData.otherClass.trim()
     ) {
-
       return "Please enter your class.";
-
     }
 
-
-    if (
-      !formData.timezone
-    ) {
-
+    if (!formData.timezone) {
       return "Please select a timezone.";
-
     }
 
-
-    if (
-      !formData.email.trim()
-    ) {
-
+    if (!formData.email.trim()) {
       return "Please enter your email address.";
-
     }
-
 
     const emailPattern =
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 
     if (
       !emailPattern.test(
         formData.email.trim()
       )
     ) {
-
       return "Please enter a valid email address.";
-
     }
 
-
-    if (
-      !formData.password
-    ) {
-
+    if (!formData.password) {
       return "Please enter a password.";
-
     }
-
 
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
-
 
     if (
       !passwordRegex.test(
         formData.password
       )
     ) {
-
       setShowPasswordRules(true);
 
       return (
@@ -415,49 +295,33 @@ const StudentRegister = () => {
         "one uppercase letter, one lowercase letter, " +
         "one number and one special character."
       );
-
     }
-
 
     if (
       formData.password !==
       formData.confirmPassword
     ) {
-
       return "Passwords do not match.";
-
     }
 
-
-    if (
-      !studentIdFile
-    ) {
-
+    if (!studentIdFile) {
       return "Please upload your student ID.";
-
     }
-
 
     return "";
-
   };
-
 
   /* =======================================================
      HANDLE SUBMIT
   ======================================================= */
 
   const handleSubmit = async (event) => {
-
     event.preventDefault();
-
 
     const validationError =
       validateForm();
 
-
     if (validationError) {
-
       showPopup(
         "error",
         "Registration Error",
@@ -465,18 +329,13 @@ const StudentRegister = () => {
       );
 
       return;
-
     }
 
-
     try {
-
       setLoading(true);
-
 
       const submitData =
         new FormData();
-
 
       /* ===================================================
          BASIC DETAILS
@@ -487,40 +346,30 @@ const StudentRegister = () => {
         formData.title
       );
 
-
-      /*
-         Backend compatibility
-      */
-
       submitData.append(
         "salutation",
         formData.title
       );
-
 
       submitData.append(
         "firstName",
         formData.firstName.trim()
       );
 
-
       submitData.append(
         "lastName",
         formData.lastName.trim()
       );
-
 
       submitData.append(
         "mobile",
         formData.mobile.trim()
       );
 
-
       submitData.append(
         "syllabus",
         formData.syllabus
       );
-
 
       /* ===================================================
          CLASS
@@ -531,23 +380,15 @@ const StudentRegister = () => {
           ? formData.otherClass.trim()
           : formData.studentClass;
 
-
       submitData.append(
         "studentClass",
         finalClass
       );
 
-
-      /*
-         Some existing backend versions
-         may expect "class".
-      */
-
       submitData.append(
         "class",
         finalClass
       );
-
 
       /* ===================================================
          TIMEZONE
@@ -557,7 +398,6 @@ const StudentRegister = () => {
         "timezone",
         formData.timezone
       );
-
 
       /* ===================================================
          EMAIL
@@ -570,7 +410,6 @@ const StudentRegister = () => {
           .toLowerCase()
       );
 
-
       /* ===================================================
          PASSWORD
       =================================================== */
@@ -580,12 +419,10 @@ const StudentRegister = () => {
         formData.password
       );
 
-
       submitData.append(
         "confirmPassword",
         formData.confirmPassword
       );
-
 
       /* ===================================================
          EMIS
@@ -596,7 +433,6 @@ const StudentRegister = () => {
         formData.emisNumber.trim()
       );
 
-
       /* ===================================================
          STUDENT ID FILE
       =================================================== */
@@ -605,7 +441,6 @@ const StudentRegister = () => {
         "proof",
         studentIdFile
       );
-
 
       /* ===================================================
          API CALL
@@ -623,7 +458,6 @@ const StudentRegister = () => {
           }
         );
 
-
       /* ===================================================
          SUCCESS
       =================================================== */
@@ -634,7 +468,6 @@ const StudentRegister = () => {
         response.data?.message ||
           "Participant registration completed successfully. Please wait for admin approval."
       );
-
 
       /* ===================================================
          RESET FORM
@@ -655,27 +488,20 @@ const StudentRegister = () => {
         emisNumber: "",
       });
 
-
       setStudentIdFile(null);
 
-
-      setShowPasswordRules(
-        false
-      );
-
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+      setShowPasswordRules(false);
 
       const fileInput =
         document.getElementById(
           "studentIdFile"
         );
 
-
       if (fileInput) {
-
         fileInput.value = "";
-
       }
-
 
     } catch (error) {
 
@@ -684,58 +510,42 @@ const StudentRegister = () => {
         error
       );
 
-
       let errorMessage =
         "Registration failed. Please try again.";
-
 
       if (
         error.response?.data?.message
       ) {
-
         errorMessage =
           error.response.data.message;
 
-      }
-
-      else if (
+      } else if (
         error.response?.data?.error
       ) {
-
         errorMessage =
           error.response.data.error;
 
-      }
-
-      else if (
+      } else if (
         error.response?.data?.errors
       ) {
 
         const errors =
           error.response.data.errors;
 
-
         if (
           typeof errors === "object"
         ) {
-
           errorMessage =
             Object.values(errors)
               .join(", ");
-
         }
 
-      }
-
-      else if (
+      } else if (
         error.message
       ) {
-
         errorMessage =
           error.message;
-
       }
-
 
       showPopup(
         "error",
@@ -743,38 +553,23 @@ const StudentRegister = () => {
         errorMessage
       );
 
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-
 
   /* =======================================================
      RENDER
   ======================================================= */
 
   return (
-
     <div className="register-page">
-
 
       {/* ===================================================
           COMMON NAVBAR
-
-          IMPORTANT:
-          App.js does not render the global Navbar on
-          registration pages.
-
-          Therefore StudentRegister MUST render Navbar here,
-          just like TeacherRegister.
       =================================================== */}
 
       <Navbar />
-
 
       {/* ===================================================
           MAIN CONTENT
@@ -783,7 +578,6 @@ const StudentRegister = () => {
       <main className="register-main">
 
         <div className="register-card">
-
 
           {/* ===============================================
               HEADER
@@ -795,18 +589,15 @@ const StudentRegister = () => {
               <FaUserPlus />
             </div>
 
-
             <h1>
               Participant Registration
             </h1>
-
 
             <p>
               Create your participant account to start learning.
             </p>
 
           </div>
-
 
           {/* ===============================================
               FORM
@@ -817,13 +608,11 @@ const StudentRegister = () => {
             onSubmit={handleSubmit}
           >
 
-
             {/* =============================================
                 TITLE + FIRST NAME + LAST NAME
             ============================================= */}
 
             <div className="form-row three-columns">
-
 
               {/* TITLE */}
 
@@ -833,30 +622,24 @@ const StudentRegister = () => {
                   Title
                 </label>
 
-
                 <select
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
                 >
-
                   {TITLE_OPTIONS.map(
                     (title) => (
-
                       <option
                         key={title}
                         value={title}
                       >
                         {title}
                       </option>
-
                     )
                   )}
-
                 </select>
 
               </div>
-
 
               {/* FIRST NAME */}
 
@@ -865,7 +648,6 @@ const StudentRegister = () => {
                 <label>
                   First Name
                 </label>
-
 
                 <input
                   type="text"
@@ -877,7 +659,6 @@ const StudentRegister = () => {
 
               </div>
 
-
               {/* LAST NAME */}
 
               <div className="input-group">
@@ -885,7 +666,6 @@ const StudentRegister = () => {
                 <label>
                   Last Name
                 </label>
-
 
                 <input
                   type="text"
@@ -899,7 +679,6 @@ const StudentRegister = () => {
 
             </div>
 
-
             {/* =============================================
                 MOBILE NUMBER
             ============================================= */}
@@ -910,13 +689,11 @@ const StudentRegister = () => {
                 Mobile Number
               </label>
 
-
               <div className="input-wrapper">
 
                 <FaPhoneAlt
                   className="input-icon"
                 />
-
 
                 <input
                   type="tel"
@@ -931,13 +708,11 @@ const StudentRegister = () => {
 
             </div>
 
-
             {/* =============================================
                 SYLLABUS + CLASS
             ============================================= */}
 
             <div className="form-row">
-
 
               {/* SYLLABUS */}
 
@@ -946,7 +721,6 @@ const StudentRegister = () => {
                 <label>
                   Syllabus
                 </label>
-
 
                 <select
                   name="syllabus"
@@ -958,24 +732,20 @@ const StudentRegister = () => {
                     Select syllabus
                   </option>
 
-
                   {SYLLABUS_OPTIONS.map(
                     (syllabus) => (
-
                       <option
                         key={syllabus}
                         value={syllabus}
                       >
                         {syllabus}
                       </option>
-
                     )
                   )}
 
                 </select>
 
               </div>
-
 
               {/* CLASS */}
 
@@ -984,7 +754,6 @@ const StudentRegister = () => {
                 <label>
                   Class
                 </label>
-
 
                 <select
                   name="studentClass"
@@ -996,17 +765,14 @@ const StudentRegister = () => {
                     Select class
                   </option>
 
-
                   {CLASS_OPTIONS.map(
                     (className) => (
-
                       <option
                         key={className}
                         value={className}
                       >
                         {className}
                       </option>
-
                     )
                   )}
 
@@ -1015,7 +781,6 @@ const StudentRegister = () => {
               </div>
 
             </div>
-
 
             {/* =============================================
                 OTHER CLASS
@@ -1029,7 +794,6 @@ const StudentRegister = () => {
                   Enter Class
                 </label>
 
-
                 <input
                   type="text"
                   name="otherClass"
@@ -1042,7 +806,6 @@ const StudentRegister = () => {
 
             )}
 
-
             {/* =============================================
                 TIMEZONE
             ============================================= */}
@@ -1052,7 +815,6 @@ const StudentRegister = () => {
               <label>
                 Timezone
               </label>
-
 
               <select
                 name="timezone"
@@ -1064,24 +826,20 @@ const StudentRegister = () => {
                   Select timezone
                 </option>
 
-
                 {TIMEZONE_OPTIONS.map(
                   (timezone) => (
-
                     <option
                       key={timezone}
                       value={timezone}
                     >
                       {timezone}
                     </option>
-
                   )
                 )}
 
               </select>
 
             </div>
-
 
             {/* =============================================
                 EMAIL
@@ -1093,13 +851,11 @@ const StudentRegister = () => {
                 Email Address
               </label>
 
-
               <div className="input-wrapper">
 
                 <FaEnvelope
                   className="input-icon"
                 />
-
 
                 <input
                   type="email"
@@ -1113,7 +869,6 @@ const StudentRegister = () => {
 
             </div>
 
-
             {/* =============================================
                 PASSWORD
             ============================================= */}
@@ -1124,13 +879,11 @@ const StudentRegister = () => {
                 Password
               </label>
 
-
               <div className="input-wrapper">
 
                 <FaLock
                   className="input-icon"
                 />
-
 
                 <input
                   type={
@@ -1142,33 +895,74 @@ const StudentRegister = () => {
                   placeholder="Create password"
                   value={formData.password}
                   onChange={handleChange}
-                  onFocus={() =>
-                    setShowPasswordRules(true)
-                  }
+
+                  /* Show rules when entering password */
+                  onFocus={() => {
+                    setShowPasswordRules(true);
+                  }}
+
+                  /* Hide rules when leaving password */
+                  onBlur={(event) => {
+
+                    /*
+                      Do not hide rules if the user
+                      clicked the custom eye button.
+                    */
+                    if (
+                      event.relatedTarget?.closest?.(
+                        ".password-toggle"
+                      )
+                    ) {
+                      return;
+                    }
+
+                    setShowPasswordRules(false);
+                  }}
+
+                  autoComplete="new-password"
                 />
 
+                {/* CUSTOM EYE BUTTON */}
 
                 <button
                   type="button"
                   className="password-toggle"
+
+                  onMouseDown={(event) => {
+                    /*
+                      Prevent the input from losing focus
+                      when clicking the eye button.
+                    */
+                    event.preventDefault();
+                  }}
+
                   onClick={() =>
                     setShowPassword(
                       (previous) =>
                         !previous
                     )
                   }
-                  aria-label="Toggle password visibility"
+
+                  aria-label={
+                    showPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
                 >
 
-                  {showPassword
-                    ? <FaEyeSlash />
-                    : <FaEye />
-                  }
+                  {showPassword ? (
+                    <FaEyeSlash />
+                  ) : (
+                    <FaEye />
+                  )}
 
                 </button>
 
               </div>
 
+              {/* =========================================
+                  PASSWORD RULES
+              ========================================= */}
 
               {showPasswordRules && (
 
@@ -1187,7 +981,6 @@ const StudentRegister = () => {
                     At least 8 characters
                   </p>
 
-
                   <p
                     className={
                       passwordChecks.uppercase
@@ -1200,7 +993,6 @@ const StudentRegister = () => {
                       : "•"}{" "}
                     One uppercase letter
                   </p>
-
 
                   <p
                     className={
@@ -1215,7 +1007,6 @@ const StudentRegister = () => {
                     One lowercase letter
                   </p>
 
-
                   <p
                     className={
                       passwordChecks.number
@@ -1228,7 +1019,6 @@ const StudentRegister = () => {
                       : "•"}{" "}
                     One number
                   </p>
-
 
                   <p
                     className={
@@ -1249,7 +1039,6 @@ const StudentRegister = () => {
 
             </div>
 
-
             {/* =============================================
                 CONFIRM PASSWORD
             ============================================= */}
@@ -1260,13 +1049,11 @@ const StudentRegister = () => {
                 Confirm Password
               </label>
 
-
               <div className="input-wrapper">
 
                 <FaLock
                   className="input-icon"
                 />
-
 
                 <input
                   type={
@@ -1278,30 +1065,40 @@ const StudentRegister = () => {
                   placeholder="Confirm password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  autoComplete="new-password"
                 />
-
 
                 <button
                   type="button"
                   className="password-toggle"
+
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                  }}
+
                   onClick={() =>
                     setShowConfirmPassword(
                       (previous) =>
                         !previous
                     )
                   }
-                  aria-label="Toggle confirm password visibility"
+
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
                 >
 
-                  {showConfirmPassword
-                    ? <FaEyeSlash />
-                    : <FaEye />
-                  }
+                  {showConfirmPassword ? (
+                    <FaEyeSlash />
+                  ) : (
+                    <FaEye />
+                  )}
 
                 </button>
 
               </div>
-
 
               {formData.confirmPassword && (
 
@@ -1313,19 +1110,15 @@ const StudentRegister = () => {
                       : "password-match error"
                   }
                 >
-
                   {formData.password ===
                   formData.confirmPassword
                     ? "✓ Passwords match"
-                    : "✕ Passwords do not match"
-                  }
-
+                    : "✕ Passwords do not match"}
                 </p>
 
               )}
 
             </div>
-
 
             {/* =============================================
                 EMIS NUMBER
@@ -1335,20 +1128,16 @@ const StudentRegister = () => {
 
               <label>
                 EMIS Number{" "}
-
                 <span className="optional-text">
                   (Optional)
                 </span>
-
               </label>
-
 
               <div className="input-wrapper">
 
                 <FaIdCard
                   className="input-icon"
                 />
-
 
                 <input
                   type="text"
@@ -1362,7 +1151,6 @@ const StudentRegister = () => {
 
             </div>
 
-
             {/* =============================================
                 UPLOAD STUDENT ID
             ============================================= */}
@@ -1373,7 +1161,6 @@ const StudentRegister = () => {
                 Upload Student ID
               </label>
 
-
               <label
                 className="upload-box"
                 htmlFor="studentIdFile"
@@ -1383,23 +1170,17 @@ const StudentRegister = () => {
                   className="upload-icon"
                 />
 
-
                 <span className="upload-choose-btn">
                   Choose File
                 </span>
 
-
                 <span className="upload-filename">
-
                   {studentIdFile
                     ? studentIdFile.name
-                    : "No file chosen"
-                  }
-
+                    : "No file chosen"}
                 </span>
 
               </label>
-
 
               <input
                 id="studentIdFile"
@@ -1410,7 +1191,6 @@ const StudentRegister = () => {
               />
 
             </div>
-
 
             {/* =============================================
                 REGISTER BUTTON
@@ -1425,27 +1205,19 @@ const StudentRegister = () => {
               {loading ? (
 
                 <>
-
                   <span className="button-spinner"></span>
-
                   Registering...
-
                 </>
 
               ) : (
 
                 <>
-
                   Register as Participant
-
-                  
-
                 </>
 
               )}
 
             </button>
-
 
             {/* =============================================
                 DIVIDER
@@ -1453,14 +1225,13 @@ const StudentRegister = () => {
 
             <div className="register-divider"></div>
 
-
             {/* =============================================
                 LOGIN LINK
             ============================================= */}
 
             <p className="already-user">
 
-              Already a User?{" "}
+              Already a User{" "}
 
               <a href="/login">
                 Continue Here
@@ -1473,7 +1244,6 @@ const StudentRegister = () => {
         </div>
 
       </main>
-
 
       {/* ===================================================
           POPUP
@@ -1502,36 +1272,25 @@ const StudentRegister = () => {
               <FaTimes />
             </button>
 
-
             <div
-              className={
-                `register-popup-icon ${popup.type}`
-              }
+              className={`register-popup-icon ${popup.type}`}
             >
-
               {popup.type === "success"
                 ? <FaCheck />
-                : <FaTimes />
-              }
-
+                : <FaTimes />}
             </div>
-
 
             <h2>
               {popup.title}
             </h2>
 
-
             <p>
               {popup.message}
             </p>
 
-
             <button
               type="button"
-              className={
-                `register-popup-button ${popup.type}`
-              }
+              className={`register-popup-button ${popup.type}`}
               onClick={closePopup}
             >
               Okay
@@ -1544,10 +1303,7 @@ const StudentRegister = () => {
       )}
 
     </div>
-
   );
-
 };
-
 
 export default StudentRegister;
