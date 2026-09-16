@@ -162,9 +162,11 @@ function loadRoute(routePath) {
 ========================================================= */
 
 // Authentication
+const authRoutes = require("./routes/authRoutes");
+
 app.use(
   "/api/auth",
-  loadRoute("./routes/authRoutes")
+  authRoutes
 );
 
 // Admin
