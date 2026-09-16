@@ -1263,10 +1263,10 @@ const Home = () => {
   }, [handleNext, isSearchFocused]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/teachers`)
+    fetch(`${API_BASE_URL}/api/teacher`)
       .then(res => res.json())
       .then(data => {
-        if (data.teachers) setTeachers(data.teachers.filter(t => t.isApproved));
+        if (data.teachers) setTeachers(data.teachers);
       })
       .catch(err => console.error(err));
   }, []);
