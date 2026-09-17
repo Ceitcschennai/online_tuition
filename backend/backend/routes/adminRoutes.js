@@ -819,10 +819,9 @@ router.put("/teachers/:id/subject", async (req, res) => {
       await Subject.findById(
         subject._id
       ).populate(
-        "teacher",
-        "firstName lastName email"
-      );
-
+  "teacher",
+  "firstName lastName email bankDetails"
+)
     const updatedTeacher =
       await Teacher.findById(
         teacherId

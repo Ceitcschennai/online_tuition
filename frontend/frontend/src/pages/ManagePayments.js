@@ -772,17 +772,6 @@ ${payment._id || "-"}
           <div className="no-payments">
             Loading student payments...
           </div>
-        ) : filteredPayments.length === 0 ? (
-          <div className="no-payments">
-            <h3>
-              No student payments found
-            </h3>
-
-            <p>
-              No payment records match
-              your current filter.
-            </p>
-          </div>
         ) : (
           <div className="table-card">
 
@@ -1037,28 +1026,13 @@ ${payment._id || "-"}
 
         {teacherLoading ? (
 
-          <div className="no-payments">
-            Loading teacher payments...
-          </div>
+  <div className="no-payments">
+    Loading teacher payments...
+  </div>
 
-        ) : teacherPayments.length === 0 ? (
+) : (
 
-          <div className="no-payments">
-
-            <h3>
-              No teacher payments found
-            </h3>
-
-            <p>
-              No teacher salary records
-              have been generated yet.
-            </p>
-
-          </div>
-
-        ) : (
-
-          <div className="table-card">
+  <div className="table-card">
 
             <div className="table-card-header">
   <div>
@@ -1089,6 +1063,7 @@ ${payment._id || "-"}
 
                   <tr>
                     <th>Teacher</th>
+                    <th>Bank Details</th>
                     <th>Month</th>
                     <th>Students</th>
                     <th>Rate</th>
@@ -1118,17 +1093,37 @@ ${payment._id || "-"}
                         >
 
                           <td>
-                            <strong>
-                              {teacherName ||
-                                "-"}
-                            </strong>
-                          </td>
+  <strong>
+    {teacherName || "-"}
+  </strong>
+</td>
 
-                          <td>
-                            {formatMonth(
-                              payment.paymentMonth
-                            )}
-                          </td>
+<td>
+  {payment.teacher?.bankDetails ? (
+    <button
+      type="button"
+      onClick={() => {
+        alert(
+          `Account Holder: ${payment.teacher.bankDetails.accountHolderName}\n` +
+          `Bank: ${payment.teacher.bankDetails.bankName}\n` +
+          `Account Number: ${payment.teacher.bankDetails.accountNumber}\n` +
+          `IFSC: ${payment.teacher.bankDetails.ifscCode}\n` +
+          `Account Type: ${payment.teacher.bankDetails.accountType}`
+        );
+      }}
+    >
+      View Bank Details
+    </button>
+  ) : (
+    "Not Added"
+  )}
+</td>
+
+<td>
+  {formatMonth(
+    payment.paymentMonth
+  )}
+</td>
 
                           <td className="center">
                             {payment.studentCount ??
