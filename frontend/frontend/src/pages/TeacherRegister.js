@@ -1399,7 +1399,7 @@ const TeacherRegister = () => {
               <input
                 id="degreeCertificate"
                 type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept=".pdf"
                 onChange={handleFileChange}
                 hidden
               />

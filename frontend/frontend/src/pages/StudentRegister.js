@@ -1187,7 +1187,7 @@ const StudentRegister = () => {
                 type="file"
                 className="upload-input"
                 onChange={handleFileChange}
-                accept="image/*,.pdf"
+                accept=".pdf"
               />
 
             </div>

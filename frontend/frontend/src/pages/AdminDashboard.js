@@ -1002,7 +1002,7 @@ const AdminDashboard = () => {
                 ) : (
                   <p>No certificate uploaded</p>
                 )}
-                <p><strong>Subjects:</strong> {selectedTeacher.subjects?.join(", ") || "N/A"}</p>
+                
                 <div className="button-group">
                   <button disabled={loading} onClick={() => handleTeacherApproval("Approved")} className="approve-btn">
                     {loading ? "Processing..." : "Approve"}

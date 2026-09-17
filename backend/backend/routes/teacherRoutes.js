@@ -330,6 +330,13 @@ router.post(
           normalized.password,
           10
         );
+const certificateFile = req.files?.find(
+  (file) => file.fieldname === "degreeCertificate"
+);
+
+const degreeCertificate = certificateFile
+  ? `data:${certificateFile.mimetype};base64,${certificateFile.buffer.toString("base64")}`
+  : "";
 
       const teacher =
         await Teacher.create({
@@ -362,6 +369,9 @@ router.post(
 
           classesAssigned:
             normalized.classesAssigned,
+
+          degreeCertificate:
+            degreeCertificate,
 
           isApproved:
             false,
@@ -488,6 +498,182 @@ router.post(
       } catch (emailError) {
         console.error(
           "Admin email failed:",
+          emailError.message
+        );
+      }
+
+            // =================================================
+      // SEND REGISTRATION CONFIRMATION EMAIL TO FACULTY
+      // =================================================
+
+      try {
+        console.log(
+          "📧 SENDING FACULTY REGISTRATION EMAIL TO:",
+          teacher.email
+        );
+
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: teacher.email,
+          subject: "CeiT Academy - Faculty Registration Received",
+
+          html: `
+            <div style="
+              font-family: Arial, Helvetica, sans-serif;
+              background-color: #f4f6f8;
+              padding: 30px 15px;
+            ">
+
+              <div style="
+                max-width: 650px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 35px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+              ">
+
+                <h2 style="
+                  color: #2c3e50;
+                  margin-bottom: 5px;
+                ">
+                  CeiT Academy - Online Tuition
+                </h2>
+
+                <p style="
+                  color: #777;
+                  margin-top: 0;
+                  font-size: 14px;
+                ">
+                  Faculty Registration Confirmation
+                </p>
+
+                <hr style="
+                  border: none;
+                  border-top: 1px solid #e5e5e5;
+                  margin: 20px 0;
+                ">
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                ">
+                  Dear ${teacher.firstName} ${teacher.lastName},
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  Thank you for registering as a faculty member with
+                  <strong>CeiT Academy - Online Tuition</strong>.
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  We have successfully received your registration details
+                  and submitted documents.
+                </p>
+
+                <div style="
+                  background-color: #fff8e6;
+                  border-left: 5px solid #f0ad4e;
+                  padding: 15px 18px;
+                  margin: 25px 0;
+                ">
+
+                  <p style="
+                    margin: 0;
+                    color: #8a6d3b;
+                    font-size: 17px;
+                    font-weight: bold;
+                  ">
+                    Profile Status: PENDING ADMIN APPROVAL
+                  </p>
+
+                </div>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  Your profile is currently waiting for admin approval.
+                  Our admin team will review your registration details
+                  and the documents submitted by you.
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  Once your profile has been reviewed and approved,
+                  you will receive another email confirming that your
+                  faculty account is ready to use.
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  Please wait for the approval confirmation email before
+                  attempting to log in.
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  After your profile is approved, you can log in using
+                  your registered email address and password.
+                </p>
+
+                <hr style="
+                  border: none;
+                  border-top: 1px solid #e5e5e5;
+                  margin: 30px 0 20px;
+                ">
+
+                <p style="
+                  font-size: 14px;
+                  color: #555;
+                  line-height: 1.6;
+                ">
+                  Regards,<br>
+                  <strong>Admin</strong><br>
+                  <strong>CeiT Academy - Online Tuition</strong>
+                </p>
+
+                <p style="
+                  font-size: 12px;
+                  color: #999;
+                  margin-top: 25px;
+                ">
+                  This is an automated email from
+                  CeiT Academy - Online Tuition.
+                  Please do not reply directly to this email.
+                </p>
+
+              </div>
+            </div>
+          `,
+        });
+
+        console.log(
+          "✅ FACULTY REGISTRATION EMAIL SENT TO:",
+          teacher.email
+        );
+
+      } catch (emailError) {
+        console.error(
+          "❌ FACULTY REGISTRATION EMAIL FAILED:",
           emailError.message
         );
       }
@@ -662,73 +848,92 @@ router.put(
   "/admin/teacher/:id/approve",
   async (req, res) => {
     try {
-      const { status } = req.body;
+      const { status, reason } = req.body;
+
+      // =================================================
+      // VALIDATE TEACHER ID
+      // =================================================
 
       if (!isValidObjectId(req.params.id)) {
         return res.status(400).json({
           success: false,
-          message:
-            "Invalid teacher ID",
+          message: "Invalid teacher ID",
         });
       }
 
-      if (
-        !["Approved", "Rejected"].includes(status)
-      ) {
+      // =================================================
+      // VALIDATE STATUS
+      // =================================================
+
+      if (!["Approved", "Rejected"].includes(status)) {
         return res.status(400).json({
           success: false,
-          message:
-            "Invalid status",
+          message: "Invalid status",
         });
       }
 
-      const updateData =
-        status === "Approved"
-          ? {
-              isApproved: true,
-              isRejected: false,
-              isActive: true,
-            }
-          : {
-              isApproved: false,
-              isRejected: true,
-              isActive: false,
-            };
+      // =================================================
+      // VALIDATE REJECTION REASON
+      // =================================================
 
-      const teacher =
-        await Teacher.findByIdAndUpdate(
-          req.params.id,
-          updateData,
-          {
-            new: true,
-          }
-        ).select("-password");
+      if (status === "Rejected" && !reason?.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Rejection reason is required",
+        });
+      }
+
+      // =================================================
+      // FIND TEACHER
+      // =================================================
+
+      const teacher = await Teacher.findById(
+        req.params.id
+      );
 
       if (!teacher) {
         return res.status(404).json({
           success: false,
-          message:
-            "Teacher not found",
+          message: "Teacher not found",
         });
       }
 
-      const customerId =
-        teacher._id.toString();
+      // =================================================
+      // UPDATE TEACHER STATUS
+      // =================================================
+
+      if (status === "Approved") {
+        teacher.isApproved = true;
+        teacher.isRejected = false;
+        teacher.isActive = true;
+      } else {
+        teacher.isApproved = false;
+        teacher.isRejected = true;
+        teacher.isActive = false;
+      }
+
+      await teacher.save();
+
+      // =================================================
+      // CUSTOMER ID
+      // =================================================
+
+      const customerId = teacher._id.toString();
+
+      // =================================================
+      // ANALYTICS
+      // =================================================
 
       try {
         if (
           AnalyticsAgent &&
-          typeof AnalyticsAgent.logInteraction ===
-            "function"
+          typeof AnalyticsAgent.logInteraction === "function"
         ) {
           await AnalyticsAgent.logInteraction({
             customerId,
-
             message:
               `Teacher ${teacher.firstName} ${teacher.lastName} was ${status}`,
-
-            type:
-              "approval",
+            type: "approval",
           });
         }
       } catch (analyticsError) {
@@ -738,30 +943,27 @@ router.put(
         );
       }
 
+      // =================================================
+      // CLOSE OPEN TASKS
+      // =================================================
+
       try {
-        if (
-          db.readyState === 1 &&
-          db.db
-        ) {
-          const tasks =
-            await db.db
-              .collection("tasks")
-              .find({
-                customerId,
-                status: "open",
-              })
-              .toArray();
+        if (db.readyState === 1 && db.db) {
+          const tasks = await db.db
+            .collection("tasks")
+            .find({
+              customerId,
+              status: "open",
+            })
+            .toArray();
 
           for (const task of tasks) {
             try {
               if (
                 ActionAgent &&
-                typeof ActionAgent.closeTask ===
-                  "function"
+                typeof ActionAgent.closeTask === "function"
               ) {
-                await ActionAgent.closeTask(
-                  task._id
-                );
+                await ActionAgent.closeTask(task._id);
               }
             } catch (taskError) {
               console.error(
@@ -778,13 +980,15 @@ router.put(
         );
       }
 
+      // =================================================
+      // ACTIVITY LOG
+      // =================================================
+
       try {
         await Activity.create({
           type: "teacher",
-
           message:
             `Teacher ${teacher.firstName} ${teacher.lastName} was ${status}`,
-
           time: new Date(),
         });
       } catch (activityError) {
@@ -794,56 +998,352 @@ router.put(
         );
       }
 
+      // =================================================
+      // SEND EMAIL TO TEACHER
+      // =================================================
+
+      let emailSent = false;
+      let emailErrorMessage = "";
+
       try {
-        await transporter.sendMail({
-          from:
-            process.env.EMAIL_USER,
+        console.log(
+          "📧 SENDING FACULTY EMAIL TO:",
+          teacher.email
+        );
 
-          to:
-            teacher.email,
+        const emailSubject =
+          status === "Approved"
+            ? "Online Tuition - Faculty Profile Approved"
+            : "Online Tuition - Faculty Profile Rejected";
 
-          subject:
-            `Your Teacher Account is ${status}`,
+        const emailHtml =
+          status === "Approved"
+            ? `
+              <div style="
+                font-family: Arial, Helvetica, sans-serif;
+                background-color: #f4f6f8;
+                padding: 30px 15px;
+              ">
 
-          html: `
-            <h2>
-              Hello ${teacher.firstName},
-            </h2>
+                <div style="
+                  max-width: 650px;
+                  margin: 0 auto;
+                  background-color: #ffffff;
+                  border-radius: 10px;
+                  padding: 35px;
+                  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+                ">
 
-            <p>
-              Your teacher account has been
-              <b>${status}</b>.
-            </p>
+                  <h2 style="
+                    color: #2c3e50;
+                    margin-bottom: 5px;
+                  ">
+                    Online Tuition
+                  </h2>
 
-            ${
-              status === "Approved"
-                ? `
-                  <p>
-                    You can now login and start teaching.
+                  <p style="
+                    color: #777;
+                    margin-top: 0;
+                    font-size: 14px;
+                  ">
+                    Faculty Account Notification
                   </p>
-                `
-                : `
-                  <p>
-                    Please contact the administrator for more details.
+
+                  <hr style="
+                    border: none;
+                    border-top: 1px solid #e5e5e5;
+                    margin: 20px 0;
+                  ">
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                  ">
+                    Dear ${teacher.firstName} ${teacher.lastName},
                   </p>
-                `
-            }
-          `,
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                    line-height: 1.6;
+                  ">
+                    We are pleased to inform you that your faculty
+                    registration profile with
+                    <strong>Online Tuition</strong>
+                    has been successfully reviewed and approved
+                    by the administrator.
+                  </p>
+
+                  <div style="
+                    background-color: #eaf8ef;
+                    border-left: 5px solid #28a745;
+                    padding: 15px 18px;
+                    margin: 25px 0;
+                  ">
+                    <p style="
+                      margin: 0;
+                      color: #218838;
+                      font-size: 17px;
+                      font-weight: bold;
+                    ">
+                      Profile Status: APPROVED
+                    </p>
+                  </div>
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                    line-height: 1.6;
+                  ">
+                    Your faculty account is now active.
+                  </p>
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                    line-height: 1.6;
+                  ">
+                    You can now log in to the
+                    <strong>Online Tuition Portal</strong>
+                    using your registered email address and password.
+                  </p>
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                    line-height: 1.6;
+                  ">
+                    After logging in, you will be able to access
+                    your faculty portal and use the features
+                    available for your account.
+                  </p>
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                    line-height: 1.6;
+                  ">
+                    We welcome you to
+                    <strong>Online Tuition</strong>
+                    and look forward to your contribution to
+                    our learning community.
+                  </p>
+
+                  <hr style="
+                    border: none;
+                    border-top: 1px solid #e5e5e5;
+                    margin: 30px 0 20px;
+                  ">
+
+                  <p style="
+                    font-size: 14px;
+                    color: #555;
+                    line-height: 1.6;
+                  ">
+                    Regards,<br>
+                    <strong>Admin</strong><br>
+                    <strong>Online Tuition</strong>
+                  </p>
+
+                  <p style="
+                    font-size: 12px;
+                    color: #999;
+                    margin-top: 25px;
+                  ">
+                    This is an automated email from Online Tuition.
+                    Please do not reply directly to this email.
+                  </p>
+
+                </div>
+              </div>
+            `
+            : `
+              <div style="
+                font-family: Arial, Helvetica, sans-serif;
+                background-color: #f4f6f8;
+                padding: 30px 15px;
+              ">
+
+                <div style="
+                  max-width: 650px;
+                  margin: 0 auto;
+                  background-color: #ffffff;
+                  border-radius: 10px;
+                  padding: 35px;
+                  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+                ">
+
+                  <h2 style="
+                    color: #2c3e50;
+                    margin-bottom: 5px;
+                  ">
+                    Online Tuition
+                  </h2>
+
+                  <p style="
+                    color: #777;
+                    margin-top: 0;
+                    font-size: 14px;
+                  ">
+                    Faculty Account Notification
+                  </p>
+
+                  <hr style="
+                    border: none;
+                    border-top: 1px solid #e5e5e5;
+                    margin: 20px 0;
+                  ">
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                  ">
+                    Dear ${teacher.firstName} ${teacher.lastName},
+                  </p>
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                    line-height: 1.6;
+                  ">
+                    Thank you for registering as a faculty member
+                    with <strong>Online Tuition</strong>.
+                  </p>
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                    line-height: 1.6;
+                  ">
+                    After reviewing your registration profile,
+                    the administrator has decided not to approve
+                    your faculty application at this time.
+                  </p>
+
+                  <div style="
+                    background-color: #fff3f3;
+                    border-left: 5px solid #dc3545;
+                    padding: 15px 18px;
+                    margin: 25px 0;
+                  ">
+
+                    <p style="
+                      margin: 0 0 10px 0;
+                      color: #c82333;
+                      font-size: 17px;
+                      font-weight: bold;
+                    ">
+                      Profile Status: REJECTED
+                    </p>
+
+                    <p style="
+                      margin: 0;
+                      color: #333;
+                      font-size: 15px;
+                      line-height: 1.6;
+                    ">
+                      <strong>Reason:</strong>
+                      ${reason.trim()}
+                    </p>
+
+                  </div>
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                    line-height: 1.6;
+                  ">
+                    Please review the above feedback carefully.
+                    If you require further clarification regarding
+                    your application, please contact the administrator
+                    of <strong>Online Tuition</strong>.
+                  </p>
+
+                  <hr style="
+                    border: none;
+                    border-top: 1px solid #e5e5e5;
+                    margin: 30px 0 20px;
+                  ">
+
+                  <p style="
+                    font-size: 14px;
+                    color: #555;
+                    line-height: 1.6;
+                  ">
+                    Regards,<br>
+                    <strong>Admin</strong><br>
+                    <strong>Online Tuition</strong>
+                  </p>
+
+                  <p style="
+                    font-size: 12px;
+                    color: #999;
+                    margin-top: 25px;
+                  ">
+                    This is an automated email from Online Tuition.
+                    Please do not reply directly to this email.
+                  </p>
+
+                </div>
+              </div>
+            `;
+
+        const mailInfo = await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: teacher.email,
+          subject: emailSubject,
+          html: emailHtml,
         });
+
+        emailSent = true;
+
+        console.log(
+          "✅ FACULTY EMAIL SENT SUCCESSFULLY",
+          {
+            messageId: mailInfo.messageId,
+            to: teacher.email,
+            status,
+          }
+        );
+
       } catch (emailError) {
+        emailErrorMessage =
+          emailError?.message ||
+          "Unknown email error";
+
         console.error(
-          "Approval email failed:",
-          emailError.message
+          "❌ FACULTY EMAIL FAILED:",
+          emailError
         );
       }
+
+      // =================================================
+      // RESPONSE
+      // =================================================
 
       return res.json({
         success: true,
 
         message:
-          `Teacher ${status.toLowerCase()} successfully`,
+          status === "Approved"
+            ? emailSent
+              ? "Teacher approved successfully and approval email sent."
+              : "Teacher approved successfully, but approval email could not be sent."
+            : emailSent
+              ? "Teacher rejected successfully and rejection email sent."
+              : "Teacher rejected successfully, but rejection email could not be sent.",
 
-        teacher,
+        emailSent,
+
+        ...(emailSent
+          ? {}
+          : {
+              emailError: emailErrorMessage,
+            }),
+
+        teacher: teacher.toObject
+          ? teacher.toObject()
+          : teacher,
       });
 
     } catch (err) {
@@ -856,7 +1356,7 @@ router.put(
         success: false,
         message:
           err.message ||
-          "Approval failed",
+          "Approval/rejection failed",
       });
     }
   }

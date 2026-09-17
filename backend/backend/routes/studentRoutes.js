@@ -1,4 +1,3 @@
-
 const express = require("express");
 const bcrypt = require("bcrypt");
 const router = express.Router();
@@ -16,6 +15,12 @@ const {
 
 const mongoose = require("mongoose");
 const db = mongoose.connection;
+
+/* =================================================
+   COMPANY
+================================================= */
+
+const COMPANY_NAME = "CeiT Academy - Online Tuition";
 
 /* =================================================
    HELPER — LOCAL VALIDATION
@@ -208,20 +213,20 @@ function validateStudent(body, hasFile) {
   // =================================================
 
   const emis = (
-  body.emisNumber || ""
-)
-  .toString()
-  .trim();
+    body.emisNumber || ""
+  )
+    .toString()
+    .trim();
 
-if (emis === "") {
-  // EMIS is optional
-  normalized.emisNumber = "";
-} else if (emis.length < 4) {
-  errors.emisNumber =
-    "EMIS Number must contain at least 4 characters";
-} else {
-  normalized.emisNumber = emis;
-}
+  if (emis === "") {
+    // EMIS is optional
+    normalized.emisNumber = "";
+  } else if (emis.length < 4) {
+    errors.emisNumber =
+      "EMIS Number must contain at least 4 characters";
+  } else {
+    normalized.emisNumber = emis;
+  }
 
   // =================================================
   // FILE
@@ -255,25 +260,27 @@ router.post(
   "/register",
   upload.single("proof"),
   async (req, res) => {
- const proof = req.file
-  ? `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`
-  : null;
+
+    const proof = req.file
+      ? `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`
+      : null;
 
     try {
-      const validation =
-        validateStudent(
-          req.body,
-          !!req.file
-        );
+
+      // =================================================
+      // VALIDATION
+      // =================================================
+
+      const validation = validateStudent(
+        req.body,
+        !!req.file
+      );
 
       if (!validation.valid) {
         return res.status(400).json({
-          message:
-            "Validation failed",
-          errors:
-            validation.errors,
-          summary:
-            validation.summary,
+          message: "Validation failed",
+          errors: validation.errors,
+          summary: validation.summary,
         });
       }
 
@@ -303,8 +310,7 @@ router.post(
 
       if (existingStudent) {
         return res.status(409).json({
-          message:
-            "Email already registered",
+          message: "Email already registered",
         });
       }
 
@@ -330,26 +336,24 @@ router.post(
           mobile,
           timezone,
           email,
-          password:
-            hashedPassword,
+          password: hashedPassword,
           class: studentClass,
           group,
           syllabus,
           emisNumber,
           proof,
-          approvalStatus:
-            "Pending",
+          approvalStatus: "Pending",
           isActive: false,
         });
 
       await newStudent.save();
 
+      // =================================================
+      // CUSTOMER RECORD
+      // =================================================
+
       const customerId =
         newStudent._id.toString();
-
-      // =================================================
-      // KNOWLEDGE AGENT
-      // =================================================
 
       await db.db
         .collection("customers")
@@ -358,8 +362,7 @@ router.post(
           name: `${firstName} ${lastName}`,
           email,
           role: "student",
-          createdAt:
-            new Date(),
+          createdAt: new Date(),
         });
 
       // =================================================
@@ -374,7 +377,7 @@ router.post(
       });
 
       // =================================================
-      // ANALYTICS AGENT
+      // ANALYTICS
       // =================================================
 
       await AnalyticsAgent.logInteraction({
@@ -400,48 +403,190 @@ router.post(
       // =================================================
 
       try {
-        await transporter.sendMail({
-          from:
-            process.env.EMAIL_USER,
 
-          to:
-            process.env.ADMIN_EMAIL,
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: process.env.ADMIN_EMAIL,
 
           subject:
             "New Student Registration Alert",
 
           html: `
-            <h2>New Student Registered</h2>
+            <div style="
+              font-family: Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+            ">
 
-            <p>
-              <b>Name:</b>
-              ${firstName} ${lastName}
-            </p>
+              <h2>${COMPANY_NAME}</h2>
 
-            <p>
-              <b>Email:</b>
-              ${email}
-            </p>
+              <h3>New Student Registration</h3>
 
-            <p>
-              <b>Class:</b>
-              ${studentClass}
-            </p>
+              <p>
+                <b>Name:</b>
+                ${firstName} ${lastName}
+              </p>
 
-            <p>
-              <b>Syllabus:</b>
-              ${syllabus}
-            </p>
+              <p>
+                <b>Email:</b>
+                ${email}
+              </p>
 
-            <p>
-              Status: Pending Approval
-            </p>
+              <p>
+                <b>Class:</b>
+                ${studentClass}
+              </p>
+
+              <p>
+                <b>Syllabus:</b>
+                ${syllabus}
+              </p>
+
+              <p>
+                <b>Status:</b>
+                Pending Admin Approval
+              </p>
+
+              <p>
+                Please review the student's registration
+                from the admin dashboard.
+              </p>
+
+              <br />
+
+              <p>
+                Regards,<br />
+                <strong>Admin</strong><br />
+                <strong>${COMPANY_NAME}</strong>
+              </p>
+
+            </div>
           `,
         });
+
+        console.log(
+          "📧 New student registration email sent to admin:",
+          process.env.ADMIN_EMAIL
+        );
+
       } catch (emailError) {
+
         console.error(
-          "Email sending failed:",
-          emailError
+          "Admin registration email failed:",
+          emailError.message
+        );
+      }
+
+      // =================================================
+      // EMAIL STUDENT
+      // REGISTRATION RECEIVED
+      // =================================================
+
+      let registrationEmailSent = false;
+
+      try {
+
+        await transporter.sendMail({
+
+          from: process.env.EMAIL_USER,
+
+          to: email,
+
+          subject:
+            "CeiT Academy - Online Tuition | Registration Received",
+
+          html: `
+            <div
+              style="
+                font-family: Arial, sans-serif;
+                line-height: 1.7;
+                color: #333;
+                max-width: 650px;
+                margin: 0 auto;
+                padding: 20px;
+              "
+            >
+
+              <h2 style="color: #4b3f9f;">
+                ${COMPANY_NAME}
+              </h2>
+
+              <h3>
+                Registration Received
+              </h3>
+
+              <p>
+                Dear ${firstName},
+              </p>
+
+              <p>
+                Thank you for registering with
+                <strong>${COMPANY_NAME}</strong>.
+              </p>
+
+              <p>
+                Your registration has been
+                <strong>successfully received</strong>.
+              </p>
+
+              <p>
+                Your profile is currently
+                <strong>waiting for admin approval</strong>.
+              </p>
+
+              <p>
+                Our admin team will review your
+                registration details and submitted documents.
+              </p>
+
+              <p>
+                Once your profile has been approved,
+                we will send you another email confirming
+                that your account is ready to use.
+              </p>
+
+              <p>
+                After receiving the approval email,
+                you can log in to the
+                <strong>${COMPANY_NAME}</strong>
+                portal using your registered email address
+                and password.
+              </p>
+
+              <p>
+                Please wait for the approval confirmation
+                before attempting to log in.
+              </p>
+
+              <br />
+
+              <p>
+                Thank you for choosing
+                <strong>${COMPANY_NAME}</strong>.
+              </p>
+
+              <p>
+                Regards,<br />
+                <strong>Admin</strong><br />
+                <strong>${COMPANY_NAME}</strong>
+              </p>
+
+            </div>
+          `,
+        });
+
+        registrationEmailSent = true;
+
+        console.log(
+          "📧 Registration confirmation email sent to student:",
+          email
+        );
+
+      } catch (emailError) {
+
+        console.error(
+          "Student registration email failed:",
+          emailError.message
         );
       }
 
@@ -450,36 +595,56 @@ router.post(
       // =================================================
 
       return res.status(201).json({
+
         success: true,
 
         message:
-          "✅ Registration successful. Waiting for admin approval.",
+          registrationEmailSent
+            ? "Registration successful. A confirmation email has been sent. Please wait for admin approval."
+            : "Registration successful. Please wait for admin approval.",
+
+        registrationEmailSent,
 
         student: {
+
           id: newStudent._id,
+
           firstName:
             newStudent.firstName,
+
           lastName:
             newStudent.lastName,
+
           email:
             newStudent.email,
+
           class:
             newStudent.class,
+
           approvalStatus:
             newStudent.approvalStatus,
+
         },
+
       });
 
     } catch (err) {
+
       console.error(
         "Student Registration Error:",
         err
       );
 
-      res.status(500).json({
+      return res.status(500).json({
+
+        success: false,
+
         message:
-          "❌ Server error",
+          err.message ||
+          "Server error during student registration",
+
       });
+
     }
   }
 );
@@ -492,6 +657,7 @@ router.get(
   "/search",
   async (req, res) => {
     try {
+
       const { name } =
         req.query;
 
@@ -536,6 +702,7 @@ router.get(
       });
 
     } catch (err) {
+
       console.error(
         "Student search error:",
         err
@@ -561,6 +728,7 @@ router.get(
   "/by-class/:class",
   async (req, res) => {
     try {
+
       const {
         class: className,
       } = req.params;
@@ -601,6 +769,7 @@ router.get(
       });
 
     } catch (err) {
+
       console.error(
         "Fetch students by class error:",
         err
@@ -622,6 +791,7 @@ router.get(
   "/admin/pending",
   async (req, res) => {
     try {
+
       const students =
         await Student.find({
           approvalStatus:
@@ -638,6 +808,7 @@ router.get(
       });
 
     } catch (err) {
+
       console.error(
         "Pending students error:",
         err
@@ -659,110 +830,321 @@ router.put(
   "/admin/:id/approve",
   async (req, res) => {
     try {
-      const { status } =
-        req.body;
+
+      const {
+        status,
+        reason,
+      } = req.body;
+
+      // =================================================
+      // VALIDATE STATUS
+      // =================================================
 
       if (
-        ![
-          "Approved",
-          "Rejected",
-        ].includes(status)
+        !["Approved", "Rejected"].includes(
+          status
+        )
       ) {
         return res.status(400).json({
+          success: false,
           message:
             "Invalid status",
         });
       }
 
-      const student =
-        await Student.findByIdAndUpdate(
-          req.params.id,
-          {
-            approvalStatus:
-              status,
+      // =================================================
+      // VALIDATE REJECTION REASON
+      // =================================================
 
-            isActive:
-              status ===
-              "Approved",
-          },
-          {
-            new: true,
-          }
+      if (
+        status === "Rejected" &&
+        !reason?.trim()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Rejection reason is required",
+        });
+      }
+
+      // =================================================
+      // FIND STUDENT
+      // =================================================
+
+      const student =
+        await Student.findById(
+          req.params.id
         );
 
       if (!student) {
         return res.status(404).json({
+          success: false,
           message:
             "Student not found",
         });
       }
 
       // =================================================
+      // UPDATE APPROVAL STATUS
+      // =================================================
+
+      student.approvalStatus =
+        status;
+
+      student.isActive =
+        status === "Approved";
+
+      await student.save();
+
+      // =================================================
       // ANALYTICS
       // =================================================
 
-      await AnalyticsAgent.logInteraction({
-        customerId:
-          student._id.toString(),
+      try {
 
-        message:
-          `Student ${student.firstName} ${student.lastName} was ${status}`,
+        await AnalyticsAgent.logInteraction({
+          customerId:
+            student._id.toString(),
 
-        type: "approval",
-      });
+          message:
+            `Student ${student.firstName} ${student.lastName} was ${status}`,
+
+          type:
+            "approval",
+        });
+
+      } catch (analyticsError) {
+
+        console.error(
+          "Student approval analytics error:",
+          analyticsError.message
+        );
+      }
 
       // =================================================
       // CLOSE OPEN TASKS
       // =================================================
 
-      const tasks =
-        await db.db
-          .collection("tasks")
-          .find({
-            customerId:
-              student._id.toString(),
+      try {
 
-            status: "open",
-          })
-          .toArray();
+        const tasks =
+          await db.db
+            .collection("tasks")
+            .find({
+              customerId:
+                student._id.toString(),
 
-      for (const task of tasks) {
-        await ActionAgent.closeTask(
-          task._id
+              status:
+                "open",
+            })
+            .toArray();
+
+        for (
+          const task of tasks
+        ) {
+
+          try {
+
+            await ActionAgent.closeTask(
+              task._id
+            );
+
+          } catch (taskError) {
+
+            console.error(
+              "Failed to close task:",
+              taskError.message
+            );
+
+          }
+        }
+
+      } catch (taskError) {
+
+        console.error(
+          "Task processing error:",
+          taskError.message
         );
       }
 
       // =================================================
       // EMAIL STUDENT
+      // APPROVED / REJECTED
       // =================================================
 
+      let emailSent = false;
+      let emailErrorMessage = "";
+
       try {
-        await transporter.sendMail({
-          to: student.email,
 
-          subject:
-            `Your Student Account is ${status}`,
+        const emailSubject =
+          status === "Approved"
+            ? `${COMPANY_NAME} | Student Profile Approved`
+            : `${COMPANY_NAME} | Student Profile Rejected`;
 
-          html: `
-            <h2>
-              Hello ${student.firstName},
-            </h2>
+        const emailHtml =
+          status === "Approved"
+            ? `
+              <div
+                style="
+                  font-family: Arial, sans-serif;
+                  line-height: 1.7;
+                  color: #333;
+                  max-width: 650px;
+                  margin: 0 auto;
+                  padding: 20px;
+                "
+              >
 
-            <p>
-              Your account has been
-              <b>${status}</b>.
-            </p>
+                <h2 style="color: #4b3f9f;">
+                  ${COMPANY_NAME}
+                </h2>
 
-            ${
-              status === "Approved"
-                ? "<p>You can now login and start learning 🎉</p>"
-                : "<p>Please contact admin for more details.</p>"
-            }
-          `,
-        });
+                <h3>
+                  Student Profile Approved
+                </h3>
+
+                <p>
+                  Dear ${student.firstName},
+                </p>
+
+                <p>
+                  Your student profile has been
+                  <strong>approved</strong> by the administrator.
+                </p>
+
+                <p>
+                  Your account is now active and ready to use.
+                </p>
+
+                <p>
+                  You can now log in to the
+                  <strong>${COMPANY_NAME}</strong>
+                  portal using your registered email address
+                  and password.
+                </p>
+
+                <p>
+                  Thank you for joining
+                  <strong>${COMPANY_NAME}</strong>.
+                </p>
+
+                <br />
+
+                <p>
+                  Regards,<br />
+                  <strong>Admin</strong><br />
+                  <strong>${COMPANY_NAME}</strong>
+                </p>
+
+              </div>
+            `
+            : `
+              <div
+                style="
+                  font-family: Arial, sans-serif;
+                  line-height: 1.7;
+                  color: #333;
+                  max-width: 650px;
+                  margin: 0 auto;
+                  padding: 20px;
+                "
+              >
+
+                <h2 style="color: #4b3f9f;">
+                  ${COMPANY_NAME}
+                </h2>
+
+                <h3>
+                  Student Profile Rejected
+                </h3>
+
+                <p>
+                  Dear ${student.firstName},
+                </p>
+
+                <p>
+                  We regret to inform you that your
+                  student profile has been
+                  <strong>rejected</strong> by the administrator.
+                </p>
+
+                <p>
+                  <strong>
+                    Reason for rejection:
+                  </strong>
+                </p>
+
+                <div
+                  style="
+                    background: #f5f5f5;
+                    padding: 15px;
+                    border-left: 4px solid #d9534f;
+                    margin: 10px 0;
+                  "
+                >
+                  ${reason.trim()}
+                </div>
+
+                <p>
+                  Please review the reason mentioned above
+                  and take the necessary action.
+                </p>
+
+                <p>
+                  If you need further assistance,
+                  please contact the administrator.
+                </p>
+
+                <br />
+
+                <p>
+                  Regards,<br />
+                  <strong>Admin</strong><br />
+                  <strong>${COMPANY_NAME}</strong>
+                </p>
+
+              </div>
+            `;
+
+        const mailInfo =
+          await transporter.sendMail({
+            from:
+              process.env.EMAIL_USER,
+
+            to:
+              student.email,
+
+            subject:
+              emailSubject,
+
+            html:
+              emailHtml,
+          });
+
+        emailSent = true;
+
+        console.log(
+          "📧 Student approval/rejection email sent successfully:",
+          {
+            messageId:
+              mailInfo.messageId,
+
+            to:
+              student.email,
+
+            status,
+          }
+        );
+
       } catch (emailError) {
+
+        emailErrorMessage =
+          emailError?.message ||
+          "Unknown email error";
+
         console.error(
-          "Approval email failed:",
+          "Student approval/rejection email failed:",
           emailError
         );
       }
@@ -771,33 +1153,69 @@ router.put(
       // ACTIVITY
       // =================================================
 
-      await Activity.create({
-        type: "student",
+      try {
 
-        message:
-          `Student ${student.firstName} ${student.lastName} was ${status}`,
+        await Activity.create({
+          type:
+            "student",
 
-        time: new Date(),
-      });
+          message:
+            `Student ${student.firstName} ${student.lastName} was ${status}`,
 
-      res.json({
+          time:
+            new Date(),
+        });
+
+      } catch (activityError) {
+
+        console.error(
+          "Activity log error:",
+          activityError.message
+        );
+      }
+
+      // =================================================
+      // RESPONSE
+      // =================================================
+
+      return res.json({
+
         success: true,
 
         message:
-          `Student ${status.toLowerCase()} successfully`,
+          status === "Approved"
+            ? emailSent
+              ? "Student approved successfully and approval email sent."
+              : "Student approved successfully, but approval email could not be sent."
+            : emailSent
+              ? "Student rejected successfully and rejection email sent."
+              : "Student rejected successfully, but rejection email could not be sent.",
+
+        emailSent,
+
+        ...(emailSent
+          ? {}
+          : {
+              emailError:
+                emailErrorMessage,
+            }),
 
         student,
+
       });
 
     } catch (err) {
+
       console.error(
         "Student approval error:",
         err
       );
 
-      res.status(500).json({
+      return res.status(500).json({
+        success: false,
         message:
-          "Approval failed",
+          err.message ||
+          "Approval/rejection failed",
       });
     }
   }
@@ -811,6 +1229,7 @@ router.get(
   "/:id/dashboard",
   async (req, res) => {
     try {
+
       // =================================================
       // GET STUDENT
       // =================================================
@@ -862,6 +1281,7 @@ router.get(
 
       assignedTeachers.forEach(
         teacher => {
+
           teacher.subjects?.forEach(
             subject => {
 
@@ -871,13 +1291,16 @@ router.get(
                   subject.name
                 )
               ) {
+
                 enrolledSubjects.push(
                   subject.name
                 );
+
               }
 
             }
           );
+
         }
       );
 
@@ -892,13 +1315,14 @@ router.get(
       // 1 / 2 * 100 = 50%
       // =================================================
 
-      // Get completed attendance
-      // sessions for this student's class.
-
       const attendanceSessions =
         await AttendanceSession.find({
-          class: student.class,
-          status: "completed",
+          class:
+            student.class,
+
+          status:
+            "completed",
+
         }).select("_id");
 
       const totalClasses =
