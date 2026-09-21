@@ -127,20 +127,29 @@ const teacherSchema = new mongoose.Schema(
        APPROVAL STATUS
     ============================================== */
 
+
+
     isApproved: {
-      type: Boolean,
-      default: false
-    },
+  type: Boolean,
+  default: false
+},
+isRejected: {
+  type: Boolean,
+  default: false
+},
+isActive: {
+  type: Boolean,
+  default: false
+},
 
-    isRejected: {
-      type: Boolean,
-      default: false
-    },
-
-    isActive: {
-      type: Boolean,
-      default: false
-    }
+documentReuploadToken: {
+  type: String,
+  default: ""
+},
+documentReuploadExpires: {
+  type: Date,
+  default: null
+} 
   },
   {
     timestamps: true

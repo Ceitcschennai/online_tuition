@@ -10,6 +10,7 @@ const Subject = require("../models/Subject");
 const ClassSession = require("../models/ClassSession");
 const Activity = require("../models/Activity");
 const transporter = require("../config/email");
+const crypto = require("crypto");
 
 const {
   ActionAgent,
@@ -841,7 +842,7 @@ router.get(
 );
 
 /* =================================================
-   APPROVE / REJECT TEACHER
+   APPROVE / REJECT / REJECT DOCUMENT TEACHER
 ================================================= */
 
 router.put(
@@ -865,7 +866,11 @@ router.put(
       // VALIDATE STATUS
       // =================================================
 
-      if (!["Approved", "Rejected"].includes(status)) {
+      if (
+        !["Approved", "Rejected", "Reject Document"].includes(
+          status
+        )
+      ) {
         return res.status(400).json({
           success: false,
           message: "Invalid status",
@@ -876,7 +881,10 @@ router.put(
       // VALIDATE REJECTION REASON
       // =================================================
 
-      if (status === "Rejected" && !reason?.trim()) {
+      if (
+        status === "Rejected" &&
+        !reason?.trim()
+      ) {
         return res.status(400).json({
           success: false,
           message: "Rejection reason is required",
@@ -899,26 +907,81 @@ router.put(
       }
 
       // =================================================
-      // UPDATE TEACHER STATUS
+      // APPROVE TEACHER
       // =================================================
 
       if (status === "Approved") {
         teacher.isApproved = true;
         teacher.isRejected = false;
         teacher.isActive = true;
-      } else {
+
+        // Clear any old document re-upload token
+        teacher.documentReuploadToken = "";
+        teacher.documentReuploadExpires = null;
+      }
+
+      // =================================================
+      // REJECT DOCUMENT ONLY
+      // =================================================
+
+      else if (status === "Reject Document") {
+        teacher.isApproved = false;
+        teacher.isRejected = false;
+        teacher.isActive = false;
+
+        // Generate secure temporary token
+        teacher.documentReuploadToken =
+          crypto.randomBytes(32).toString("hex");
+
+        // Token valid for 24 hours
+        teacher.documentReuploadExpires =
+          new Date(
+            Date.now() + 24 * 60 * 60 * 1000
+          );
+      }
+
+      // =================================================
+      // REJECT ENTIRE REGISTRATION
+      // =================================================
+
+      else {
         teacher.isApproved = false;
         teacher.isRejected = true;
         teacher.isActive = false;
+
+        // Clear any document re-upload token
+        teacher.documentReuploadToken = "";
+        teacher.documentReuploadExpires = null;
       }
 
+      // =================================================
+      // SAVE TEACHER
+      // =================================================
+
       await teacher.save();
+
+      // =================================================
+      // CREATE RE-UPLOAD LINK
+      // =================================================
+
+      let reuploadLink = "";
+
+      if (status === "Reject Document") {
+        reuploadLink =
+          `${
+            process.env.FRONTEND_URL ||
+            "https://online-tuition-1wvb.vercel.app"
+          }/register/teacher?reupload=${
+            teacher.documentReuploadToken
+          }`;
+      }
 
       // =================================================
       // CUSTOMER ID
       // =================================================
 
-      const customerId = teacher._id.toString();
+      const customerId =
+        teacher._id.toString();
 
       // =================================================
       // ANALYTICS
@@ -927,12 +990,15 @@ router.put(
       try {
         if (
           AnalyticsAgent &&
-          typeof AnalyticsAgent.logInteraction === "function"
+          typeof AnalyticsAgent.logInteraction ===
+            "function"
         ) {
           await AnalyticsAgent.logInteraction({
             customerId,
+
             message:
               `Teacher ${teacher.firstName} ${teacher.lastName} was ${status}`,
+
             type: "approval",
           });
         }
@@ -948,22 +1014,29 @@ router.put(
       // =================================================
 
       try {
-        if (db.readyState === 1 && db.db) {
-          const tasks = await db.db
-            .collection("tasks")
-            .find({
-              customerId,
-              status: "open",
-            })
-            .toArray();
+        if (
+          db.readyState === 1 &&
+          db.db
+        ) {
+          const tasks =
+            await db.db
+              .collection("tasks")
+              .find({
+                customerId,
+                status: "open",
+              })
+              .toArray();
 
           for (const task of tasks) {
             try {
               if (
                 ActionAgent &&
-                typeof ActionAgent.closeTask === "function"
+                typeof ActionAgent.closeTask ===
+                  "function"
               ) {
-                await ActionAgent.closeTask(task._id);
+                await ActionAgent.closeTask(
+                  task._id
+                );
               }
             } catch (taskError) {
               console.error(
@@ -987,8 +1060,10 @@ router.put(
       try {
         await Activity.create({
           type: "teacher",
+
           message:
             `Teacher ${teacher.firstName} ${teacher.lastName} was ${status}`,
+
           time: new Date(),
         });
       } catch (activityError) {
@@ -1011,297 +1086,518 @@ router.put(
           teacher.email
         );
 
+        // =================================================
+        // EMAIL SUBJECT
+        // =================================================
+
         const emailSubject =
           status === "Approved"
-            ? "Online Tuition - Faculty Profile Approved"
-            : "Online Tuition - Faculty Profile Rejected";
+            ? "CeiT Academy - Faculty Profile Approved"
+            : status === "Reject Document"
+              ? "CeiT Academy - Document Re-upload Required"
+              : "CeiT Academy - Faculty Profile Rejected";
 
-        const emailHtml =
-          status === "Approved"
-            ? `
+        // =================================================
+        // APPROVED EMAIL
+        // =================================================
+
+        let emailHtml = "";
+
+        if (status === "Approved") {
+          emailHtml = `
+            <div style="
+              font-family: Arial, Helvetica, sans-serif;
+              background-color: #f4f6f8;
+              padding: 30px 15px;
+            ">
+
               <div style="
-                font-family: Arial, Helvetica, sans-serif;
-                background-color: #f4f6f8;
-                padding: 30px 15px;
+                max-width: 650px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 35px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.08);
               ">
 
-                <div style="
-                  max-width: 650px;
-                  margin: 0 auto;
-                  background-color: #ffffff;
-                  border-radius: 10px;
-                  padding: 35px;
-                  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+                <h2 style="
+                  color: #2c3e50;
+                  margin-bottom: 5px;
+                ">
+                  CeiT Academy - Online Tuition
+                </h2>
+
+                <p style="
+                  color: #777;
+                  margin-top: 0;
+                  font-size: 14px;
+                ">
+                  Faculty Account Notification
+                </p>
+
+                <hr style="
+                  border: none;
+                  border-top: 1px solid #e5e5e5;
+                  margin: 20px 0;
                 ">
 
-                  <h2 style="
-                    color: #2c3e50;
-                    margin-bottom: 5px;
-                  ">
-                    Online Tuition
-                  </h2>
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                ">
+                  Dear ${teacher.firstName} ${teacher.lastName},
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  We are pleased to inform you that your faculty
+                  registration profile with
+                  <strong>CeiT Academy - Online Tuition</strong>
+                  has been successfully reviewed and approved
+                  by the administrator.
+                </p>
+
+                <div style="
+                  background-color: #eaf8ef;
+                  border-left: 5px solid #28a745;
+                  padding: 15px 18px;
+                  margin: 25px 0;
+                ">
 
                   <p style="
-                    color: #777;
-                    margin-top: 0;
-                    font-size: 14px;
+                    margin: 0;
+                    color: #218838;
+                    font-size: 17px;
+                    font-weight: bold;
                   ">
-                    Faculty Account Notification
-                  </p>
-
-                  <hr style="
-                    border: none;
-                    border-top: 1px solid #e5e5e5;
-                    margin: 20px 0;
-                  ">
-
-                  <p style="
-                    font-size: 16px;
-                    color: #333;
-                  ">
-                    Dear ${teacher.firstName} ${teacher.lastName},
-                  </p>
-
-                  <p style="
-                    font-size: 16px;
-                    color: #333;
-                    line-height: 1.6;
-                  ">
-                    We are pleased to inform you that your faculty
-                    registration profile with
-                    <strong>Online Tuition</strong>
-                    has been successfully reviewed and approved
-                    by the administrator.
-                  </p>
-
-                  <div style="
-                    background-color: #eaf8ef;
-                    border-left: 5px solid #28a745;
-                    padding: 15px 18px;
-                    margin: 25px 0;
-                  ">
-                    <p style="
-                      margin: 0;
-                      color: #218838;
-                      font-size: 17px;
-                      font-weight: bold;
-                    ">
-                      Profile Status: APPROVED
-                    </p>
-                  </div>
-
-                  <p style="
-                    font-size: 16px;
-                    color: #333;
-                    line-height: 1.6;
-                  ">
-                    Your faculty account is now active.
-                  </p>
-
-                  <p style="
-                    font-size: 16px;
-                    color: #333;
-                    line-height: 1.6;
-                  ">
-                    You can now log in to the
-                    <strong>Online Tuition Portal</strong>
-                    using your registered email address and password.
-                  </p>
-
-                  <p style="
-                    font-size: 16px;
-                    color: #333;
-                    line-height: 1.6;
-                  ">
-                    After logging in, you will be able to access
-                    your faculty portal and use the features
-                    available for your account.
-                  </p>
-
-                  <p style="
-                    font-size: 16px;
-                    color: #333;
-                    line-height: 1.6;
-                  ">
-                    We welcome you to
-                    <strong>Online Tuition</strong>
-                    and look forward to your contribution to
-                    our learning community.
-                  </p>
-
-                  <hr style="
-                    border: none;
-                    border-top: 1px solid #e5e5e5;
-                    margin: 30px 0 20px;
-                  ">
-
-                  <p style="
-                    font-size: 14px;
-                    color: #555;
-                    line-height: 1.6;
-                  ">
-                    Regards,<br>
-                    <strong>Admin</strong><br>
-                    <strong>Online Tuition</strong>
-                  </p>
-
-                  <p style="
-                    font-size: 12px;
-                    color: #999;
-                    margin-top: 25px;
-                  ">
-                    This is an automated email from Online Tuition.
-                    Please do not reply directly to this email.
+                    Profile Status: APPROVED
                   </p>
 
                 </div>
-              </div>
-            `
-            : `
-              <div style="
-                font-family: Arial, Helvetica, sans-serif;
-                background-color: #f4f6f8;
-                padding: 30px 15px;
-              ">
 
-                <div style="
-                  max-width: 650px;
-                  margin: 0 auto;
-                  background-color: #ffffff;
-                  border-radius: 10px;
-                  padding: 35px;
-                  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  Your faculty account is now active.
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  You can now log in to the
+                  <strong>Online Tuition Portal</strong>
+                  using your registered email address and password.
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  After logging in, you will be able to access
+                  your faculty portal and use the features
+                  available for your account.
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  We welcome you to
+                  <strong>CeiT Academy - Online Tuition</strong>
+                  and look forward to your contribution to
+                  our learning community.
+                </p>
+
+                <hr style="
+                  border: none;
+                  border-top: 1px solid #e5e5e5;
+                  margin: 30px 0 20px;
                 ">
 
-                  <h2 style="
-                    color: #2c3e50;
-                    margin-bottom: 5px;
-                  ">
-                    Online Tuition
-                  </h2>
+                <p style="
+                  font-size: 14px;
+                  color: #555;
+                  line-height: 1.6;
+                ">
+                  Regards,<br>
+                  <strong>Admin</strong><br>
+                  <strong>CeiT Academy - Online Tuition</strong>
+                </p>
+
+                <p style="
+                  font-size: 12px;
+                  color: #999;
+                  margin-top: 25px;
+                ">
+                  This is an automated email from
+                  CeiT Academy - Online Tuition.
+                  Please do not reply directly to this email.
+                </p>
+
+              </div>
+            </div>
+          `;
+        }
+
+        // =================================================
+        // REJECT DOCUMENT EMAIL
+        // =================================================
+
+        else if (status === "Reject Document") {
+          emailHtml = `
+            <div style="
+              font-family: Arial, Helvetica, sans-serif;
+              background-color: #f4f6f8;
+              padding: 30px 15px;
+            ">
+
+              <div style="
+                max-width: 650px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 35px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+              ">
+
+                <h2 style="
+                  color: #2c3e50;
+                  margin-bottom: 5px;
+                ">
+                  CeiT Academy - Online Tuition
+                </h2>
+
+                <p style="
+                  color: #777;
+                  margin-top: 0;
+                  font-size: 14px;
+                ">
+                  Faculty Document Notification
+                </p>
+
+                <hr style="
+                  border: none;
+                  border-top: 1px solid #e5e5e5;
+                  margin: 20px 0;
+                ">
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                ">
+                  Dear ${teacher.firstName} ${teacher.lastName},
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  We have reviewed your faculty registration
+                  submitted to
+                  <strong>CeiT Academy - Online Tuition</strong>.
+                </p>
+
+                <div style="
+                  background-color: #fff8e6;
+                  border-left: 5px solid #f0ad4e;
+                  padding: 15px 18px;
+                  margin: 25px 0;
+                ">
 
                   <p style="
-                    color: #777;
-                    margin-top: 0;
-                    font-size: 14px;
+                    margin: 0 0 10px 0;
+                    color: #8a6d3b;
+                    font-size: 17px;
+                    font-weight: bold;
                   ">
-                    Faculty Account Notification
+                    Document Re-upload Required
                   </p>
 
-                  <hr style="
-                    border: none;
-                    border-top: 1px solid #e5e5e5;
-                    margin: 20px 0;
-                  ">
-
                   <p style="
-                    font-size: 16px;
+                    margin: 0;
                     color: #333;
-                  ">
-                    Dear ${teacher.firstName} ${teacher.lastName},
-                  </p>
-
-                  <p style="
-                    font-size: 16px;
-                    color: #333;
+                    font-size: 15px;
                     line-height: 1.6;
                   ">
-                    Thank you for registering as a faculty member
-                    with <strong>Online Tuition</strong>.
-                  </p>
-
-                  <p style="
-                    font-size: 16px;
-                    color: #333;
-                    line-height: 1.6;
-                  ">
-                    After reviewing your registration profile,
-                    the administrator has decided not to approve
-                    your faculty application at this time.
-                  </p>
-
-                  <div style="
-                    background-color: #fff3f3;
-                    border-left: 5px solid #dc3545;
-                    padding: 15px 18px;
-                    margin: 25px 0;
-                  ">
-
-                    <p style="
-                      margin: 0 0 10px 0;
-                      color: #c82333;
-                      font-size: 17px;
-                      font-weight: bold;
-                    ">
-                      Profile Status: REJECTED
-                    </p>
-
-                    <p style="
-                      margin: 0;
-                      color: #333;
-                      font-size: 15px;
-                      line-height: 1.6;
-                    ">
-                      <strong>Reason:</strong>
-                      ${reason.trim()}
-                    </p>
-
-                  </div>
-
-                  <p style="
-                    font-size: 16px;
-                    color: #333;
-                    line-height: 1.6;
-                  ">
-                    Please review the above feedback carefully.
-                    If you require further clarification regarding
-                    your application, please contact the administrator
-                    of <strong>Online Tuition</strong>.
-                  </p>
-
-                  <hr style="
-                    border: none;
-                    border-top: 1px solid #e5e5e5;
-                    margin: 30px 0 20px;
-                  ">
-
-                  <p style="
-                    font-size: 14px;
-                    color: #555;
-                    line-height: 1.6;
-                  ">
-                    Regards,<br>
-                    <strong>Admin</strong><br>
-                    <strong>Online Tuition</strong>
-                  </p>
-
-                  <p style="
-                    font-size: 12px;
-                    color: #999;
-                    margin-top: 25px;
-                  ">
-                    This is an automated email from Online Tuition.
-                    Please do not reply directly to this email.
+                    The document you uploaded is not clearly
+                    visible or readable, so the administrator
+                    is unable to verify it.
                   </p>
 
                 </div>
-              </div>
-            `;
 
-        const mailInfo = await transporter.sendMail({
-          from: process.env.EMAIL_USER,
-          to: teacher.email,
-          subject: emailSubject,
-          html: emailHtml,
-        });
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  Please click the button below to open your
+                  registration form.
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  Your existing registration details will already
+                  be filled in. You only need to upload a new,
+                  clear document and submit the form again.
+                </p>
+
+                <div style="
+                  text-align: center;
+                  margin: 30px 0;
+                ">
+
+                  <a
+                    href="${reuploadLink}"
+                    style="
+                      display: inline-block;
+                      background-color: #007bff;
+                      color: #ffffff;
+                      text-decoration: none;
+                      padding: 14px 28px;
+                      border-radius: 6px;
+                      font-size: 16px;
+                      font-weight: bold;
+                    "
+                  >
+                    Re-upload Document
+                  </a>
+
+                </div>
+
+                <div style="
+                  background-color: #f8f9fa;
+                  border: 1px solid #e5e5e5;
+                  padding: 15px 18px;
+                  margin: 25px 0;
+                  border-radius: 6px;
+                ">
+
+                  <p style="
+                    margin: 0;
+                    color: #555;
+                    font-size: 14px;
+                    line-height: 1.6;
+                  ">
+                    <strong>Important:</strong><br>
+                    Please make sure the complete document is
+                    visible, clear, readable and not cropped or blurred.
+                  </p>
+
+                </div>
+
+                <p style="
+                  font-size: 14px;
+                  color: #777;
+                  line-height: 1.6;
+                ">
+                  This re-upload link is valid for 24 hours.
+                </p>
+
+                <hr style="
+                  border: none;
+                  border-top: 1px solid #e5e5e5;
+                  margin: 30px 0 20px;
+                ">
+
+                <p style="
+                  font-size: 14px;
+                  color: #555;
+                  line-height: 1.6;
+                ">
+                  Regards,<br>
+                  <strong>Admin</strong><br>
+                  <strong>CeiT Academy - Online Tuition</strong>
+                </p>
+
+                <p style="
+                  font-size: 12px;
+                  color: #999;
+                  margin-top: 25px;
+                ">
+                  This is an automated email from
+                  CeiT Academy - Online Tuition.
+                  Please do not reply directly to this email.
+                </p>
+
+              </div>
+            </div>
+          `;
+        }
+
+        // =================================================
+        // FULL REGISTRATION REJECTION EMAIL
+        // =================================================
+
+        else {
+          emailHtml = `
+            <div style="
+              font-family: Arial, Helvetica, sans-serif;
+              background-color: #f4f6f8;
+              padding: 30px 15px;
+            ">
+
+              <div style="
+                max-width: 650px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 35px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+              ">
+
+                <h2 style="
+                  color: #2c3e50;
+                  margin-bottom: 5px;
+                ">
+                  CeiT Academy - Online Tuition
+                </h2>
+
+                <p style="
+                  color: #777;
+                  margin-top: 0;
+                  font-size: 14px;
+                ">
+                  Faculty Account Notification
+                </p>
+
+                <hr style="
+                  border: none;
+                  border-top: 1px solid #e5e5e5;
+                  margin: 20px 0;
+                ">
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                ">
+                  Dear ${teacher.firstName} ${teacher.lastName},
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  Thank you for registering as a faculty member
+                  with <strong>CeiT Academy - Online Tuition</strong>.
+                </p>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  After reviewing your registration profile,
+                  the administrator has decided not to approve
+                  your faculty application at this time.
+                </p>
+
+                <div style="
+                  background-color: #fff3f3;
+                  border-left: 5px solid #dc3545;
+                  padding: 15px 18px;
+                  margin: 25px 0;
+                ">
+
+                  <p style="
+                    margin: 0 0 10px 0;
+                    color: #c82333;
+                    font-size: 17px;
+                    font-weight: bold;
+                  ">
+                    Profile Status: REJECTED
+                  </p>
+
+                  <p style="
+                    margin: 0;
+                    color: #333;
+                    font-size: 15px;
+                    line-height: 1.6;
+                  ">
+                    <strong>Reason:</strong>
+                    ${reason?.trim() || "No reason provided"}
+                  </p>
+
+                </div>
+
+                <p style="
+                  font-size: 16px;
+                  color: #333;
+                  line-height: 1.6;
+                ">
+                  Please review the above feedback carefully.
+                  If you require further clarification regarding
+                  your application, please contact the administrator
+                  of <strong>CeiT Academy - Online Tuition</strong>.
+                </p>
+
+                <hr style="
+                  border: none;
+                  border-top: 1px solid #e5e5e5;
+                  margin: 30px 0 20px;
+                ">
+
+                <p style="
+                  font-size: 14px;
+                  color: #555;
+                  line-height: 1.6;
+                ">
+                  Regards,<br>
+                  <strong>Admin</strong><br>
+                  <strong>CeiT Academy - Online Tuition</strong>
+                </p>
+
+                <p style="
+                  font-size: 12px;
+                  color: #999;
+                  margin-top: 25px;
+                ">
+                  This is an automated email from
+                  CeiT Academy - Online Tuition.
+                  Please do not reply directly to this email.
+                </p>
+
+              </div>
+            </div>
+          `;
+        }
+
+        // =================================================
+        // SEND EMAIL
+        // =================================================
+
+        const mailInfo =
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: teacher.email,
+            subject: emailSubject,
+            html: emailHtml,
+          });
 
         emailSent = true;
 
         console.log(
           "✅ FACULTY EMAIL SENT SUCCESSFULLY",
           {
-            messageId: mailInfo.messageId,
+            messageId:
+              mailInfo.messageId,
+
             to: teacher.email,
+
             status,
           }
         );
@@ -1329,21 +1625,29 @@ router.put(
             ? emailSent
               ? "Teacher approved successfully and approval email sent."
               : "Teacher approved successfully, but approval email could not be sent."
-            : emailSent
-              ? "Teacher rejected successfully and rejection email sent."
-              : "Teacher rejected successfully, but rejection email could not be sent.",
+
+            : status === "Reject Document"
+              ? emailSent
+                ? "Teacher document rejected and re-upload email sent."
+                : "Teacher document rejected, but re-upload email could not be sent."
+
+              : emailSent
+                ? "Teacher rejected successfully and rejection email sent."
+                : "Teacher rejected successfully, but rejection email could not be sent.",
 
         emailSent,
 
         ...(emailSent
           ? {}
           : {
-              emailError: emailErrorMessage,
+              emailError:
+                emailErrorMessage,
             }),
 
-        teacher: teacher.toObject
-          ? teacher.toObject()
-          : teacher,
+        teacher:
+          teacher.toObject
+            ? teacher.toObject()
+            : teacher,
       });
 
     } catch (err) {
@@ -2081,6 +2385,275 @@ router.put(
       return res.status(500).json({
         success: false,
         message: "Failed to update bank details"
+      });
+    }
+  }
+);
+
+/* =================================================
+   DOCUMENT RE-UPLOAD
+================================================= */
+
+/*
+   GET:
+   Load existing teacher registration details
+   using the temporary re-upload token.
+*/
+
+router.get(
+  "/reupload-document/:token",
+  async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: "Re-upload token is required",
+        });
+      }
+
+      const teacher = await Teacher.findOne({
+        documentReuploadToken: token,
+        documentReuploadExpires: {
+          $gt: new Date(),
+        },
+      }).select(
+        "-password -degreeCertificate -documentReuploadToken -documentReuploadExpires"
+      );
+
+      if (!teacher) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "This document re-upload link is invalid or has expired.",
+        });
+      }
+
+      return res.json({
+        success: true,
+
+        teacher: {
+          _id: teacher._id,
+          salutation: teacher.salutation,
+          firstName: teacher.firstName,
+          lastName: teacher.lastName,
+          email: teacher.email,
+          mobile: teacher.mobile,
+          timezone: teacher.timezone,
+          qualification: teacher.qualification,
+          preferredSubject:
+            teacher.preferredSubject,
+          classesAssigned:
+            teacher.classesAssigned || [],
+        },
+      });
+    } catch (error) {
+      console.error(
+        "Document re-upload details error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Failed to load registration details",
+      });
+    }
+  }
+);
+
+
+/*
+   POST:
+   Upload the corrected document
+   and update the existing teacher record.
+*/
+
+router.post(
+  "/reupload-document/:token",
+  upload.any(),
+  async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: "Re-upload token is required",
+        });
+      }
+
+      const teacher = await Teacher.findOne({
+        documentReuploadToken: token,
+        documentReuploadExpires: {
+          $gt: new Date(),
+        },
+      });
+
+      if (!teacher) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "This document re-upload link is invalid or has expired.",
+        });
+      }
+
+      // Find the newly uploaded document
+      const certificateFile =
+        req.files?.find(
+          (file) =>
+            file.fieldname ===
+            "degreeCertificate"
+        );
+
+      if (!certificateFile) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Please upload the corrected document.",
+        });
+      }
+
+      // Replace the old document
+      teacher.degreeCertificate =
+        `data:${certificateFile.mimetype};base64,${certificateFile.buffer.toString(
+          "base64"
+        )}`;
+
+      // Keep the faculty pending for admin review
+      teacher.isApproved = false;
+      teacher.isRejected = false;
+      teacher.isActive = false;
+
+      // Token can only be used once
+      teacher.documentReuploadToken = "";
+      teacher.documentReuploadExpires = null;
+
+      await teacher.save();
+
+      // =================================================
+      // ACTIVITY LOG
+      // =================================================
+
+      try {
+        await Activity.create({
+          type: "teacher",
+
+          message:
+            `Teacher ${teacher.firstName} ${teacher.lastName} re-uploaded the required document`,
+
+          time: new Date(),
+        });
+      } catch (activityError) {
+        console.error(
+          "Document re-upload activity error:",
+          activityError.message
+        );
+      }
+
+      // =================================================
+      // ADMIN EMAIL
+      // =================================================
+
+      try {
+        const ADMIN_EMAIL =
+          process.env.ADMIN_EMAIL;
+
+        if (ADMIN_EMAIL) {
+          await transporter.sendMail({
+            from:
+              process.env.EMAIL_USER,
+
+            to: ADMIN_EMAIL,
+
+            subject:
+              "CeiT Academy - Faculty Document Re-uploaded",
+
+            html: `
+              <div style="
+                font-family: Arial, Helvetica, sans-serif;
+                padding: 30px;
+              ">
+
+                <h2>
+                  Faculty Document Re-uploaded
+                </h2>
+
+                <p>
+                  A faculty member has uploaded a
+                  corrected document for verification.
+                </p>
+
+                <p>
+                  <strong>Name:</strong>
+                  ${teacher.firstName}
+                  ${teacher.lastName}
+                </p>
+
+                <p>
+                  <strong>Email:</strong>
+                  ${teacher.email}
+                </p>
+
+                <p>
+                  <strong>Status:</strong>
+                  Pending Admin Approval
+                </p>
+
+                <p>
+                  Please review the newly uploaded
+                  document and approve or reject the
+                  faculty registration.
+                </p>
+
+                <br>
+
+                <p>
+                  Regards,<br>
+                  <strong>
+                    CeiT Academy - Online Tuition
+                  </strong>
+                </p>
+
+              </div>
+            `,
+          });
+        }
+      } catch (emailError) {
+        console.error(
+          "Admin re-upload email failed:",
+          emailError.message
+        );
+      }
+
+      return res.json({
+        success: true,
+
+        message:
+          "Document re-uploaded successfully. Your registration is now waiting for admin approval.",
+
+        teacher: {
+          id: teacher._id,
+          firstName: teacher.firstName,
+          lastName: teacher.lastName,
+          email: teacher.email,
+          isApproved:
+            teacher.isApproved,
+          isRejected:
+            teacher.isRejected,
+        },
+      });
+    } catch (error) {
+      console.error(
+        "Document re-upload error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Failed to re-upload document",
       });
     }
   }
