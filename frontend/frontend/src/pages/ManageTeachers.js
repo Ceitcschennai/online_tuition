@@ -607,18 +607,19 @@ const saveSubject = async () => {
       </button>
     )}
 
-<button
-  className="btn-reject-document"
-  onClick={() =>
-    updateStatus(
-      teacher._id,
-      "Reject Document"
-    )
-  }
->
-  Reject Document
-</button>
-
+{!teacher.isApproved && (
+  <button
+    className="btn-reject-document"
+    onClick={() =>
+      updateStatus(
+        teacher._id,
+        "Reject Document"
+      )
+    }
+  >
+    Reject Document
+  </button>
+)}
     {!teacher.isRejected && (
       <button
         className="btn-reject"
