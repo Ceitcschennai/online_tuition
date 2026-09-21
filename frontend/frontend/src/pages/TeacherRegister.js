@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import Navbar from "../components/Navbar";
 import API_BASE_URL from "../config/api";
@@ -76,6 +76,21 @@ const QUALIFICATION_OPTIONS = [
 
 
 /* =========================================================
+   DOCUMENT RE-UPLOAD MODE
+========================================================= */
+
+const searchParams = new URLSearchParams(
+  window.location.search
+);
+
+const reuploadToken =
+  searchParams.get("reupload");
+
+const isReuploadMode =
+  Boolean(reuploadToken);
+
+
+/* =========================================================
    TEACHER REGISTER COMPONENT
 ========================================================= */
 
@@ -142,6 +157,9 @@ const TeacherRegister = () => {
   const [loading, setLoading] =
     useState(false);
 
+  const [loadingDetails, setLoadingDetails] =
+    useState(isReuploadMode);
+
 
   /* =======================================================
      POPUP
@@ -156,10 +174,14 @@ const TeacherRegister = () => {
 
 
   /* =========================================================
-     POPUP
+     POPUP FUNCTIONS
   ========================================================= */
 
-  const showPopup = (type, title, message) => {
+  const showPopup = (
+    type,
+    title,
+    message
+  ) => {
     setPopup({
       show: true,
       type,
@@ -180,10 +202,110 @@ const TeacherRegister = () => {
 
 
   /* =========================================================
+     LOAD EXISTING DETAILS FOR RE-UPLOAD
+  ========================================================= */
+
+  useEffect(() => {
+
+    if (!isReuploadMode) {
+      setLoadingDetails(false);
+      return;
+    }
+
+    const loadTeacherDetails = async () => {
+
+      try {
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/teacher/reupload-document/${reuploadToken}`
+        );
+
+        let data = {};
+
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          console.error(
+            "Unable to read re-upload response:",
+            jsonError
+          );
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+            "This re-upload link is invalid or expired."
+          );
+        }
+
+        const teacher =
+          data.teacher;
+
+        setForm({
+          salutation:
+            teacher.salutation || "Mr.",
+
+          firstName:
+            teacher.firstName || "",
+
+          lastName:
+            teacher.lastName || "",
+
+          mobile:
+            teacher.mobile || "",
+
+          timezone:
+            teacher.timezone || "",
+
+          qualification:
+            teacher.qualification || "",
+
+          email:
+            teacher.email || "",
+
+          password: "",
+
+          confirmPassword: "",
+
+          preferredSubject:
+            teacher.preferredSubject || "",
+
+          classes:
+            teacher.classesAssigned || [],
+        });
+
+      } catch (error) {
+
+        console.error(
+          "Teacher re-upload details error:",
+          error
+        );
+
+        showPopup(
+          "error",
+          "Re-upload Link Error",
+          error.message ||
+          "Unable to load your registration details."
+        );
+
+      } finally {
+
+        setLoadingDetails(false);
+
+      }
+    };
+
+    loadTeacherDetails();
+
+  }, []);
+
+
+  /* =========================================================
      FORM CHANGE
   ========================================================= */
 
   const handleChange = (event) => {
+
     const {
       name,
       value,
@@ -193,6 +315,7 @@ const TeacherRegister = () => {
       ...previous,
       [name]: value,
     }));
+
   };
 
 
@@ -201,22 +324,34 @@ const TeacherRegister = () => {
   ========================================================= */
 
   const toggleClass = (className) => {
+
+    if (isReuploadMode) {
+      return;
+    }
+
     setForm((previous) => {
 
       if (
-        previous.classes.includes(className)
+        previous.classes.includes(
+          className
+        )
       ) {
+
         return {
           ...previous,
+
           classes:
             previous.classes.filter(
-              (item) => item !== className
+              (item) =>
+                item !== className
             ),
         };
+
       }
 
       return {
         ...previous,
+
         classes: [
           ...previous.classes,
           className,
@@ -224,6 +359,7 @@ const TeacherRegister = () => {
       };
 
     });
+
   };
 
 
@@ -237,10 +373,13 @@ const TeacherRegister = () => {
       event.target.files &&
       event.target.files[0]
     ) {
+
       setDegreeFile(
         event.target.files[0]
       );
+
     }
+
   };
 
 
@@ -249,20 +388,30 @@ const TeacherRegister = () => {
   ========================================================= */
 
   const passwordChecks = {
+
     length:
       form.password.length >= 8,
 
     upper:
-      /[A-Z]/.test(form.password),
+      /[A-Z]/.test(
+        form.password
+      ),
 
     lower:
-      /[a-z]/.test(form.password),
+      /[a-z]/.test(
+        form.password
+      ),
 
     number:
-      /\d/.test(form.password),
+      /\d/.test(
+        form.password
+      ),
 
     special:
-      /[@$!%*?&]/.test(form.password),
+      /[@$!%*?&]/.test(
+        form.password
+      ),
+
   };
 
 
@@ -273,7 +422,8 @@ const TeacherRegister = () => {
   const passwordsMatch =
     form.confirmPassword.length === 0
       ? null
-      : form.password === form.confirmPassword;
+      : form.password ===
+        form.confirmPassword;
 
 
   /* =========================================================
@@ -314,6 +464,7 @@ const TeacherRegister = () => {
     if (fileInput) {
       fileInput.value = "";
     }
+
   };
 
 
@@ -321,13 +472,135 @@ const TeacherRegister = () => {
      SUBMIT
   ========================================================= */
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (
+    event
+  ) => {
 
     event.preventDefault();
 
 
     /* =======================================================
-       REQUIRED FIELDS
+       DOCUMENT RE-UPLOAD MODE
+    ======================================================= */
+
+    if (isReuploadMode) {
+
+      if (!degreeFile) {
+
+        showPopup(
+          "error",
+          "Certificate Required",
+          "Please upload the corrected degree certificate."
+        );
+
+        return;
+      }
+
+
+      const formData =
+        new FormData();
+
+      formData.append(
+        "degreeCertificate",
+        degreeFile
+      );
+
+
+      try {
+
+        setLoading(true);
+
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/teacher/reupload-document/${reuploadToken}`,
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+
+        let data = {};
+
+        try {
+
+          data =
+            await response.json();
+
+        } catch (jsonError) {
+
+          console.error(
+            "Unable to read server response:",
+            jsonError
+          );
+
+        }
+
+
+        if (response.ok) {
+
+          setDegreeFile(null);
+
+          const fileInput =
+            document.getElementById(
+              "degreeCertificate"
+            );
+
+          if (fileInput) {
+            fileInput.value = "";
+          }
+
+
+          showPopup(
+            "success",
+            "Document Submitted Successfully!",
+            data.message ||
+            "Your corrected document has been submitted. Please wait for admin approval."
+          );
+
+
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          });
+
+          return;
+        }
+
+
+        showPopup(
+          "error",
+          "Re-upload Failed",
+          data.message ||
+          "Unable to upload the corrected document."
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Teacher document re-upload error:",
+          error
+        );
+
+        showPopup(
+          "error",
+          "Connection Error",
+          "Unable to connect to the server. Please try again."
+        );
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+      return;
+    }
+
+
+    /* =======================================================
+       NORMAL REGISTRATION
     ======================================================= */
 
     if (
@@ -490,7 +763,9 @@ const TeacherRegister = () => {
 
     formData.append(
       "email",
-      form.email.trim().toLowerCase()
+      form.email
+        .trim()
+        .toLowerCase()
     );
 
     formData.append(
@@ -520,7 +795,7 @@ const TeacherRegister = () => {
 
 
     /* =======================================================
-       API CALL
+       NORMAL REGISTRATION API
     ======================================================= */
 
     try {
@@ -550,6 +825,7 @@ const TeacherRegister = () => {
           "Unable to read server response:",
           jsonError
         );
+
       }
 
 
@@ -565,7 +841,7 @@ const TeacherRegister = () => {
           "success",
           "Registration Successful!",
           data.message ||
-            "Your teacher registration was successful. Please wait for admin approval before logging in."
+          "Your teacher registration was successful. Please wait for admin approval before logging in."
         );
 
         window.scrollTo({
@@ -584,8 +860,9 @@ const TeacherRegister = () => {
       if (data.errors) {
 
         const errorMessages =
-          Object.values(data.errors)
-            .join("\n");
+          Object.values(
+            data.errors
+          ).join("\n");
 
         showPopup(
           "error",
@@ -599,8 +876,9 @@ const TeacherRegister = () => {
           "error",
           "Registration Failed",
           data.message ||
-            "Registration failed. Please try again."
+          "Registration failed. Please try again."
         );
+
       }
 
 
@@ -633,10 +911,6 @@ const TeacherRegister = () => {
   return (
 
     <div className="teacher-register-page">
-
-      {/* =====================================================
-          NAVBAR
-      ===================================================== */}
 
       <Navbar />
 
@@ -726,14 +1000,43 @@ const TeacherRegister = () => {
           <div className="teacher-register-heading">
 
             <h1>
-              Faculty Registration
+
+              {isReuploadMode
+                ? "Document Re-upload"
+                : "Faculty Registration"
+              }
+
             </h1>
 
             <p>
-              Fill in your details to create your teacher account
+
+              {isReuploadMode
+                ? "Review your registration details and upload a clear, readable document"
+                : "Fill in your details to create your teacher account"
+              }
+
             </p>
 
           </div>
+
+
+          {/* =================================================
+              LOADING EXISTING DETAILS
+          ================================================= */}
+
+          {isReuploadMode &&
+            loadingDetails && (
+
+              <p
+                style={{
+                  textAlign: "center",
+                  margin: "20px 0",
+                }}
+              >
+                Loading your registration details...
+              </p>
+
+          )}
 
 
           {/* =================================================
@@ -767,6 +1070,7 @@ const TeacherRegister = () => {
                   name="salutation"
                   value={form.salutation}
                   onChange={handleChange}
+                  disabled={isReuploadMode}
                 >
 
                   <option value="Mr.">
@@ -804,6 +1108,7 @@ const TeacherRegister = () => {
                   value={form.firstName}
                   onChange={handleChange}
                   placeholder="Enter first name"
+                  readOnly={isReuploadMode}
                 />
 
               </div>
@@ -823,6 +1128,7 @@ const TeacherRegister = () => {
                   value={form.lastName}
                   onChange={handleChange}
                   placeholder="Enter last name"
+                  readOnly={isReuploadMode}
                 />
 
               </div>
@@ -846,6 +1152,7 @@ const TeacherRegister = () => {
                 value={form.mobile}
                 onChange={handleChange}
                 placeholder="Enter mobile number"
+                readOnly={isReuploadMode}
               />
 
             </div>
@@ -870,6 +1177,7 @@ const TeacherRegister = () => {
                   name="timezone"
                   value={form.timezone}
                   onChange={handleChange}
+                  disabled={isReuploadMode}
                 >
 
                   <option value="">
@@ -906,6 +1214,7 @@ const TeacherRegister = () => {
                   name="qualification"
                   value={form.qualification}
                   onChange={handleChange}
+                  disabled={isReuploadMode}
                 >
 
                   <option value="">
@@ -948,6 +1257,7 @@ const TeacherRegister = () => {
                 value={form.email}
                 onChange={handleChange}
                 placeholder="Enter email address"
+                readOnly={isReuploadMode}
               />
 
             </div>
@@ -955,297 +1265,257 @@ const TeacherRegister = () => {
 
             {/* ===============================================
                 PASSWORD
+                HIDDEN DURING DOCUMENT RE-UPLOAD
             =============================================== */}
 
-            <div className="teacher-form-group">
+            {!isReuploadMode && (
 
-              <label>
-                Password
-              </label>
+              <>
 
+                {/* PASSWORD */}
 
-              <div className="teacher-password-wrapper">
+                <div className="teacher-form-group">
 
-                <FaLock
-                  className="teacher-password-icon"
-                />
-
-
-                <input
-                  type={
-                    showPassword
-                      ? "text"
-                      : "password"
-                  }
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="Enter password"
-
-                  /* Show rules when password is focused */
-                  onFocus={() => {
-                    setShowPasswordRules(true);
-                  }}
-
-                  /*
-                    Hide rules when leaving password.
-
-                    The eye button uses onMouseDown
-                    with preventDefault(), so clicking
-                    the eye will NOT trigger this blur.
-                  */
-                  onBlur={() => {
-                    setShowPasswordRules(false);
-                  }}
-
-                  autoComplete="new-password"
-                />
+                  <label>
+                    Password
+                  </label>
 
 
-                {/* =========================================
-                    PASSWORD EYE BUTTON
-                ========================================= */}
+                  <div className="teacher-password-wrapper">
 
-                <button
-                  type="button"
-                  className="teacher-eye-button"
-
-                  /*
-                    Keep password input focused
-                    when clicking the eye.
-                  */
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                  }}
-
-                  onClick={() =>
-                    setShowPassword(
-                      (previous) =>
-                        !previous
-                    )
-                  }
-
-                  aria-label={
-                    showPassword
-                      ? "Hide password"
-                      : "Show password"
-                  }
-                >
-
-                  {showPassword
-                    ? <FaEyeSlash />
-                    : <FaEye />
-                  }
-
-                </button>
-
-              </div>
+                    <FaLock
+                      className="teacher-password-icon"
+                    />
 
 
-              {/* =========================================
-                  PASSWORD RULES BOX
-              ========================================= */}
+                    <input
+                      type={
+                        showPassword
+                          ? "text"
+                          : "password"
+                      }
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="Enter password"
 
-              {showPasswordRules && (
+                      onFocus={() =>
+                        setShowPasswordRules(true)
+                      }
 
-                <div className="teacher-password-rules">
+                      onBlur={() =>
+                        setShowPasswordRules(false)
+                      }
+
+                      autoComplete="new-password"
+                    />
 
 
-                  {/* LENGTH */}
+                    <button
+                      type="button"
+                      className="teacher-eye-button"
 
-                  <div
-                    className={
-                      passwordChecks.length
-                        ? "valid"
-                        : ""
-                    }
-                  >
+                      onMouseDown={(event) =>
+                        event.preventDefault()
+                      }
 
-                    {passwordChecks.length
-                      ? "✓"
-                      : "•"
-                    }{" "}
+                      onClick={() =>
+                        setShowPassword(
+                          (previous) =>
+                            !previous
+                        )
+                      }
 
-                    At least 8 characters
+                      aria-label={
+                        showPassword
+                          ? "Hide password"
+                          : "Show password"
+                      }
+                    >
+
+                      {showPassword
+                        ? <FaEyeSlash />
+                        : <FaEye />
+                      }
+
+                    </button>
 
                   </div>
 
 
-                  {/* UPPERCASE */}
+                  {/* PASSWORD RULES */}
 
-                  <div
-                    className={
-                      passwordChecks.upper
-                        ? "valid"
-                        : ""
-                    }
-                  >
+                  {showPasswordRules && (
 
-                    {passwordChecks.upper
-                      ? "✓"
-                      : "•"
-                    }{" "}
+                    <div className="teacher-password-rules">
 
-                    One uppercase letter
-
-                  </div>
-
-
-                  {/* LOWERCASE */}
-
-                  <div
-                    className={
-                      passwordChecks.lower
-                        ? "valid"
-                        : ""
-                    }
-                  >
-
-                    {passwordChecks.lower
-                      ? "✓"
-                      : "•"
-                    }{" "}
-
-                    One lowercase letter
-
-                  </div>
+                      <div
+                        className={
+                          passwordChecks.length
+                            ? "valid"
+                            : ""
+                        }
+                      >
+                        {passwordChecks.length
+                          ? "✓"
+                          : "•"
+                        }{" "}
+                        At least 8 characters
+                      </div>
 
 
-                  {/* NUMBER */}
-
-                  <div
-                    className={
-                      passwordChecks.number
-                        ? "valid"
-                        : ""
-                    }
-                  >
-
-                    {passwordChecks.number
-                      ? "✓"
-                      : "•"
-                    }{" "}
-
-                    One number
-
-                  </div>
+                      <div
+                        className={
+                          passwordChecks.upper
+                            ? "valid"
+                            : ""
+                        }
+                      >
+                        {passwordChecks.upper
+                          ? "✓"
+                          : "•"
+                        }{" "}
+                        One uppercase letter
+                      </div>
 
 
-                  {/* SPECIAL CHARACTER */}
+                      <div
+                        className={
+                          passwordChecks.lower
+                            ? "valid"
+                            : ""
+                        }
+                      >
+                        {passwordChecks.lower
+                          ? "✓"
+                          : "•"
+                        }{" "}
+                        One lowercase letter
+                      </div>
 
-                  <div
-                    className={
-                      passwordChecks.special
-                        ? "valid"
-                        : ""
-                    }
-                  >
 
-                    {passwordChecks.special
-                      ? "✓"
-                      : "•"
-                    }{" "}
+                      <div
+                        className={
+                          passwordChecks.number
+                            ? "valid"
+                            : ""
+                        }
+                      >
+                        {passwordChecks.number
+                          ? "✓"
+                          : "•"
+                        }{" "}
+                        One number
+                      </div>
 
-                    One special character
 
-                  </div>
+                      <div
+                        className={
+                          passwordChecks.special
+                            ? "valid"
+                            : ""
+                        }
+                      >
+                        {passwordChecks.special
+                          ? "✓"
+                          : "•"
+                        }{" "}
+                        One special character
+                      </div>
 
+                    </div>
+
+                  )}
 
                 </div>
 
-              )}
 
-            </div>
+                {/* CONFIRM PASSWORD */}
 
+                <div className="teacher-form-group">
 
-            {/* ===============================================
-                CONFIRM PASSWORD
-            =============================================== */}
-
-            <div className="teacher-form-group">
-
-              <label>
-                Confirm Password
-              </label>
+                  <label>
+                    Confirm Password
+                  </label>
 
 
-              <div className="teacher-password-wrapper">
+                  <div className="teacher-password-wrapper">
 
-                <FaLock
-                  className="teacher-password-icon"
-                />
-
-
-                <input
-                  type={
-                    showConfirmPassword
-                      ? "text"
-                      : "password"
-                  }
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Confirm password"
-                  autoComplete="new-password"
-                />
+                    <FaLock
+                      className="teacher-password-icon"
+                    />
 
 
-                {/* CONFIRM PASSWORD EYE */}
-
-                <button
-                  type="button"
-                  className="teacher-eye-button"
-
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                  }}
-
-                  onClick={() =>
-                    setShowConfirmPassword(
-                      (previous) =>
-                        !previous
-                    )
-                  }
-
-                  aria-label={
-                    showConfirmPassword
-                      ? "Hide confirm password"
-                      : "Show confirm password"
-                  }
-                >
-
-                  {showConfirmPassword
-                    ? <FaEyeSlash />
-                    : <FaEye />
-                  }
-
-                </button>
-
-              </div>
+                    <input
+                      type={
+                        showConfirmPassword
+                          ? "text"
+                          : "password"
+                      }
+                      name="confirmPassword"
+                      value={form.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="Confirm password"
+                      autoComplete="new-password"
+                    />
 
 
-              {/* PASSWORD MATCH MESSAGE */}
+                    <button
+                      type="button"
+                      className="teacher-eye-button"
 
-              {passwordsMatch !== null && (
+                      onMouseDown={(event) =>
+                        event.preventDefault()
+                      }
 
-                <small
-                  className={
-                    passwordsMatch
-                      ? "teacher-password-match valid"
-                      : "teacher-password-match invalid"
-                  }
-                >
+                      onClick={() =>
+                        setShowConfirmPassword(
+                          (previous) =>
+                            !previous
+                        )
+                      }
 
-                  {passwordsMatch
-                    ? "✓ Passwords match"
-                    : "✕ Passwords do not match"
-                  }
+                      aria-label={
+                        showConfirmPassword
+                          ? "Hide confirm password"
+                          : "Show confirm password"
+                      }
+                    >
 
-                </small>
+                      {showConfirmPassword
+                        ? <FaEyeSlash />
+                        : <FaEye />
+                      }
 
-              )}
+                    </button>
 
-            </div>
+                  </div>
+
+
+                  {passwordsMatch !== null && (
+
+                    <small
+                      className={
+                        passwordsMatch
+                          ? "teacher-password-match valid"
+                          : "teacher-password-match invalid"
+                      }
+                    >
+
+                      {passwordsMatch
+                        ? "✓ Passwords match"
+                        : "✕ Passwords do not match"
+                      }
+
+                    </small>
+
+                  )}
+
+                </div>
+
+              </>
+
+            )}
 
 
             {/* ===============================================
@@ -1264,6 +1534,7 @@ const TeacherRegister = () => {
                 value={form.preferredSubject}
                 onChange={handleChange}
                 placeholder="Example: Mathematics"
+                readOnly={isReuploadMode}
               />
 
             </div>
@@ -1282,16 +1553,21 @@ const TeacherRegister = () => {
 
               <div className="teacher-classes-dropdown">
 
-
                 <button
                   type="button"
                   className="teacher-classes-button"
 
-                  onClick={() =>
-                    setClassesOpen(
-                      !classesOpen
-                    )
-                  }
+                  onClick={() => {
+
+                    if (!isReuploadMode) {
+                      setClassesOpen(
+                        !classesOpen
+                      );
+                    }
+
+                  }}
+
+                  disabled={isReuploadMode}
                 >
 
                   <span>
@@ -1315,7 +1591,7 @@ const TeacherRegister = () => {
                 </button>
 
 
-                {classesOpen && (
+                {classesOpen && !isReuploadMode && (
 
                   <div className="teacher-classes-menu">
 
@@ -1334,6 +1610,7 @@ const TeacherRegister = () => {
                                 className
                               )
                             }
+
                             onChange={() =>
                               toggleClass(
                                 className
@@ -1361,13 +1638,18 @@ const TeacherRegister = () => {
 
 
             {/* ===============================================
-                CERTIFICATE
+                DEGREE CERTIFICATE
             =============================================== */}
 
             <div className="teacher-form-group">
 
               <label>
-                Degree Certificate
+
+                {isReuploadMode
+                  ? "Upload Corrected Degree Certificate"
+                  : "Degree Certificate"
+                }
+
               </label>
 
 
@@ -1380,7 +1662,12 @@ const TeacherRegister = () => {
 
 
                 <span className="teacher-file-button">
-                  Choose File
+
+                  {isReuploadMode
+                    ? "Upload Document"
+                    : "Choose File"
+                  }
+
                 </span>
 
 
@@ -1408,18 +1695,28 @@ const TeacherRegister = () => {
 
 
             {/* ===============================================
-                REGISTER
+                SUBMIT BUTTON
             =============================================== */}
 
             <button
               type="submit"
               className="teacher-register-button"
-              disabled={loading}
+              disabled={
+                loading ||
+                loadingDetails
+              }
             >
 
               {loading
-                ? "Registering..."
-                : "Register as Faculty"
+
+                ? isReuploadMode
+                  ? "Uploading..."
+                  : "Registering..."
+
+                : isReuploadMode
+                  ? "Submit Corrected Document"
+                  : "Register as Faculty"
+
               }
 
             </button>
@@ -1456,6 +1753,7 @@ const TeacherRegister = () => {
     </div>
 
   );
+
 };
 
 

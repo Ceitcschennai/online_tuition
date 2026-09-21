@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 
+
 /* =========================================================
    PAGES
 ========================================================= */
@@ -53,6 +54,7 @@ import TeacherSubjects from "./pages/TeacherSubjects";
 
 import NotFound from "./pages/NotFound";
 
+
 /* =========================================================
    COMPONENTS
 ========================================================= */
@@ -62,11 +64,13 @@ import Sidebar from "./components/Sidebar";
 import ErrorBoundary from "./components/ErrorBoundary";
 import JitsiRedirectHandler from "./components/JitsiRedirectHandler";
 
+
 /* =========================================================
    CONTEXT
 ========================================================= */
 
 import { LiveClassProvider } from "./contexts/LiveClassContext";
+
 
 /* =========================================================
    STYLES
@@ -77,26 +81,40 @@ import "slick-carousel/slick/slick-theme.css";
 
 import "./styles/layout.css";
 
+
 /* =========================================================
    SAFE USER HELPER
 ========================================================= */
 
 const getStoredUser = () => {
-  try {
-    const raw = localStorage.getItem("user");
 
-    if (!raw || raw === "undefined" || raw === "null") {
+  try {
+
+    const raw =
+      localStorage.getItem("user");
+
+    if (
+      !raw ||
+      raw === "undefined" ||
+      raw === "null"
+    ) {
       return null;
     }
 
-    const parsed = JSON.parse(raw);
+    const parsed =
+      JSON.parse(raw);
 
-    if (!parsed || typeof parsed !== "object") {
+    if (
+      !parsed ||
+      typeof parsed !== "object"
+    ) {
       return null;
     }
 
     return parsed;
+
   } catch (error) {
+
     console.error(
       "Error reading user from localStorage:",
       error
@@ -106,55 +124,84 @@ const getStoredUser = () => {
   }
 };
 
+
 /* =========================================================
    APP CONTENT
 ========================================================= */
 
 const AppContent = () => {
 
+
   /* =======================================================
      STATE
   ======================================================= */
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [
+    sidebarOpen,
+    setSidebarOpen
+  ] = useState(false);
 
-  const [isMobile, setIsMobile] = useState(
+
+  const [
+    isMobile,
+    setIsMobile
+  ] = useState(
     window.innerWidth <= 768
   );
 
-  const [student, setStudent] = useState(
+
+  const [
+    student,
+    setStudent
+  ] = useState(
     getStoredUser
   );
+
 
   /* =======================================================
      LOCATION
   ======================================================= */
 
-  const location = useLocation();
+  const location =
+    useLocation();
+
 
   /* =======================================================
      LOGIN STATUS
   ======================================================= */
 
-  const userRole = localStorage.getItem("userRole");
+  const userRole =
+    localStorage.getItem(
+      "userRole"
+    );
 
-  const isLoggedIn = !!userRole;
+  const isLoggedIn =
+    !!userRole;
+
 
   /* =======================================================
      SPECIAL PAGES
   ======================================================= */
 
   const isLoginPage =
-    location.pathname === "/login";
+    location.pathname ===
+    "/login";
+
 
   const isStudentRegisterPage =
-    location.pathname === "/register/student";
+    location.pathname ===
+    "/register/student";
+
 
   const isTeacherRegisterPage =
-    location.pathname === "/register/teacher";
+    location.pathname ===
+    "/register/teacher";
+
 
   const isAdminRegisterPage =
-    location.pathname === "/admin-register";
+    location.pathname ===
+    "/admin-register";
+
 
   /*
      Registration and login pages
@@ -166,19 +213,29 @@ const AppContent = () => {
     isTeacherRegisterPage ||
     isAdminRegisterPage;
 
+
   const isSpecialPage =
     isLoginPage ||
     isRegistrationPage;
+
 
   /* =======================================================
      UPDATE USER WHEN ROUTE CHANGES
   ======================================================= */
 
   useEffect(() => {
-    const storedUser = getStoredUser();
 
-    setStudent(storedUser);
-  }, [location.pathname]);
+    const storedUser =
+      getStoredUser();
+
+    setStudent(
+      storedUser
+    );
+
+  }, [
+    location.pathname
+  ]);
+
 
   /* =======================================================
      HANDLE SCREEN RESIZE
@@ -191,7 +248,10 @@ const AppContent = () => {
       const mobile =
         window.innerWidth <= 768;
 
-      setIsMobile(mobile);
+      setIsMobile(
+        mobile
+      );
+
 
       /*
          Login and registration pages
@@ -199,9 +259,14 @@ const AppContent = () => {
       */
 
       if (isSpecialPage) {
-        setSidebarOpen(false);
+
+        setSidebarOpen(
+          false
+        );
+
         return;
       }
+
 
       /*
          Mobile does not keep
@@ -209,33 +274,52 @@ const AppContent = () => {
       */
 
       if (mobile) {
-        setSidebarOpen(false);
+
+        setSidebarOpen(
+          false
+        );
+
         return;
       }
+
 
       /*
          Desktop logged-in user
       */
 
       if (isLoggedIn) {
-        setSidebarOpen(true);
+
+        setSidebarOpen(
+          true
+        );
+
       } else {
-        setSidebarOpen(false);
+
+        setSidebarOpen(
+          false
+        );
+
       }
+
     };
 
+
     handleResize();
+
 
     window.addEventListener(
       "resize",
       handleResize
     );
 
+
     return () => {
+
       window.removeEventListener(
         "resize",
         handleResize
       );
+
     };
 
   }, [
@@ -243,14 +327,22 @@ const AppContent = () => {
     isSpecialPage,
   ]);
 
+
   /* =======================================================
      CLOSE MOBILE SIDEBAR ON ROUTE CHANGE
   ======================================================= */
 
   useEffect(() => {
 
-    if (isMobile || isSpecialPage) {
-      setSidebarOpen(false);
+    if (
+      isMobile ||
+      isSpecialPage
+    ) {
+
+      setSidebarOpen(
+        false
+      );
+
     }
 
   }, [
@@ -259,12 +351,15 @@ const AppContent = () => {
     isSpecialPage,
   ]);
 
+
   /* =======================================================
      APPLICATION ROUTES
   ======================================================= */
 
   const AppRoutes = () => (
+
     <Routes>
+
 
       {/* =================================================
           HOME
@@ -272,8 +367,11 @@ const AppContent = () => {
 
       <Route
         path="/"
-        element={<Home />}
+        element={
+          <Home />
+        }
       />
+
 
       {/* =================================================
           LOGIN
@@ -281,13 +379,19 @@ const AppContent = () => {
 
       <Route
         path="/login"
-        element={<Login />}
+        element={
+          <Login />
+        }
       />
 
+
       <Route
-  path="/forgot-password"
-  element={<ForgotPassword />}
-/>
+        path="/forgot-password"
+        element={
+          <ForgotPassword />
+        }
+      />
+
 
       {/* =================================================
           REGISTRATION
@@ -295,18 +399,27 @@ const AppContent = () => {
 
       <Route
         path="/register/student"
-        element={<StudentRegister />}
+        element={
+          <StudentRegister />
+        }
       />
+
 
       <Route
         path="/register/teacher"
-        element={<TeacherRegister />}
+        element={
+          <TeacherRegister />
+        }
       />
+
 
       <Route
         path="/admin-register"
-        element={<AdminRegister />}
+        element={
+          <AdminRegister />
+        }
       />
+
 
       {/* =================================================
           SUBJECTS
@@ -314,18 +427,27 @@ const AppContent = () => {
 
       <Route
         path="/subjects"
-        element={<Subjects />}
+        element={
+          <Subjects />
+        }
       />
 
+
       <Route
-  path="/subjects/:subjectName"
-  element={<SubjectDetails />}
-/>
+        path="/subjects/:subjectName"
+        element={
+          <SubjectDetails />
+        }
+      />
+
 
       <Route
         path="/teacher-subjects"
-        element={<TeacherSubjects />}
+        element={
+          <TeacherSubjects />
+        }
       />
+
 
       {/* =================================================
           TEACHER DETAILS
@@ -333,8 +455,11 @@ const AppContent = () => {
 
       <Route
         path="/teacher-details"
-        element={<TeacherDetails />}
+        element={
+          <TeacherDetails />
+        }
       />
+
 
       {/* =================================================
           DASHBOARDS
@@ -342,13 +467,19 @@ const AppContent = () => {
 
       <Route
         path="/admin-dashboard"
-        element={<AdminDashboard />}
+        element={
+          <AdminDashboard />
+        }
       />
+
 
       <Route
         path="/teacher-dashboard"
-        element={<TeacherDashboard />}
+        element={
+          <TeacherDashboard />
+        }
       />
+
 
       <Route
         path="/student-dashboard"
@@ -359,19 +490,26 @@ const AppContent = () => {
         }
       />
 
+
       {/* =================================================
           ASSIGNMENTS
       ================================================= */}
 
       <Route
         path="/assignments"
-        element={<Assignments />}
+        element={
+          <Assignments />
+        }
       />
+
 
       <Route
         path="/teacher-assignments"
-        element={<TeacherAssignments />}
+        element={
+          <TeacherAssignments />
+        }
       />
+
 
       {/* =================================================
           EXTRA CLASSES
@@ -379,8 +517,11 @@ const AppContent = () => {
 
       <Route
         path="/explore-more"
-        element={<ExtraClasses />}
+        element={
+          <ExtraClasses />
+        }
       />
+
 
       {/* =================================================
           ATTENDANCE
@@ -388,8 +529,11 @@ const AppContent = () => {
 
       <Route
         path="/take-attendance"
-        element={<TakeAttendance />}
+        element={
+          <TakeAttendance />
+        }
       />
+
 
       {/* =================================================
           QUERIES
@@ -397,13 +541,19 @@ const AppContent = () => {
 
       <Route
         path="/student-queries"
-        element={<StudentQueries />}
+        element={
+          <StudentQueries />
+        }
       />
+
 
       <Route
         path="/queries"
-        element={<RaiseQuery />}
+        element={
+          <RaiseQuery />
+        }
       />
+
 
       {/* =================================================
           ADMIN MANAGEMENT
@@ -411,23 +561,35 @@ const AppContent = () => {
 
       <Route
         path="/manage-students"
-        element={<ManageStudents />}
+        element={
+          <ManageStudents />
+        }
       />
+
 
       <Route
         path="/manage-teachers"
-        element={<ManageTeachers />}
+        element={
+          <ManageTeachers />
+        }
       />
+
 
       <Route
         path="/manage-payments"
-        element={<ManagePayments />}
+        element={
+          <ManagePayments />
+        }
       />
+
 
       <Route
         path="/manage-subjects"
-        element={<ManageSubjects />}
+        element={
+          <ManageSubjects />
+        }
       />
+
 
       {/* =================================================
           PAYMENTS
@@ -435,27 +597,43 @@ const AppContent = () => {
 
       <Route
         path="/payments"
-        element={<Payments />}
+        element={
+          <Payments />
+        }
       />
+
 
       <Route
         path="/fee-payment"
-        element={<FeePayment />}
+        element={
+          <FeePayment />
+        }
       />
+
 
       <Route
         path="/payment-history"
-        element={<PaymentHistory />}
-
-        
+        element={
+          <PaymentHistory />
+        }
       />
 
-      <Route path="/teacher-payments" element={<TeacherPayments />} />
 
       <Route
-  path="/teacher-profile"
-  element={<TeacherProfile />}
-/>
+        path="/teacher-payments"
+        element={
+          <TeacherPayments />
+        }
+      />
+
+
+      <Route
+        path="/teacher-profile"
+        element={
+          <TeacherProfile />
+        }
+      />
+
 
       {/* =================================================
           LIVE CLASS
@@ -463,8 +641,11 @@ const AppContent = () => {
 
       <Route
         path="/live-class"
-        element={<LiveClass />}
+        element={
+          <LiveClass />
+        }
       />
+
 
       {/* =================================================
           404 PAGE
@@ -472,23 +653,32 @@ const AppContent = () => {
 
       <Route
         path="*"
-        element={<NotFound />}
+        element={
+          <NotFound />
+        }
       />
 
+
     </Routes>
+
   );
+
 
   /* =======================================================
      RENDER
   ======================================================= */
 
   return (
+
     <>
+
+
       {/* ===============================================
           JITSI REDIRECT HANDLER
       =============================================== */}
 
       <JitsiRedirectHandler />
+
 
       {/* ===============================================
           SPECIAL PAGES
@@ -499,23 +689,35 @@ const AppContent = () => {
 
       {isSpecialPage ? (
 
-        <div className="special-page-wrapper">
+        <div
+          className="special-page-wrapper"
+        >
+
           <AppRoutes />
+
         </div>
 
       ) : (
 
         <>
 
+
           {/* ===========================================
               GLOBAL NAVBAR
           =========================================== */}
 
           <Navbar
-            sidebarOpen={sidebarOpen}
-            setSidebarOpen={setSidebarOpen}
-            isMobile={isMobile}
+            sidebarOpen={
+              sidebarOpen
+            }
+            setSidebarOpen={
+              setSidebarOpen
+            }
+            isMobile={
+              isMobile
+            }
           />
+
 
           {/* ===========================================
               SIDEBAR
@@ -526,12 +728,19 @@ const AppContent = () => {
           {isLoggedIn && (
 
             <Sidebar
-              isOpen={sidebarOpen}
-              setIsOpen={setSidebarOpen}
-              isMobile={isMobile}
+              isOpen={
+                sidebarOpen
+              }
+              setIsOpen={
+                setSidebarOpen
+              }
+              isMobile={
+                isMobile
+              }
             />
 
           )}
+
 
           {/* ===========================================
               MAIN CONTENT
@@ -539,6 +748,7 @@ const AppContent = () => {
 
           <main
             className={
+
               /*
                  PUBLIC PAGES
 
@@ -553,15 +763,19 @@ const AppContent = () => {
               */
 
               !isLoggedIn
+
                 ? "main-content public-content"
 
                 : isMobile
+
                 ? "main-content"
 
                 : sidebarOpen
+
                 ? "main-content sidebar-open"
 
                 : "main-content sidebar-collapsed"
+
             }
           >
 
@@ -569,13 +783,17 @@ const AppContent = () => {
 
           </main>
 
+
         </>
 
       )}
 
     </>
+
   );
+
 };
+
 
 /* =========================================================
    MAIN APP
@@ -584,6 +802,7 @@ const AppContent = () => {
 function App() {
 
   return (
+
     <ErrorBoundary>
 
       <Router>
@@ -597,8 +816,11 @@ function App() {
       </Router>
 
     </ErrorBoundary>
+
   );
+
 }
+
 
 /* =========================================================
    EXPORT

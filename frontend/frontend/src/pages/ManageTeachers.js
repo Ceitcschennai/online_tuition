@@ -146,7 +146,7 @@ const ManageTeachers = () => {
   const updateStatus = async (id, status) => {
     try {
       await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/admin/teachers/${id}/status`,
+        `${process.env.REACT_APP_API_URL}/api/teacher/admin/teacher/${id}/approve`,
         { status }
       );
 
@@ -606,6 +606,18 @@ const saveSubject = async () => {
         Approve
       </button>
     )}
+
+<button
+  className="btn-reject-document"
+  onClick={() =>
+    updateStatus(
+      teacher._id,
+      "Reject Document"
+    )
+  }
+>
+  Reject Document
+</button>
 
     {!teacher.isRejected && (
       <button

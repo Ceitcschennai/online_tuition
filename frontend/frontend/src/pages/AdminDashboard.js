@@ -864,23 +864,78 @@ const AdminDashboard = () => {
   };
 
   const handleTeacherApproval = async (status) => {
-    if (!selectedTeacher) return;
-    if (status === "Rejected" && !rejectReason.trim()) { alert("Please enter a rejection reason."); return; }
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/teacher/admin/teacher/${selectedTeacher._id}/approve`, {
+  if (!selectedTeacher) return;
+
+  // Full rejection requires a reason.
+  // Document rejection does NOT require a rejection reason.
+  if (
+    status === "Rejected" &&
+    !rejectReason.trim()
+  ) {
+    alert("Please enter a rejection reason.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const res = await fetch(
+      `${API_BASE_URL}/api/teacher/admin/teacher/${selectedTeacher._id}/approve`,
+      {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, reason: status === "Rejected" ? rejectReason : "" })
-      });
-      if (!res.ok) throw new Error("Failed to update teacher");
-      const data = await res.json();
-      alert(data.message || "Teacher updated successfully");
-      resetState();
-      fetchPendingTeachers();
-    } catch (err) { console.error(err); alert("Action failed"); }
-    finally { setLoading(false); }
-  };
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status,
+          reason:
+            status === "Rejected"
+              ? rejectReason.trim()
+              : "",
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        data.message ||
+        "Failed to update teacher"
+      );
+    }
+
+    alert(
+      data.message ||
+      (
+        status === "Reject Document"
+          ? "Document rejected. Re-upload email sent to the faculty."
+          : "Teacher updated successfully"
+      )
+    );
+
+    resetState();
+
+    await fetchPendingTeachers();
+
+  } catch (err) {
+
+    console.error(
+      "Teacher approval error:",
+      err
+    );
+
+    alert(
+      err.message ||
+      "Action failed"
+    );
+
+  } finally {
+
+    setLoading(false);
+
+  }
+};
 
   const resetState = () => {
     setSelectedStudent(null);
@@ -942,16 +997,48 @@ const AdminDashboard = () => {
                   <p>No proof uploaded</p>
                 )}
                 <div className="button-group">
-                  <button disabled={loading} onClick={() => handleStudentApproval("Approved")} className="approve-btn">
-                    {loading ? "Processing..." : "Approve"}
-                  </button>
-                </div>
-                <div className="reject-section">
-                  <textarea placeholder="Enter rejection reason..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} rows="3" />
-                  <button disabled={loading} onClick={() => handleStudentApproval("Rejected")} className="reject-btn">
-                    {loading ? "Processing..." : "Reject"}
-                  </button>
-                </div>
+
+  {/* APPROVE STUDENT */}
+  <button
+    disabled={loading}
+    onClick={() =>
+      handleStudentApproval("Approved")
+    }
+    className="approve-btn"
+  >
+    {loading
+      ? "Processing..."
+      : "Approve"}
+  </button>
+
+</div>
+
+
+{/* FULL STUDENT REGISTRATION REJECTION */}
+<div className="reject-section">
+
+  <textarea
+    placeholder="Enter rejection reason..."
+    value={rejectReason}
+    onChange={(e) =>
+      setRejectReason(e.target.value)
+    }
+    rows="3"
+  />
+
+  <button
+    disabled={loading}
+    onClick={() =>
+      handleStudentApproval("Rejected")
+    }
+    className="reject-btn"
+  >
+    {loading
+      ? "Processing..."
+      : "Reject"}
+  </button>
+
+</div>
               </div>
             )}
           </React.Fragment>
@@ -1004,15 +1091,45 @@ const AdminDashboard = () => {
                 )}
                 
                 <div className="button-group">
-                  <button disabled={loading} onClick={() => handleTeacherApproval("Approved")} className="approve-btn">
-                    {loading ? "Processing..." : "Approve"}
-                  </button>
-                </div>
-                <div className="reject-section">
-                  <textarea placeholder="Enter rejection reason..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} rows="3" />
-                  <button disabled={loading} onClick={() => handleTeacherApproval("Rejected")} className="reject-btn">
+
+  {/* APPROVE TEACHER */}
+  <button
+    disabled={loading}
+    onClick={() =>
+      handleTeacherApproval("Approved")
+    }
+    className="approve-btn"
+  >
+    {loading
+      ? "Processing..."
+      : "Approve"}
+  </button>
+
+<button disabled={loading} onClick={() => handleTeacherApproval("Rejected")} className="reject-btn">
                     {loading ? "Processing..." : "Reject"}
                   </button>
+
+  {/* REJECT DOCUMENT */}
+  <button
+    disabled={loading}
+    onClick={() =>
+      handleTeacherApproval(
+        "Reject Document"
+      )
+    }
+    className="reject-document-btn"
+  >
+    {loading
+      ? "Processing..."
+      : "Reject Document"}
+  </button>
+
+  
+
+</div>
+                <div className="reject-section">
+                  <textarea placeholder="Enter rejection reason...." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} rows="3" />
+                  
                 </div>
               </div>
             )}
