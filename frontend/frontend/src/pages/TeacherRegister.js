@@ -1356,11 +1356,7 @@ const TeacherRegister = () => {
                             : ""
                         }
                       >
-                        {passwordChecks.length
-                          ? "✓"
-                          : "•"
-                        }{" "}
-                        At least 8 characters
+                        {passwordChecks.length ? "✓" : "•"} At least 8 characters
                       </div>
 
 
@@ -1371,11 +1367,7 @@ const TeacherRegister = () => {
                             : ""
                         }
                       >
-                        {passwordChecks.upper
-                          ? "✓"
-                          : "•"
-                        }{" "}
-                        One uppercase letter
+                        {passwordChecks.length ? "✓" : "•"} One uppercase letter
                       </div>
 
 
@@ -1386,11 +1378,7 @@ const TeacherRegister = () => {
                             : ""
                         }
                       >
-                        {passwordChecks.lower
-                          ? "✓"
-                          : "•"
-                        }{" "}
-                        One lowercase letter
+                        {passwordChecks.length ? "✓" : "•"} One lowercase letter
                       </div>
 
 
@@ -1401,11 +1389,7 @@ const TeacherRegister = () => {
                             : ""
                         }
                       >
-                        {passwordChecks.number
-                          ? "✓"
-                          : "•"
-                        }{" "}
-                        One number
+                        {passwordChecks.length ? "✓" : "•"} One number
                       </div>
 
 
@@ -1416,11 +1400,7 @@ const TeacherRegister = () => {
                             : ""
                         }
                       >
-                        {passwordChecks.special
-                          ? "✓"
-                          : "•"
-                        }{" "}
-                        One special character
+                        {passwordChecks.length ? "✓" : "•"} One special character
                       </div>
 
                     </div>

@@ -489,3 +489,35 @@
 
   cursor: not-allowed;
 }
+
+.teacher-certificate {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.certificate-file-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.certificate-view-icon,
+.certificate-download-icon {
+  flex-shrink: 0;
+  margin-left: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.certificate-download-icon {
+  margin-left: 18px;
+}
+
+.certificate-view-icon {
+  margin-left: auto;
+}

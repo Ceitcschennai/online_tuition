@@ -157,6 +157,41 @@ const ManageTeachers = () => {
     }
   };
 
+  const viewCertificate = (certificate) => {
+  try {
+    const [meta, base64] = certificate.split(",");
+
+    const mimeType =
+      meta.match(/data:(.*?);base64/)?.[1] ||
+      "application/pdf";
+
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+
+    const byteArray = new Uint8Array(byteNumbers);
+
+    const blob = new Blob([byteArray], {
+      type: mimeType,
+    });
+
+    const blobUrl = URL.createObjectURL(blob);
+
+    window.open(blobUrl, "_blank");
+
+    setTimeout(() => {
+      URL.revokeObjectURL(blobUrl);
+    }, 60000);
+
+  } catch (error) {
+    console.error("Certificate view error:", error);
+    alert("Unable to open certificate.");
+  }
+};
+
   // =====================================================
   // EDIT CLASSES
   // =====================================================
@@ -585,6 +620,36 @@ const saveSubject = async () => {
                   {getTeacherSubject(teacher)}
                 </span>
               </p>
+
+              {/* DEGREE CERTIFICATE */}
+              {teacher.degreeCertificate && (
+  <div className="teacher-certificate">
+
+    <span className="certificate-file-name">
+      📄 Degree Certificate.pdf
+    </span>
+
+    <a
+      href={teacher.degreeCertificate}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="certificate-view-icon"
+      title="View Certificate"
+    >
+      👁
+    </a>
+
+    <a
+      href={teacher.degreeCertificate}
+      download="Degree-Certificate.pdf"
+      className="certificate-download-icon"
+      title="Download Certificate"
+    >
+      ↓
+    </a>
+
+  </div>
+)}
 
               {/* ACTION BUTTONS */}
 
