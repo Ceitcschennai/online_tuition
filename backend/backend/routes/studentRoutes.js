@@ -1067,82 +1067,138 @@ await student.save();
               </div>
             `
                         : status === "Reject Document"
-              ? `
-                            <div
-                style="
-                  font-family: Arial, sans-serif;
-                  line-height: 1.7;
-                  color: #333;
-                  max-width: 650px;
-                  margin: 0 auto;
-                  padding: 20px;
-                "
-              >
+  ? `
+    <div
+      style="
+        font-family: Arial, sans-serif;
+        line-height: 1.7;
+        color: #333;
+        max-width: 650px;
+        margin: 0 auto;
+        padding: 20px;
+      "
+    >
 
-                <h2 style="color: #4b3f9f;">
-                  ${COMPANY_NAME}
-                </h2>
+      <h2 style="color: #1f3c88; margin-bottom: 5px;">
+        ${COMPANY_NAME}
+      </h2>
 
-                <h3>
-                  Document Re-upload Required
-                </h3>
+      <p style="color: #666; margin-top: 0;">
+        Student Document Notification
+      </p>
 
-                <p>
-                  Dear ${student.firstName},
-                </p>
+      <hr style="border: 0; border-top: 1px solid #ddd;" />
 
-                <p>
-                  Your submitted ID proof could not be accepted
-                  by the administrator.
-                </p>
+      <p>
+        Dear ${student.firstName},
+      </p>
 
-                <p>
-                  Please upload a new and valid ID proof
-                  to continue with your registration.
-                </p>
+      <p>
+        We have reviewed your student registration submitted to
+        <strong>${COMPANY_NAME}</strong>.
+      </p>
 
-                <p>
-                  Your student profile has been kept in
-                  <strong>Pending</strong> status until the
-                  new document is submitted and reviewed.
-                </p>
+      <div
+        style="
+          background: #fff7e6;
+          border-left: 4px solid #f0ad4e;
+          padding: 15px 18px;
+          margin: 20px 0;
+        "
+      >
 
-                <p>
-  Please click the button below to upload your replacement document:
-</p>
+        <h3 style="margin-top: 0; color: #9a6700;">
+          Document Re-upload Required
+        </h3>
 
-<p style="text-align: center; margin: 30px 0;">
-  <a
-    href="${reuploadLink}"
-    style="
-      display: inline-block;
-      background: #4b3f9f;
-      color: #ffffff;
-      text-decoration: none;
-      padding: 12px 24px;
-      border-radius: 6px;
-      font-weight: bold;
-    "
-  >
-    Re-upload Document
-  </a>
-</p>
+        <p style="margin-bottom: 0;">
+          The document you uploaded could not be accepted by the
+          administrator. Please upload a new and valid student ID
+          document for verification.
+        </p>
 
-<p>
-  Your existing registration details will already be filled in.
-  You only need to select and upload your new student ID document.
-</p>
+      </div>
 
-                <br />
+      <p>
+        Your student profile has been kept in
+        <strong>Pending</strong> status until the new document is
+        submitted and reviewed.
+      </p>
 
-                <p>
-                  Regards,<br />
-                  <strong>Admin</strong><br />
-                  <strong>${COMPANY_NAME}</strong>
-                </p>
+      <p>
+        Please click the button below to open your registration form.
+      </p>
 
-              </div>
-            `
+      <p>
+        Your existing registration details will already be filled in.
+        You only need to upload a new document and submit the form again.
+      </p>
+
+      <p style="text-align: center; margin: 30px 0;">
+
+        <a
+          href="${reuploadLink}"
+          style="
+            display: inline-block;
+            background: #087ff5;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 13px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 15px;
+          "
+        >
+          Re-upload Document
+        </a>
+
+      </p>
+
+      <div
+        style="
+          border: 1px solid #ddd;
+          background: #fafafa;
+          padding: 15px 18px;
+          margin: 20px 0;
+          border-radius: 5px;
+        "
+      >
+
+        <strong>Important:</strong>
+
+        <p style="margin-bottom: 0;">
+          Please make sure the complete document is visible,
+          clear, readable and not cropped or blurred.
+        </p>
+
+      </div>
+
+      <p>
+        This re-upload link is valid for
+        <strong>24 hours</strong>.
+      </p>
+
+      <hr style="border: 0; border-top: 1px solid #ddd;" />
+
+      <p>
+        Regards,<br />
+        <strong>Admin</strong><br />
+        <strong>${COMPANY_NAME}</strong>
+      </p>
+
+      <p
+        style="
+          color: #888;
+          font-size: 12px;
+          margin-top: 25px;
+        "
+      >
+        This is an automated email from
+        ${COMPANY_NAME}. Please do not reply directly to this email.
+      </p>
+
+    </div>
+  `
             : `
               <div
                 style="
