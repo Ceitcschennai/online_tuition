@@ -1,6 +1,7 @@
 /* =========================
    MAIN CONTAINER
 ========================= */
+
 .student-management-container {
   padding: 30px;
   background-color: #f4f6fb;
@@ -11,6 +12,7 @@
 /* =========================
    HEADER
 ========================= */
+
 .student-management-container h2 {
   font-size: 28px;
   color: #2c3a4f;
@@ -23,6 +25,7 @@
 /* =========================
    STATS SECTION
 ========================= */
+
 .stats-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -31,7 +34,7 @@
 }
 
 .stat-card {
-  background:#e3d8d2;
+  background: #e3d8d2;
   padding: 22px;
   border-radius: 12px;
   text-align: center;
@@ -59,6 +62,7 @@
 /* =========================
    CONTROLS
 ========================= */
+
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -96,6 +100,7 @@
 /* =========================
    CLASS FILTER BUTTONS
 ========================= */
+
 .class-filter-row {
   display: flex;
   flex-wrap: wrap;
@@ -122,18 +127,26 @@
 }
 
 .class-filter-btn.active {
-  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+  background: linear-gradient(
+    135deg,
+    #6366f1 0%,
+    #7c3aed 100%
+  );
   border-color: transparent;
-  color: #fff;
+  color: #ffffff;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
 }
 
 /* =========================
    STUDENT LIST
 ========================= */
+
 .students-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(280px, 1fr)
+  );
   gap: 20px;
 }
 
@@ -166,6 +179,7 @@
 /* =========================
    STATUS COLORS
 ========================= */
+
 .student-card p:last-child {
   font-weight: 600;
 }
@@ -188,8 +202,8 @@
 
 /* =========================
    INLINE ACTION BUTTONS
-   (matches ManageTeachers.js .teacher-actions styling)
 ========================= */
+
 .student-actions {
   margin-top: 12px;
   display: flex;
@@ -206,18 +220,26 @@
   transition: 0.2s ease;
 }
 
+/* =========================
+   APPROVE BUTTON
+========================= */
+
 .student-actions .btn-approve {
   background: #27ae60;
-  color: #fff;
+  color: #ffffff;
 }
 
 .student-actions .btn-approve:hover {
   background: #1e8449;
 }
 
+/* =========================
+   REJECT BUTTON
+========================= */
+
 .student-actions .btn-reject {
   background: #e74c3c;
-  color: #fff;
+  color: #ffffff;
 }
 
 .student-actions .btn-reject:hover {
@@ -225,9 +247,128 @@
 }
 
 /* =========================
+   REJECT DOCUMENT BUTTON
+========================= */
+
+.student-actions .btn-reject-document {
+  background: #f39c12;
+  color: #ffffff;
+}
+
+.student-actions .btn-reject-document:hover {
+  background: #d68910;
+}
+
+/* =========================
+   REJECTED STATUS LABEL
+========================= */
+
+.student-rejected-label {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 6px;
+  background-color: #f3f4f6;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* =========================
+   WAITING FOR RE-UPLOAD
+========================= */
+
+.student-card .waiting-reupload {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background-color: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* =========================
+   BUTTON DISABLED STATE
+========================= */
+
+.student-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================
    LOADING + EMPTY STATE
 ========================= */
+
 .student-management-container p {
   font-size: 15px;
   color: #6b7280;
+}
+
+/* =========================
+   RESPONSIVE DESIGN
+========================= */
+
+@media (max-width: 768px) {
+  .student-management-container {
+    padding: 20px;
+  }
+
+  .student-management-container h2 {
+    font-size: 24px;
+  }
+
+  .students-list {
+    grid-template-columns: 1fr;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box,
+  .filter-box {
+    width: 100%;
+  }
+
+  .search-box input {
+    width: 100%;
+  }
+
+  .student-actions {
+    flex-direction: column;
+  }
+
+  .student-actions button,
+  .student-rejected-label {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .student-management-container {
+    padding: 15px;
+  }
+
+  .student-management-container h2 {
+    font-size: 21px;
+  }
+
+  .stat-card {
+    padding: 18px;
+  }
+
+  .stat-card h3 {
+    font-size: 24px;
+  }
+
+  .student-card {
+    padding: 16px;
+  }
 }

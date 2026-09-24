@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const COMPANY_NAME = "CeiT Academy";
+const crypto = require("crypto");
 
 const Student = require("../models/Student");
 const Teacher = require("../models/Teacher");
@@ -215,33 +217,521 @@ router.get("/students", async (req, res) => {
 
 router.put("/students/:id/status", async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, reason } = req.body;
 
-    if (!["Approved", "Rejected", "Pending"].includes(status)) {
+    if (
+  ![
+    "Approved",
+    "Rejected",
+    "Pending",
+    "Reject Document",
+  ].includes(status)
+) {
       return res.status(400).json({
         success: false,
         message: "Invalid approval status",
       });
     }
 
-    const student = await Student.findByIdAndUpdate(
-      req.params.id,
-      {
-        approvalStatus: status,
-        isActive: status === "Approved",
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
+    const student = await Student.findById(
+  req.params.id
+);
+
+if (!student) {
+  return res.status(404).json({
+    success: false,
+    message: "Student not found",
+  });
+}
+
+if (status === "Approved") {
+
+  student.approvalStatus = "Approved";
+  student.isActive = true;
+
+  student.documentReuploadToken = null;
+  student.documentReuploadExpires = null;
+
+} else if (status === "Reject Document") {
+
+  student.approvalStatus = "Pending";
+  student.isActive = false;
+
+  student.documentReuploadToken =
+    crypto.randomBytes(32).toString("hex");
+
+  student.documentReuploadExpires =
+    new Date(
+      Date.now() + 24 * 60 * 60 * 1000
     );
 
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found",
-      });
-    }
+} else {
+
+  student.approvalStatus = "Rejected";
+  student.isActive = false;
+
+  student.documentReuploadToken = null;
+  student.documentReuploadExpires = null;
+
+}
+
+await student.save();
+
+if (status === "Approved" || status === "Rejected") {
+  const emailHtml =
+    status === "Approved"
+    ? `
+      <div
+        style="
+          font-family: Arial, sans-serif;
+          background-color: #ffffff;
+          color: #333333;
+          max-width: 650px;
+          margin: 0 auto;
+          padding: 20px;
+          line-height: 1.7;
+        "
+      >
+
+        <h2
+          style="
+            color: #2f4b8f;
+            margin-bottom: 5px;
+          "
+        >
+          CeiT Academy - Online Tuition
+        </h2>
+
+        <p
+          style="
+            color: #666666;
+            margin-top: 0;
+            margin-bottom: 25px;
+          "
+        >
+          Student Registration Confirmation
+        </p>
+
+        <p>
+          Dear ${student.firstName},
+        </p>
+
+        <p>
+          Thank you for registering as a student member with
+          <strong>CeiT Academy - Online Tuition</strong>.
+        </p>
+
+        <p>
+          We have successfully received your registration
+          details and submitted documents.
+        </p>
+
+        <div
+          style="
+            background-color: #fff8e6;
+            border-left: 4px solid #f0a500;
+            padding: 15px 18px;
+            margin: 20px 0;
+          "
+        >
+          <strong
+            style="
+              color: #a66a00;
+              font-size: 16px;
+            "
+          >
+            Profile Status: APPROVED
+          </strong>
+        </div>
+
+        <p>
+          Your student profile has been
+          <strong>approved by the administrator</strong>.
+          Your account is now active and ready to use.
+        </p>
+
+        <p>
+          You can now log in using your registered email
+          address and password.
+        </p>
+
+        <p>
+          Please keep your login credentials secure and
+          do not share your password with anyone.
+        </p>
+
+        <hr
+          style="
+            border: none;
+            border-top: 1px solid #dddddd;
+            margin: 30px 0;
+          "
+        />
+
+        <p>
+          Regards,<br />
+          <strong>Admin</strong><br />
+          <strong>CeiT Academy - Online Tuition</strong>
+        </p>
+
+        <p
+          style="
+            color: #888888;
+            font-size: 13px;
+            margin-top: 30px;
+          "
+        >
+          This is an automated email from CeiT Academy -
+          Online Tuition. Please do not reply directly to
+          this email.
+        </p>
+
+      </div>
+    `
+    : `
+      <div
+        style="
+          font-family: Arial, sans-serif;
+          background-color: #ffffff;
+          color: #333333;
+          max-width: 650px;
+          margin: 0 auto;
+          padding: 20px;
+          line-height: 1.7;
+        "
+      >
+
+        <h2
+          style="
+            color: #2f4b8f;
+            margin-bottom: 5px;
+          "
+        >
+          CeiT Academy - Online Tuition
+        </h2>
+
+        <p
+          style="
+            color: #666666;
+            margin-top: 0;
+            margin-bottom: 25px;
+          "
+        >
+          Student Registration Notification
+        </p>
+
+        <p>
+          Dear ${student.firstName},
+        </p>
+
+        <p>
+          We have reviewed your student registration
+          submitted to
+          <strong>CeiT Academy - Online Tuition</strong>.
+        </p>
+
+        <div
+          style="
+            background-color: #fff1f1;
+            border-left: 4px solid #d9534f;
+            padding: 15px 18px;
+            margin: 20px 0;
+          "
+        >
+          <strong
+            style="
+              color: #b52b27;
+              font-size: 16px;
+            "
+          >
+            Profile Status: REJECTED
+          </strong>
+        </div>
+
+        <p>
+          Your student profile could not be approved by
+          the administrator.
+        </p>
+
+        <p>
+          <strong>
+            Reason for rejection:
+          </strong>
+        </p>
+
+        <div
+          style="
+            background-color: #f5f5f5;
+            padding: 15px 18px;
+            border-left: 4px solid #d9534f;
+            margin: 10px 0 20px 0;
+          "
+        >
+          ${reason?.trim() || "No reason was provided."}
+        </div>
+
+        <p>
+          Please review the reason mentioned above and
+          take the necessary action.
+        </p>
+
+        <p>
+          If you need further assistance, please contact
+          the administrator.
+        </p>
+
+        <hr
+          style="
+            border: none;
+            border-top: 1px solid #dddddd;
+            margin: 30px 0;
+          "
+        />
+
+        <p>
+          Regards,<br />
+          <strong>Admin</strong><br />
+          <strong>CeiT Academy - Online Tuition</strong>
+        </p>
+
+        <p
+          style="
+            color: #888888;
+            font-size: 13px;
+            margin-top: 30px;
+          "
+        >
+          This is an automated email from CeiT Academy -
+          Online Tuition. Please do not reply directly to
+          this email.
+        </p>
+
+      </div>
+    `;
+}
+
+if (status === "Approved" || status === "Rejected") {
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: student.email,
+      subject:
+        status === "Approved"
+          ? `${COMPANY_NAME} | Student Registration Approved`
+          : `${COMPANY_NAME} | Student Registration Rejected`,
+      html: emailHtml,
+    });
+
+    console.log(
+      `Student ${status} email sent to: ${student.email}`
+    );
+  } catch (emailError) {
+    console.error(
+      `Failed to send student ${status} email:`,
+      emailError
+    );
+  }
+}
+
+// Send document re-upload email
+if (status === "Reject Document") {
+  try {
+    const reuploadLink =
+      `${process.env.FRONTEND_URL || "https://online-tuition-1wvb.vercel.app"}/register/student?reuploadToken=${student.documentReuploadToken}`;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: student.email,
+      subject: `${COMPANY_NAME} | Document Re-upload Required`,
+      html: `
+  <div
+    style="
+      font-family: Arial, sans-serif;
+      background-color: #ffffff;
+      color: #333333;
+      max-width: 650px;
+      margin: 0 auto;
+      padding: 20px;
+    "
+  >
+
+    <h2
+      style="
+        color: #2f3f8f;
+        margin-bottom: 8px;
+      "
+    >
+      CeiT Academy - Online Tuition
+    </h2>
+
+    <p
+      style="
+        color: #666666;
+        margin-top: 0;
+        margin-bottom: 25px;
+      "
+    >
+      Student Document Notification
+    </p>
+
+    <p>
+      Dear ${student.firstName},
+    </p>
+
+    <p>
+      We have reviewed your student registration
+      submitted to
+      <strong>CeiT Academy - Online Tuition</strong>.
+    </p>
+
+    <div
+      style="
+        background-color: #fff8e6;
+        border-left: 4px solid #f0a500;
+        padding: 16px 18px;
+        margin: 20px 0;
+      "
+    >
+
+      <h3
+        style="
+          color: #a66a00;
+          margin-top: 0;
+          margin-bottom: 12px;
+        "
+      >
+        Document Re-upload Required
+      </h3>
+
+      <p
+        style="
+          margin-bottom: 0;
+          line-height: 1.7;
+        "
+      >
+        The document you uploaded could not be accepted
+        by the administrator. Please upload a new and valid
+        student ID document for verification.
+      </p>
+
+    </div>
+
+    <p>
+      Your student profile has been kept in
+      <strong>Pending</strong> status until the new
+      document is submitted and reviewed.
+    </p>
+
+    <p>
+      Please click the button below to open your
+      registration form.
+    </p>
+
+    <p>
+      Your existing registration details will already be
+      filled in. You only need to upload a new document
+      and submit the form again.
+    </p>
+
+    <p style="text-align: center; margin: 30px 0;">
+
+      <a
+        href="${reuploadLink}"
+        style="
+          display: inline-block;
+          background-color: #1683f7;
+          color: #ffffff;
+          text-decoration: none;
+          padding: 15px 30px;
+          border-radius: 6px;
+          font-weight: bold;
+          font-size: 16px;
+        "
+      >
+        Re-upload Document
+      </a>
+
+    </p>
+
+    <div
+      style="
+        border: 1px solid #dddddd;
+        border-radius: 6px;
+        padding: 16px 18px;
+        margin: 20px 0;
+      "
+    >
+
+      <p
+        style="
+          margin-top: 0;
+          font-weight: bold;
+        "
+      >
+        Important:
+      </p>
+
+      <p
+        style="
+          margin-bottom: 0;
+          line-height: 1.7;
+        "
+      >
+        Please make sure the complete document is visible,
+        clear, readable and not cropped or blurred.
+      </p>
+
+    </div>
+
+    <p>
+      This re-upload link is valid for
+      <strong>24 hours</strong>.
+    </p>
+
+    <hr
+      style="
+        border: none;
+        border-top: 1px solid #dddddd;
+        margin: 25px 0;
+      "
+    />
+
+    <p>
+      Regards,<br />
+      Admin<br />
+      <strong>CeiT Academy - Online Tuition</strong>
+    </p>
+
+    <p
+      style="
+        color: #888888;
+        font-size: 13px;
+        margin-top: 35px;
+      "
+    >
+      This is an automated email from CeiT Academy -
+      Online Tuition. Please do not reply directly to
+      this email.
+    </p>
+
+  </div>
+`,
+    });
+
+    console.log(
+      "Document re-upload email sent to:",
+      student.email
+    );
+
+  } catch (emailError) {
+    console.error(
+      "Document re-upload email error:",
+      emailError
+    );
+  }
+}
+
+    
 
     // Activity log
     await Activity.create({

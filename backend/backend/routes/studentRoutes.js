@@ -1756,6 +1756,53 @@ router.get(
 // =================================================
 // STUDENT DOCUMENT RE-UPLOAD
 // =================================================
+// =================================================
+// GET STUDENT FOR DOCUMENT RE-UPLOAD
+// =================================================
+
+router.get("/document-reupload/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    const student = await Student.findOne({
+      documentReuploadToken: token,
+      documentReuploadExpires: { $gt: new Date() },
+    }).select(
+      "-password -documentReuploadToken -documentReuploadExpires"
+    );
+
+    if (!student) {
+      return res.status(400).json({
+        message: "Invalid or expired document re-upload link.",
+      });
+    }
+
+    res.json({
+      success: true,
+      student: {
+        title: student.title,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        mobile: student.mobile,
+        syllabus: student.syllabus,
+        studentClass: student.class,
+        timezone: student.timezone,
+        email: student.email,
+        emisNumber: student.emisNumber,
+      },
+    });
+
+  } catch (error) {
+    console.error(
+      "Document re-upload GET error:",
+      error
+    );
+
+    res.status(500).json({
+      message: "Server error.",
+    });
+  }
+});
 
 router.post(
   "/document-reupload/:token",
