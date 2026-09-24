@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const router = express.Router();
 
@@ -840,11 +841,7 @@ router.put(
       // VALIDATE STATUS
       // =================================================
 
-      if (
-        !["Approved", "Rejected"].includes(
-          status
-        )
-      ) {
+      if (!["Approved", "Rejected", "Reject Document"].includes(status)) {
         return res.status(400).json({
           success: false,
           message:
@@ -885,16 +882,41 @@ router.put(
       }
 
       // =================================================
-      // UPDATE APPROVAL STATUS
-      // =================================================
+// UPDATE APPROVAL STATUS
+// =================================================
 
-      student.approvalStatus =
-        status;
+if (status === "Approved") {
 
-      student.isActive =
-        status === "Approved";
+  student.approvalStatus = "Approved";
+  student.isActive = true;
 
-      await student.save();
+  student.documentReuploadToken = null;
+  student.documentReuploadExpires = null;
+
+} else if (status === "Reject Document") {
+
+  student.approvalStatus = "Pending";
+  student.isActive = false;
+
+  student.documentReuploadToken =
+    crypto.randomBytes(32).toString("hex");
+
+  student.documentReuploadExpires =
+    new Date(
+      Date.now() + 24 * 60 * 60 * 1000
+    );
+
+} else {
+
+  student.approvalStatus = "Rejected";
+  student.isActive = false;
+
+  student.documentReuploadToken = null;
+  student.documentReuploadExpires = null;
+
+}
+
+await student.save();
 
       // =================================================
       // ANALYTICS
@@ -977,10 +999,15 @@ router.put(
 
       try {
 
+        const reuploadLink =
+  `${process.env.FRONTEND_URL}/register/student?reuploadToken=${student.documentReuploadToken}`;
+
         const emailSubject =
-          status === "Approved"
-            ? `${COMPANY_NAME} | Student Profile Approved`
-            : `${COMPANY_NAME} | Student Profile Rejected`;
+  status === "Approved"
+    ? `${COMPANY_NAME} | Student Profile Approved`
+    : status === "Reject Document"
+      ? `${COMPANY_NAME} | Document Re-upload Required`
+      : `${COMPANY_NAME} | Student Profile Rejected`;
 
         const emailHtml =
           status === "Approved"
@@ -1028,6 +1055,83 @@ router.put(
                   Thank you for joining
                   <strong>${COMPANY_NAME}</strong>.
                 </p>
+
+                <br />
+
+                <p>
+                  Regards,<br />
+                  <strong>Admin</strong><br />
+                  <strong>${COMPANY_NAME}</strong>
+                </p>
+
+              </div>
+            `
+                        : status === "Reject Document"
+              ? `
+                            <div
+                style="
+                  font-family: Arial, sans-serif;
+                  line-height: 1.7;
+                  color: #333;
+                  max-width: 650px;
+                  margin: 0 auto;
+                  padding: 20px;
+                "
+              >
+
+                <h2 style="color: #4b3f9f;">
+                  ${COMPANY_NAME}
+                </h2>
+
+                <h3>
+                  Document Re-upload Required
+                </h3>
+
+                <p>
+                  Dear ${student.firstName},
+                </p>
+
+                <p>
+                  Your submitted ID proof could not be accepted
+                  by the administrator.
+                </p>
+
+                <p>
+                  Please upload a new and valid ID proof
+                  to continue with your registration.
+                </p>
+
+                <p>
+                  Your student profile has been kept in
+                  <strong>Pending</strong> status until the
+                  new document is submitted and reviewed.
+                </p>
+
+                <p>
+  Please click the button below to upload your replacement document:
+</p>
+
+<p style="text-align: center; margin: 30px 0;">
+  <a
+    href="${reuploadLink}"
+    style="
+      display: inline-block;
+      background: #4b3f9f;
+      color: #ffffff;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: bold;
+    "
+  >
+    Re-upload Document
+  </a>
+</p>
+
+<p>
+  Your existing registration details will already be filled in.
+  You only need to select and upload your new student ID document.
+</p>
 
                 <br />
 
@@ -1183,14 +1287,17 @@ router.put(
         success: true,
 
         message:
-          status === "Approved"
-            ? emailSent
-              ? "Student approved successfully and approval email sent."
-              : "Student approved successfully, but approval email could not be sent."
-            : emailSent
-              ? "Student rejected successfully and rejection email sent."
-              : "Student rejected successfully, but rejection email could not be sent.",
-
+  status === "Approved"
+    ? emailSent
+      ? "Student approved successfully and approval email sent."
+      : "Student approved successfully, but approval email could not be sent."
+    : status === "Reject Document"
+      ? emailSent
+        ? "Document rejection notification sent successfully."
+        : "Document rejection notification could not be sent."
+      : emailSent
+        ? "Student rejected successfully and rejection email sent."
+        : "Student rejected successfully, but rejection email could not be sent.",
         emailSent,
 
         ...(emailSent
@@ -1530,5 +1637,119 @@ router.get(
     }
   }
 );
+
+// =================================================
+// GET STUDENT DETAILS FOR DOCUMENT RE-UPLOAD
+// =================================================
+
+router.get(
+  "/document-reupload/:token",
+  async (req, res) => {
+    try {
+
+      const { token } = req.params;
+
+      const student = await Student.findOne({
+        documentReuploadToken: token,
+        documentReuploadExpires: {
+          $gt: new Date()
+        }
+      }).select(
+        "-password -documentReuploadToken -documentReuploadExpires"
+      );
+
+      if (!student) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid or expired document re-upload link."
+        });
+      }
+
+      return res.json({
+        success: true,
+        student: {
+          title: student.salutation,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          mobile: student.mobile,
+          syllabus: student.syllabus,
+          studentClass: student.class,
+          timezone: student.timezone,
+          email: student.email,
+          emisNumber: student.emisNumber
+        }
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Get re-upload student details error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Failed to load student details."
+      });
+    }
+  }
+);
+
+// =================================================
+// STUDENT DOCUMENT RE-UPLOAD
+// =================================================
+
+router.post(
+  "/document-reupload/:token",
+  upload.single("proof"),
+  async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!req.file) {
+  return res.status(400).json({
+    success: false,
+    message: "Please upload the replacement ID proof."
+  });
+}
+
+    const student = await Student.findOne({
+      documentReuploadToken: token,
+      documentReuploadExpires: { $gt: new Date() }
+    });
+
+    if (!student) {
+      return res.status(400).json({
+        message: "Invalid or expired document re-upload link."
+      });
+    }
+
+    const proof =
+  `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+
+student.proof = proof;
+
+student.approvalStatus = "Pending";
+student.isActive = false;
+
+student.documentReuploadToken = null;
+student.documentReuploadExpires = null;
+
+    await student.save();
+
+    res.json({
+      message: "Document re-upload request accepted.",
+      studentId: student._id
+    });
+
+  } catch (error) {
+    console.error("Document re-upload error:", error);
+
+    res.status(500).json({
+      message: "Server error."
+    });
+  }
+});
 
 module.exports = router;

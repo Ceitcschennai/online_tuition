@@ -49,9 +49,22 @@ const studentSchema = new mongoose.Schema({
     match: [/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Please enter a valid PAN number'] // ✅ ADDED
   },
   proof: String,
+  proof: String,
+
+documentReuploadToken: {
+  type: String,
+  default: ""
+},
+
+documentReuploadExpires: {
+  type: Date,
+  default: null
+},
+
+
   registeredAt: { type: Date, default: Date.now },
   status: {
-    type: String,
+    type: String, 
     enum: ['Paid', 'Unpaid'],
     default: 'Unpaid'
   },

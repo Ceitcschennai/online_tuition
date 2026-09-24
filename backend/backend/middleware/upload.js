@@ -4,20 +4,20 @@ const path = require("path");
 // Store uploaded files in memory
 const storage = multer.memoryStorage();
 
-// Allow only image files
+// Allow only PDF files
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png/;
+  const allowedTypes = /pdf/;
 
   const extName = allowedTypes.test(
     path.extname(file.originalname).toLowerCase()
   );
 
-  const mimeType = allowedTypes.test(file.mimetype);
+  const mimeType = file.mimetype === "application/pdf";
 
   if (extName && mimeType) {
     cb(null, true);
   } else {
-    cb(new Error("Only images are allowed"));
+    cb(new Error("Only PDF files are allowed"));
   }
 };
 

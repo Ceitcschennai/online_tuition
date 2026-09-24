@@ -64,6 +64,11 @@ const TIMEZONE_OPTIONS = [
 ========================================================= */
 
 const StudentRegister = () => {
+  const [reuploadToken, setReuploadToken] = useState(
+  new URLSearchParams(window.location.search).get(
+    "reuploadToken"
+  )
+);
 
   /* =======================================================
      FORM STATE
@@ -134,6 +139,93 @@ const StudentRegister = () => {
       document.body.classList.remove("register-active");
     };
   }, []);
+
+  useEffect(() => {
+
+  if (!reuploadToken) {
+    return;
+  }
+
+  const loadReuploadStudent = async () => {
+
+    try {
+
+      const response = await axios.get(
+        `${API_BASE_URL}/api/student/document-reupload/${reuploadToken}`
+      );
+
+      const student =
+        response.data?.student;
+
+      if (!student) {
+        showPopup(
+          "error",
+          "Invalid Link",
+          "This document re-upload link is invalid or expired."
+        );
+        return;
+      }
+
+      setFormData((previous) => ({
+        ...previous,
+
+        title:
+          student.title || "Mr.",
+
+        firstName:
+          student.firstName || "",
+
+        lastName:
+          student.lastName || "",
+
+        mobile:
+          student.mobile || "",
+
+        syllabus:
+          student.syllabus || "",
+
+        studentClass:
+          student.studentClass || "",
+
+        timezone:
+          student.timezone || "",
+
+        email:
+          student.email || "",
+
+        emisNumber:
+          student.emisNumber || "",
+
+        // Password stays empty.
+        password: "",
+        confirmPassword: "",
+      }));
+
+      // IMPORTANT:
+      // The old document is NOT loaded.
+      // The student must choose a new document.
+      setStudentIdFile(null);
+
+    } catch (error) {
+
+      console.error(
+        "Failed to load re-upload student:",
+        error
+      );
+
+      showPopup(
+        "error",
+        "Unable to Load",
+        error.response?.data?.message ||
+          "Unable to load your registration details."
+      );
+    }
+
+  };
+
+  loadReuploadStudent();
+
+}, [reuploadToken]);
 
   /* =======================================================
      SHOW POPUP
@@ -276,33 +368,37 @@ const StudentRegister = () => {
       return "Please enter a valid email address.";
     }
 
-    if (!formData.password) {
-      return "Please enter a password.";
-    }
+    if (!reuploadToken) {
 
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+  if (!formData.password) {
+    return "Please enter a password.";
+  }
 
-    if (
-      !passwordRegex.test(
-        formData.password
-      )
-    ) {
-      setShowPasswordRules(true);
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
-      return (
-        "Password must contain at least 8 characters, " +
-        "one uppercase letter, one lowercase letter, " +
-        "one number and one special character."
-      );
-    }
+  if (
+    !passwordRegex.test(
+      formData.password
+    )
+  ) {
+    setShowPasswordRules(true);
 
-    if (
-      formData.password !==
-      formData.confirmPassword
-    ) {
-      return "Passwords do not match.";
-    }
+    return (
+      "Password must contain at least 8 characters, " +
+      "one uppercase letter, one lowercase letter, " +
+      "one number and one special character."
+    );
+  }
+
+  if (
+    formData.password !==
+    formData.confirmPassword
+  ) {
+    return "Passwords do not match.";
+  }
+
+}
 
     if (!studentIdFile) {
       return "Please upload your student ID.";
@@ -414,15 +510,17 @@ const StudentRegister = () => {
          PASSWORD
       =================================================== */
 
-      submitData.append(
-        "password",
-        formData.password
-      );
+      if (!reuploadToken) {
+  submitData.append(
+    "password",
+    formData.password
+  );
 
-      submitData.append(
-        "confirmPassword",
-        formData.confirmPassword
-      );
+  submitData.append(
+    "confirmPassword",
+    formData.confirmPassword
+  );
+}
 
       /* ===================================================
          EMIS
@@ -446,29 +544,54 @@ const StudentRegister = () => {
          API CALL
       =================================================== */
 
-      const response =
-        await axios.post(
-          `${API_BASE_URL}/api/student/register`,
-          submitData,
-          {
-            headers: {
-              "Content-Type":
-                "multipart/form-data",
-            },
-          }
-        );
+      let response;
+
+if (reuploadToken) {
+
+  response =
+    await axios.post(
+      `${API_BASE_URL}/api/student/document-reupload/${reuploadToken}`,
+      submitData,
+      {
+        headers: {
+          "Content-Type":
+            "multipart/form-data",
+        },
+      }
+    );
+
+} else {
+
+  response =
+    await axios.post(
+      `${API_BASE_URL}/api/student/register`,
+      submitData,
+      {
+        headers: {
+          "Content-Type":
+            "multipart/form-data",
+        },
+      }
+    );
+
+}
 
       /* ===================================================
          SUCCESS
       =================================================== */
 
       showPopup(
-        "success",
-        "Registration Successful",
-        response.data?.message ||
-          "Participant registration completed successfully. Please wait for admin approval."
-      );
-
+  "success",
+  reuploadToken
+    ? "Document Re-uploaded"
+    : "Registration Successful",
+  response.data?.message ||
+    (
+      reuploadToken
+        ? "Your document has been re-uploaded successfully. Please wait for admin review."
+        : "Participant registration completed successfully. Please wait for admin approval."
+    )
+);
       /* ===================================================
          RESET FORM
       =================================================== */
@@ -590,12 +713,16 @@ const StudentRegister = () => {
             </div>
 
             <h1>
-              Participant Registration
-            </h1>
+  {reuploadToken
+    ? "Re-upload Student Document"
+    : "Participant Registration"}
+</h1>
 
             <p>
-              Create your participant account to start learning.
-            </p>
+  {reuploadToken
+    ? "Please upload a new student ID document for admin review."
+    : "Create your participant account to start learning."}
+</p>
 
           </div>
 
@@ -872,7 +999,7 @@ const StudentRegister = () => {
             {/* =============================================
                 PASSWORD
             ============================================= */}
-
+{!reuploadToken && (
             <div className="input-group">
 
               <label>
@@ -1038,11 +1165,12 @@ const StudentRegister = () => {
               )}
 
             </div>
+            )}
 
             {/* =============================================
                 CONFIRM PASSWORD
             ============================================= */}
-
+{!reuploadToken && (
             <div className="input-group">
 
               <label>
@@ -1119,6 +1247,7 @@ const StudentRegister = () => {
               )}
 
             </div>
+            )}
 
             {/* =============================================
                 EMIS NUMBER
@@ -1158,8 +1287,10 @@ const StudentRegister = () => {
             <div className="input-group">
 
               <label className="upload-label">
-                Upload Student ID
-              </label>
+  {reuploadToken
+    ? "Upload Replacement Student ID"
+    : "Upload Student ID"}
+</label>
 
               <label
                 className="upload-box"
@@ -1171,13 +1302,17 @@ const StudentRegister = () => {
                 />
 
                 <span className="upload-choose-btn">
-                  Choose File
-                </span>
+  {reuploadToken
+    ? "Choose Replacement File"
+    : "Choose File"}
+</span>
 
                 <span className="upload-filename">
                   {studentIdFile
-                    ? studentIdFile.name
-                    : "No file chosen"}
+  ? studentIdFile.name
+  : reuploadToken
+    ? "Please choose a replacement document"
+    : "No file chosen"}
                 </span>
 
               </label>
@@ -1206,14 +1341,18 @@ const StudentRegister = () => {
 
                 <>
                   <span className="button-spinner"></span>
-                  Registering...
+                  {reuploadToken
+  ? "Re-uploading..."
+  : "Registering..."}
                 </>
 
               ) : (
 
                 <>
-                  Register as Participant
-                </>
+  {reuploadToken
+    ? "Re-upload Document"
+    : "Register as Participant"}
+</>
 
               )}
 
