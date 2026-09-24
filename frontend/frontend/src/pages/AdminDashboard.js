@@ -2852,6 +2852,27 @@ const AdminDashboard = () => {
 
 )}
 
+{selectedStudent.documentReuploadToken ? (
+
+  <div
+    style={{
+      width: "100%",
+      padding: "14px 20px",
+      borderRadius: "8px",
+      background: "#fff7ed",
+      border: "1px solid #fdba74",
+      color: "#ea580c",
+      fontWeight: "600",
+      textAlign: "center",
+      fontSize: "15px",
+      marginTop: "15px",
+    }}
+  >
+    Waiting for re-upload document
+  </div>
+
+) : (
+    <>
 
                   {/* STUDENT APPROVE */}
 
@@ -2926,10 +2947,15 @@ const AdminDashboard = () => {
 
                     
 
-                  </div>
+                                    </div>
 
-                </div>
+                </>
+
               )}
+
+              </div>
+
+            )}
 
             </React.Fragment>
           )
