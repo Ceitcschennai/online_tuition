@@ -374,14 +374,10 @@ const degreeCertificate = certificateFile
           degreeCertificate:
             degreeCertificate,
 
-          isApproved:
-            false,
-
-          isRejected:
-            false,
-
-          isActive:
-            true,
+          isApproved: false,
+isRejected: false,
+isActive: false,
+activationRequested: false,
         });
 
       try {
@@ -914,6 +910,7 @@ router.put(
         teacher.isApproved = true;
         teacher.isRejected = false;
         teacher.isActive = true;
+        teacher.activationRequested = false;
 
         // Clear any old document re-upload token
         teacher.documentReuploadToken = "";
@@ -928,6 +925,7 @@ router.put(
         teacher.isApproved = false;
         teacher.isRejected = false;
         teacher.isActive = false;
+        teacher.activationRequested = false;
 
         // Generate secure temporary token
         teacher.documentReuploadToken =
@@ -948,6 +946,7 @@ router.put(
         teacher.isApproved = false;
         teacher.isRejected = true;
         teacher.isActive = false;
+        teacher.activationRequested = false;
 
         // Clear any document re-upload token
         teacher.documentReuploadToken = "";
@@ -1725,10 +1724,15 @@ router.put(
          UPDATE ACTIVE STATUS
       ========================================= */
 
-      teacher.isActive =
-        action === "activate";
+      if (action === "activate") {
+  teacher.isActive = true;
+  teacher.activationRequested = false;
+} else {
+  teacher.isActive = false;
+  teacher.activationRequested = false;
+}
 
-      await teacher.save();
+await teacher.save();
 
       /* =========================================
          ACTIVITY LOG
@@ -1769,7 +1773,10 @@ router.put(
           isRejected:
             teacher.isRejected,
           isActive:
-            teacher.isActive,
+  teacher.isActive,
+
+activationRequested:
+  teacher.activationRequested,
         },
       });
 
@@ -1784,6 +1791,170 @@ router.put(
         message:
           "Failed to update teacher status",
         error: error.message,
+      });
+    }
+  }
+);
+/* =================================================
+   FACULTY REQUEST ACTIVATION
+================================================= */
+
+router.post(
+  "/request-activation/:teacherId",
+  async (req, res) => {
+    try {
+      const { teacherId } = req.params;
+
+      if (!isValidObjectId(teacherId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid teacher ID",
+        });
+      }
+
+      const teacher = await Teacher.findById(teacherId);
+
+      if (!teacher) {
+        return res.status(404).json({
+          success: false,
+          message: "Teacher not found",
+        });
+      }
+
+      /* =========================================
+         ONLY APPROVED FACULTY CAN REQUEST
+         ACTIVATION
+      ========================================= */
+
+      if (!teacher.isApproved) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Only approved faculty can request activation",
+        });
+      }
+
+      /* =========================================
+         FACULTY MUST BE DEACTIVATED
+      ========================================= */
+
+      if (teacher.isActive) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Your faculty account is already active",
+        });
+      }
+
+      /* =========================================
+         ALREADY REQUESTED
+      ========================================= */
+
+      if (teacher.activationRequested) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Activation request has already been submitted",
+        });
+      }
+
+      /* =========================================
+         CREATE ACTIVATION REQUEST
+      ========================================= */
+
+      teacher.activationRequested = true;
+      teacher.isActive = false;
+
+      await teacher.save();
+
+      /* =========================================
+         ACTIVITY LOG
+      ========================================= */
+
+      try {
+        await Activity.create({
+          type: "teacher",
+
+          message:
+            `Teacher ${teacher.firstName} ${teacher.lastName} requested account activation`,
+
+          time: new Date(),
+        });
+      } catch (activityError) {
+        console.error(
+          "Activation request activity error:",
+          activityError.message
+        );
+      }
+
+      return res.json({
+        success: true,
+
+        message:
+          "Activation request submitted successfully. Please wait for admin approval.",
+
+        teacher: {
+          _id: teacher._id,
+          isApproved: teacher.isApproved,
+          isActive: teacher.isActive,
+          activationRequested:
+            teacher.activationRequested,
+        },
+      });
+
+    } catch (error) {
+      console.error(
+        "Faculty activation request error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Failed to submit activation request",
+        error: error.message,
+      });
+    }
+  }
+);
+
+/* =================================================
+   GET FACULTY ACTIVATION REQUESTS
+================================================= */
+
+router.get(
+  "/admin/activation-requests",
+  async (req, res) => {
+    try {
+      const teachers = await Teacher.find({
+        isApproved: true,
+        isActive: false,
+        activationRequested: true,
+      })
+        .select("-password")
+        .populate(
+          "subjects",
+          "name category classes"
+        )
+        .sort({
+          createdAt: -1,
+        });
+
+      return res.json({
+        success: true,
+        teachers,
+      });
+
+    } catch (error) {
+      console.error(
+        "Fetch activation requests error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Failed to fetch activation requests",
       });
     }
   }
@@ -1812,7 +1983,7 @@ router.get(
   await Teacher.findById(
     teacherId
   ).select(
-    "firstName lastName classesAssigned subjects preferredSubject isApproved isRejected"
+    "firstName lastName classesAssigned subjects preferredSubject isApproved isRejected isActive activationRequested"
   );
 
       if (!teacher) {
@@ -1943,6 +2114,15 @@ if (
 
           subjects:
             subjectNames,
+
+              isApproved:
+    teacher.isApproved,
+
+  isActive:
+    teacher.isActive,
+
+  activationRequested:
+    teacher.activationRequested,
 
           assignedSubjects:
             assignedSubjects.map(
@@ -2667,6 +2847,7 @@ router.post(
       teacher.isApproved = false;
       teacher.isRejected = false;
       teacher.isActive = false;
+      teacher.activationRequested = false;
 
       // Token can only be used once
       teacher.documentReuploadToken = "";
@@ -2680,7 +2861,7 @@ router.post(
 
       try {
         await Activity.create({
-          type: "teacher",
+          type: "teacher",  
 
           message:
             `Teacher ${teacher.firstName} ${teacher.lastName} re-uploaded the required document`,

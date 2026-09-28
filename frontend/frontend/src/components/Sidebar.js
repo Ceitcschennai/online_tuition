@@ -96,10 +96,45 @@ const menuConfig = {
 const Sidebar = ({ isOpen, setIsOpen, isMobile = false }) => {
   const role = localStorage.getItem("userRole");
 
-  if (!role) {
-    return null;
-  }
+  const [storedUser, setStoredUser] = React.useState(() =>
+    JSON.parse(
+      localStorage.getItem("user") || "null"
+    )
+  );
 
+  React.useEffect(() => {
+    const updateUserStatus = () => {
+      setStoredUser(
+        JSON.parse(
+          localStorage.getItem("user") || "null"
+        )
+      );
+    };
+
+    window.addEventListener(
+      "userStatusUpdated",
+      updateUserStatus
+    );
+
+    return () => {
+      window.removeEventListener(
+        "userStatusUpdated",
+        updateUserStatus
+      );
+    };
+  }, []);
+
+if (!role) {
+  return null;
+}
+
+const isRestrictedTeacher =
+  role === "teacher" &&
+  storedUser?.isActive === false &&
+  (
+    storedUser?.isApproved === true ||
+    storedUser?.approvalStatus === "Approved"
+  );
 
   const dashboardLink = {
     admin: "/admin-dashboard",
@@ -164,7 +199,13 @@ const Sidebar = ({ isOpen, setIsOpen, isMobile = false }) => {
 
 
           {/* ROLE BASED MENU */}
-          {(menuConfig[role] || []).map((item, index) => {
+{(
+  role === "teacher" && isRestrictedTeacher
+    ? (menuConfig[role] || []).filter(
+        (item) => item.to === "/teacher-profile"
+      )
+    : (menuConfig[role] || [])
+).map((item, index) => {
             const Icon = item.icon;
 
             return (

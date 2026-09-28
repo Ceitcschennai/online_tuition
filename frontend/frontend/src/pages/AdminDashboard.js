@@ -2339,12 +2339,17 @@ const AdminDashboard = () => {
 
   const [pendingTeachers, setPendingTeachers] =
     useState([]);
+  const [activationRequests, setActivationRequests] =
+  useState([]);
+
+
 
   const [selectedStudent, setSelectedStudent] =
     useState(null);
 
   const [selectedTeacher, setSelectedTeacher] =
     useState(null);
+    
 
   const [rejectReason, setRejectReason] =
     useState("");
@@ -2353,12 +2358,13 @@ const AdminDashboard = () => {
     useState(false);
 
 
-  useEffect(() => {
+ useEffect(() => {
 
-    fetchPendingStudents();
-    fetchPendingTeachers();
+  fetchPendingStudents();
+  fetchPendingTeachers();
+  fetchActivationRequests();
 
-  }, []);
+}, []);
 
 
   const fetchPendingStudents =
@@ -2401,6 +2407,40 @@ const AdminDashboard = () => {
 
   const fetchPendingTeachers =
     async () => {
+      const fetchActivationRequests =
+  async () => {
+
+    try {
+
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/teacher/admin/activation-requests`
+        );
+
+      if (!res.ok)
+        throw new Error(
+          "Failed to fetch activation requests"
+        );
+
+      const data =
+        await res.json();
+
+      setActivationRequests(
+        Array.isArray(data.teachers)
+          ? data.teachers
+          : []
+      );
+
+    } catch (err) {
+
+      console.error(
+        "Error fetching activation requests:",
+        err.message
+      );
+
+      setActivationRequests([]);
+    }
+  };
 
       try {
 
@@ -2435,6 +2475,40 @@ const AdminDashboard = () => {
         setPendingTeachers([]);
       }
     };
+    const fetchActivationRequests =
+  async () => {
+
+    try {
+
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/teacher/admin/activation-requests`
+        );
+
+      if (!res.ok)
+        throw new Error(
+          "Failed to fetch activation requests"
+        );
+
+      const data =
+        await res.json();
+
+      setActivationRequests(
+        Array.isArray(data.teachers)
+          ? data.teachers
+          : []
+      );
+
+    } catch (err) {
+
+      console.error(
+        "Error fetching activation requests:",
+        err.message
+      );
+
+      setActivationRequests([]);
+    }
+  };
 
 
   // ─────────────────────────────────────────────
@@ -2684,7 +2758,35 @@ const handleTeacherStatus = async (
 
   return (
     <div className="admin-dashboard">
+{activationRequests.length > 0 && (
+  <div className="activation-request-popup">
 
+    <div className="activation-request-popup-icon">
+      🔔
+    </div>
+
+    <div className="activation-request-popup-content">
+      <h3>Faculty Activation Request</h3>
+
+      <p>
+        {activationRequests.length} faculty member
+        {activationRequests.length > 1 ? "s" : ""} requested
+        account activation.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      className="activation-request-popup-btn"
+      onClick={() => {
+        window.location.href = "/manage-teachers";
+      }}
+    >
+      View Requests
+    </button>
+
+  </div>
+)}
       <h1>
         Admin Dashboard
       </h1>

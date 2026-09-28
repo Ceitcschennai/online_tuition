@@ -138,8 +138,19 @@ isRejected: {
   default: false
 },
 isActive: {
+
   type: Boolean,
+
   default: false
+
+},
+
+activationRequested: {
+
+  type: Boolean,
+
+  default: false
+
 },
 
 documentReuploadToken: {
@@ -160,13 +171,13 @@ documentReuploadExpires: {
    AUTO ACTIVATE APPROVED TEACHER
 ============================================== */
 teacherSchema.pre("save", function (next) {
-  if (this.isApproved === true) {
-    this.isActive = true;
-  } else {
+
+  if (this.isApproved === false) {
     this.isActive = false;
   }
 
   next();
+
 });
 
 /* ==============================================
@@ -188,6 +199,8 @@ teacherSchema.index({ email: 1 });
 teacherSchema.index({ isApproved: 1 });
 
 teacherSchema.index({ isActive: 1 });
+
+teacherSchema.index({ activationRequested: 1 });
 
 /* ==============================================
    EXPORT MODEL

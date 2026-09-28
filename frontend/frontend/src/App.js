@@ -223,20 +223,21 @@ const AppContent = () => {
   const storedUser =
     getStoredUser();
 
+    const isRestrictedTeacher =
+  isLoggedIn &&
+  userRole === "teacher" &&
+  storedUser?.approvalStatus === "Approved" &&
+  storedUser?.isActive === false;
 
   const isPendingUser =
-    isLoggedIn &&
-    userRole !== "admin" &&
-    (
-      (
-        userRole === "student" &&
-        storedUser?.approvalStatus !== "Approved"
-      ) ||
-      (
-        userRole === "teacher" &&
-        storedUser?.approvalStatus !== "Approved"
-      )
-    );
+  isLoggedIn &&
+  userRole !== "admin" &&
+  (
+    (userRole === "student" &&
+      storedUser?.approvalStatus !== "Approved") ||
+    (userRole === "teacher" &&
+      storedUser?.isApproved !== true)
+  );
 
 const allowedPendingPaths =
   userRole === "student"
@@ -263,6 +264,16 @@ const allowedPendingPaths =
       location.pathname
     );
 
+const allowedRestrictedTeacherPaths = [
+  "/",
+  "/teacher-dashboard",
+  "/teacher-profile"
+];
+
+const isRestrictedTeacherAllowedPath =
+  allowedRestrictedTeacherPaths.includes(
+    location.pathname
+  );
 
   const shouldShowWaitingPage =
     isPendingUser &&
@@ -270,6 +281,12 @@ const allowedPendingPaths =
     !isWaitingPage &&
     !isLoginPage &&
     !isRegistrationPage;
+
+    const shouldRestrictTeacher =
+  isRestrictedTeacher &&
+  !isRestrictedTeacherAllowedPath &&
+  !isLoginPage &&
+  !isRegistrationPage;
 
 
   /* =======================================================
@@ -436,6 +453,14 @@ const allowedPendingPaths =
       );
 
     }
+
+   if (shouldRestrictTeacher) {
+
+  return (
+    <WaitingForApproval />
+  );
+
+}
 
 
     return (

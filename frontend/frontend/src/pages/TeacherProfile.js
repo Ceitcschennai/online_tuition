@@ -34,8 +34,7 @@ const TeacherProfile = () => {
   );
 
   const isTeacherApproved =
-    loggedInUser?.approvalStatus === "Approved";
-
+  loggedInUser?.isApproved === true;
 
   /* =========================================================
      FETCH TEACHER PROFILE

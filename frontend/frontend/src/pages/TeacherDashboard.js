@@ -27,12 +27,14 @@ const TeacherDashboard = () => {
   });
 
   const [teacherInfo, setTeacherInfo] = useState({
-    name: "",
-    classes: [],
-    subjects: [],
-    assignedSubjects: []
-  });
-
+  name: "",
+  classes: [],
+  subjects: [],
+  assignedSubjects: [],
+  isApproved: false,
+  isActive: false,
+  activationRequested: false
+});
   const [queries, setQueries] = useState([]);
   const [scheduledClasses, setScheduledClasses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,6 +68,28 @@ const TeacherDashboard = () => {
 
       const data = await response.json();
       console.log("Teacher Dashboard Data:", data);
+      const storedUser = JSON.parse(
+  localStorage.getItem("user") || "null"
+);
+
+if (storedUser) {
+  const updatedUser = {
+    ...storedUser,
+    isApproved: data.teacherInfo?.isApproved || false,
+    isActive: data.teacherInfo?.isActive || false,
+    activationRequested:
+      data.teacherInfo?.activationRequested || false
+  };
+
+  localStorage.setItem(
+    "user",
+    JSON.stringify(updatedUser)
+  );
+
+  window.dispatchEvent(
+    new Event("userStatusUpdated")
+  );
+}
 console.log(
   "Assigned Subjects:",
   data.teacherInfo?.assignedSubjects
@@ -92,24 +116,33 @@ console.log(
       });
 
       setTeacherInfo({
-        name:
-          data.teacherInfo?.name || "",
+  name:
+    data.teacherInfo?.name || "",
 
-        classes:
-          Array.isArray(data.teacherInfo?.classes)
-            ? data.teacherInfo.classes
-            : [],
+  classes:
+    Array.isArray(data.teacherInfo?.classes)
+      ? data.teacherInfo.classes
+      : [],
 
-        subjects:
-          Array.isArray(data.teacherInfo?.subjects)
-            ? data.teacherInfo.subjects
-            : [],
+  subjects:
+    Array.isArray(data.teacherInfo?.subjects)
+      ? data.teacherInfo.subjects
+      : [],
 
-        assignedSubjects:
-          Array.isArray(data.teacherInfo?.assignedSubjects)
-            ? data.teacherInfo.assignedSubjects
-            : []
-      });
+  assignedSubjects:
+    Array.isArray(data.teacherInfo?.assignedSubjects)
+      ? data.teacherInfo.assignedSubjects
+      : [],
+
+  isApproved:
+    data.teacherInfo?.isApproved || false,
+
+  isActive:
+    data.teacherInfo?.isActive || false,
+
+  activationRequested:
+    data.teacherInfo?.activationRequested || false
+});
 
     } catch (err) {
       console.error("Dashboard error:", err);
@@ -123,6 +156,55 @@ console.log(
     }
   }, [teacherId, token, navigate]);
 
+  const handleRequestActivation = async () => {
+  try {
+    if (!teacherId || !token) {
+      navigate("/login");
+      return;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/teacher/request-activation/${teacherId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message ||
+        "Failed to submit activation request"
+      );
+    }
+
+    setTeacherInfo((prev) => ({
+      ...prev,
+      isActive: false,
+      activationRequested: true
+    }));
+
+    alert(
+      "Activation request submitted successfully. Please wait for admin approval."
+    );
+
+  } catch (error) {
+    console.error(
+      "Activation request error:",
+      error
+    );
+
+    alert(
+      error.message ||
+      "Failed to submit activation request"
+    );
+  }
+};
 
   /* =========================================================
      FETCH STUDENT QUERIES
@@ -505,6 +587,46 @@ const todaysClasses = scheduledClasses.filter(
 
         </div>
 
+
+      {/* ===================================================
+          FACULTY ACCOUNT STATUS
+      =================================================== */}
+
+      {!teacherInfo.isActive && (
+        <div className="teacher-activation-status-card">
+
+          <div className="teacher-activation-status-icon">
+            {teacherInfo.activationRequested ? "⏳" : "🔒"}
+          </div>
+
+          <div className="teacher-activation-status-content">
+
+            <h3>
+              {teacherInfo.activationRequested
+                ? "Activation Request Pending"
+                : "Faculty Account Deactivated"}
+            </h3>
+
+            <p>
+              {teacherInfo.activationRequested
+                ? "Your activation request has been submitted. Please wait for admin approval."
+                : "Your faculty account is currently deactivated. You can request activation from the admin."}
+            </p>
+
+          </div>
+
+          {!teacherInfo.activationRequested && (
+            <button
+              type="button"
+              className="teacher-request-activation-btn"
+              onClick={handleRequestActivation}
+            >
+              Request Activation
+            </button>
+          )}
+
+        </div>
+      )}
 
         {/* ===================================================
             HEADER STATS
@@ -1048,6 +1170,59 @@ const todaysClasses = scheduledClasses.filter(
 
       </div>
 
+{/* =====================================================
+    FACULTY ACCOUNT STATUS
+===================================================== */}
+
+{teacherInfo.isApproved && (
+  <div className="teacher-account-status-card">
+
+    <div className="teacher-account-status-content">
+
+      <div>
+        <span className="teacher-account-status-label">
+          ACCOUNT STATUS
+        </span>
+
+        <h3>
+          {teacherInfo.isActive
+            ? "Active Faculty"
+            : teacherInfo.activationRequested
+              ? "Activation Request Pending"
+              : "Faculty Account Deactivated"}
+        </h3>
+
+        <p>
+          {teacherInfo.isActive
+            ? "Your faculty account is currently active."
+            : teacherInfo.activationRequested
+              ? "Your activation request has been submitted. Please wait for admin approval."
+              : "Your account has been deactivated by the administrator. You can request activation below."}
+        </p>
+      </div>
+
+      {!teacherInfo.isActive &&
+        !teacherInfo.activationRequested && (
+          <button
+            type="button"
+            className="teacher-request-activation-btn"
+            onClick={handleRequestActivation}
+          >
+            Request Activation
+          </button>
+        )}
+
+      {!teacherInfo.isActive &&
+        teacherInfo.activationRequested && (
+          <span className="teacher-activation-pending">
+            Activation Requested
+          </span>
+        )}
+
+    </div>
+
+  </div>
+)}
 
       {/* =====================================================
           FACULTY OVERVIEW
