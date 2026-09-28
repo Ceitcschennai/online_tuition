@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 
 import {
-  BrowserRouter as Router,
+  BrowserRouter,
   Routes,
   Route,
-  useLocation,
+  Navigate,
+  useLocation
 } from "react-router-dom";
 
 
@@ -53,6 +54,7 @@ import LiveClass from "./pages/LiveClass";
 import TeacherSubjects from "./pages/TeacherSubjects";
 
 import NotFound from "./pages/NotFound";
+import WaitingForApproval from "./pages/WaitingForApproval";
 
 
 /* =========================================================
@@ -203,11 +205,6 @@ const AppContent = () => {
     "/admin-register";
 
 
-  /*
-     Registration and login pages
-     do not use the dashboard sidebar.
-  */
-
   const isRegistrationPage =
     isStudentRegisterPage ||
     isTeacherRegisterPage ||
@@ -217,6 +214,62 @@ const AppContent = () => {
   const isSpecialPage =
     isLoginPage ||
     isRegistrationPage;
+
+
+  /* =======================================================
+     PENDING USER ACCESS CONTROL
+  ======================================================= */
+
+  const storedUser =
+    getStoredUser();
+
+
+  const isPendingUser =
+    isLoggedIn &&
+    userRole !== "admin" &&
+    (
+      (
+        userRole === "student" &&
+        storedUser?.approvalStatus !== "Approved"
+      ) ||
+      (
+        userRole === "teacher" &&
+        storedUser?.approvalStatus !== "Approved"
+      )
+    );
+
+const allowedPendingPaths =
+  userRole === "student"
+    ? [
+        "/",
+        "/student-dashboard",
+        "/profile"
+      ]
+    : userRole === "teacher"
+    ? [
+        "/",
+        "/teacher-dashboard",
+        "/teacher-profile"
+      ]
+    : [];
+
+  const isWaitingPage =
+    location.pathname ===
+    "/waiting-for-approval";
+
+
+  const isPendingAllowedPath =
+    allowedPendingPaths.includes(
+      location.pathname
+    );
+
+
+  const shouldShowWaitingPage =
+    isPendingUser &&
+    !isPendingAllowedPath &&
+    !isWaitingPage &&
+    !isLoginPage &&
+    !isRegistrationPage;
 
 
   /* =======================================================
@@ -254,8 +307,8 @@ const AppContent = () => {
 
 
       /*
-         Login and registration pages
-         never use the dashboard sidebar.
+        Login and registration pages
+        never use the dashboard sidebar.
       */
 
       if (isSpecialPage) {
@@ -269,8 +322,8 @@ const AppContent = () => {
 
 
       /*
-         Mobile does not keep
-         the sidebar permanently open.
+        Mobile does not keep
+        the sidebar permanently open.
       */
 
       if (mobile) {
@@ -284,7 +337,7 @@ const AppContent = () => {
 
 
       /*
-         Desktop logged-in user
+        Desktop logged-in user
       */
 
       if (isLoggedIn) {
@@ -324,7 +377,7 @@ const AppContent = () => {
 
   }, [
     isLoggedIn,
-    isSpecialPage,
+    isSpecialPage
   ]);
 
 
@@ -348,7 +401,7 @@ const AppContent = () => {
   }, [
     location.pathname,
     isMobile,
-    isSpecialPage,
+    isSpecialPage
   ]);
 
 
@@ -356,312 +409,355 @@ const AppContent = () => {
      APPLICATION ROUTES
   ======================================================= */
 
-  const AppRoutes = () => (
+  const AppRoutes = () => {
 
-    <Routes>
+    /*
+      Pending participant/faculty can only access:
 
+      Participant:
+      - Home
+      - Student Dashboard
 
-      {/* =================================================
-          HOME
-      ================================================= */}
+      Faculty:
+      - Home
+      - Teacher Dashboard
 
-      <Route
-        path="/"
-        element={
-          <Home />
-        }
-      />
+      Everything else goes to:
+      Waiting for Admin Approval
+    */
 
+    if (shouldShowWaitingPage) {
 
-      {/* =================================================
-          LOGIN
-      ================================================= */}
+      return (
+        <Navigate
+          to="/waiting-for-approval"
+          replace
+        />
+      );
 
-      <Route
-        path="/login"
-        element={
-          <Login />
-        }
-      />
+    }
 
 
-      <Route
-        path="/forgot-password"
-        element={
-          <ForgotPassword />
-        }
-      />
+    return (
 
+      <Routes>
 
-      {/* =================================================
-          REGISTRATION
-      ================================================= */}
 
-      <Route
-        path="/register/student"
-        element={
-          <StudentRegister />
-        }
-      />
+        {/* =================================================
+            HOME
+        ================================================= */}
 
+        <Route
+          path="/"
+          element={
+            <Home />
+          }
+        />
 
-      <Route
-        path="/register/teacher"
-        element={
-          <TeacherRegister />
-        }
-      />
 
+        {/* =================================================
+            LOGIN
+        ================================================= */}
 
-      <Route
-        path="/admin-register"
-        element={
-          <AdminRegister />
-        }
-      />
+        <Route
+          path="/login"
+          element={
+            <Login />
+          }
+        />
 
 
-      {/* =================================================
-          SUBJECTS
-      ================================================= */}
+        <Route
+          path="/forgot-password"
+          element={
+            <ForgotPassword />
+          }
+        />
 
-      <Route
-        path="/subjects"
-        element={
-          <Subjects />
-        }
-      />
 
+        {/* =================================================
+            REGISTRATION
+        ================================================= */}
 
-      <Route
-        path="/subjects/:subjectName"
-        element={
-          <SubjectDetails />
-        }
-      />
+        <Route
+          path="/register/student"
+          element={
+            <StudentRegister />
+          }
+        />
 
 
-      <Route
-        path="/teacher-subjects"
-        element={
-          <TeacherSubjects />
-        }
-      />
+        <Route
+          path="/register/teacher"
+          element={
+            <TeacherRegister />
+          }
+        />
 
 
-      {/* =================================================
-          TEACHER DETAILS
-      ================================================= */}
+        <Route
+          path="/admin-register"
+          element={
+            <AdminRegister />
+          }
+        />
 
-      <Route
-        path="/teacher-details"
-        element={
-          <TeacherDetails />
-        }
-      />
 
+        {/* =================================================
+            SUBJECTS
+        ================================================= */}
 
-      {/* =================================================
-          DASHBOARDS
-      ================================================= */}
-
-      <Route
-        path="/admin-dashboard"
-        element={
-          <AdminDashboard />
-        }
-      />
-
-
-      <Route
-        path="/teacher-dashboard"
-        element={
-          <TeacherDashboard />
-        }
-      />
-
-
-      <Route
-        path="/student-dashboard"
-        element={
-          <StudentDashboard
-            student={student}
-          />
-        }
-      />
-
-
-      {/* =================================================
-          ASSIGNMENTS
-      ================================================= */}
-
-      <Route
-        path="/assignments"
-        element={
-          <Assignments />
-        }
-      />
-
-
-      <Route
-        path="/teacher-assignments"
-        element={
-          <TeacherAssignments />
-        }
-      />
-
-
-      {/* =================================================
-          EXTRA CLASSES
-      ================================================= */}
-
-      <Route
-        path="/explore-more"
-        element={
-          <ExtraClasses />
-        }
-      />
-
-
-      {/* =================================================
-          ATTENDANCE
-      ================================================= */}
-
-      <Route
-        path="/take-attendance"
-        element={
-          <TakeAttendance />
-        }
-      />
-
-
-      {/* =================================================
-          QUERIES
-      ================================================= */}
-
-      <Route
-        path="/student-queries"
-        element={
-          <StudentQueries />
-        }
-      />
-
-
-      <Route
-        path="/queries"
-        element={
-          <RaiseQuery />
-        }
-      />
-
-
-      {/* =================================================
-          ADMIN MANAGEMENT
-      ================================================= */}
-
-      <Route
-        path="/manage-students"
-        element={
-          <ManageStudents />
-        }
-      />
+        <Route
+          path="/subjects"
+          element={
+            <Subjects />
+          }
+        />
+
+
+        <Route
+          path="/subjects/:subjectName"
+          element={
+            <SubjectDetails />
+          }
+        />
 
+
+        <Route
+          path="/teacher-subjects"
+          element={
+            <TeacherSubjects />
+          }
+        />
 
-      <Route
-        path="/manage-teachers"
-        element={
-          <ManageTeachers />
-        }
-      />
+
+        {/* =================================================
+            TEACHER DETAILS
+        ================================================= */}
+
+        <Route
+          path="/teacher-details"
+          element={
+            <TeacherDetails />
+          }
+        />
 
+
+        {/* =================================================
+            DASHBOARDS
+        ================================================= */}
+
+        <Route
+          path="/admin-dashboard"
+          element={
+            <AdminDashboard />
+          }
+        />
 
-      <Route
-        path="/manage-payments"
-        element={
-          <ManagePayments />
-        }
-      />
+
+        <Route
+          path="/teacher-dashboard"
+          element={
+            <TeacherDashboard />
+          }
+        />
 
+
+        <Route
+          path="/student-dashboard"
+          element={
+            <StudentDashboard
+              student={student}
+            />
+          }
+        />
+
+
+        {/* =================================================
+            WAITING FOR ADMIN APPROVAL
+        ================================================= */}
+
+        <Route
+          path="/waiting-for-approval"
+          element={
+            <WaitingForApproval />
+          }
+        />
+
+
+        {/* =================================================
+            ASSIGNMENTS
+        ================================================= */}
+
+        <Route
+          path="/assignments"
+          element={
+            <Assignments />
+          }
+        />
+
+
+        <Route
+          path="/teacher-assignments"
+          element={
+            <TeacherAssignments />
+          }
+        />
+
+
+        {/* =================================================
+            EXTRA CLASSES
+        ================================================= */}
+
+        <Route
+          path="/explore-more"
+          element={
+            <ExtraClasses />
+          }
+        />
+
+
+        {/* =================================================
+            ATTENDANCE
+        ================================================= */}
+
+        <Route
+          path="/take-attendance"
+          element={
+            <TakeAttendance />
+          }
+        />
+
+
+        {/* =================================================
+            QUERIES
+        ================================================= */}
+
+        <Route
+          path="/student-queries"
+          element={
+            <StudentQueries />
+          }
+        />
+
+
+        <Route
+          path="/queries"
+          element={
+            <RaiseQuery />
+          }
+        />
+
+
+        {/* =================================================
+            ADMIN MANAGEMENT
+        ================================================= */}
+
+        <Route
+          path="/manage-students"
+          element={
+            <ManageStudents />
+          }
+        />
 
-      <Route
-        path="/manage-subjects"
-        element={
-          <ManageSubjects />
-        }
-      />
 
+        <Route
+          path="/manage-teachers"
+          element={
+            <ManageTeachers />
+          }
+        />
 
-      {/* =================================================
-          PAYMENTS
-      ================================================= */}
 
-      <Route
-        path="/payments"
-        element={
-          <Payments />
-        }
-      />
+        <Route
+          path="/manage-payments"
+          element={
+            <ManagePayments />
+          }
+        />
 
 
-      <Route
-        path="/fee-payment"
-        element={
-          <FeePayment />
-        }
-      />
+        <Route
+          path="/manage-subjects"
+          element={
+            <ManageSubjects />
+          }
+        />
 
 
-      <Route
-        path="/payment-history"
-        element={
-          <PaymentHistory />
-        }
-      />
+        {/* =================================================
+            PAYMENTS
+        ================================================= */}
 
+        <Route
+          path="/payments"
+          element={
+            <Payments />
+          }
+        />
 
-      <Route
-        path="/teacher-payments"
-        element={
-          <TeacherPayments />
-        }
-      />
 
+        <Route
+          path="/fee-payment"
+          element={
+            <FeePayment />
+          }
+        />
 
-      <Route
-        path="/teacher-profile"
-        element={
-          <TeacherProfile />
-        }
-      />
 
+        <Route
+          path="/payment-history"
+          element={
+            <PaymentHistory />
+          }
+        />
 
-      {/* =================================================
-          LIVE CLASS
-      ================================================= */}
 
-      <Route
-        path="/live-class"
-        element={
-          <LiveClass />
-        }
-      />
+        <Route
+          path="/teacher-payments"
+          element={
+            <TeacherPayments />
+          }
+        />
 
 
-      {/* =================================================
-          404 PAGE
-      ================================================= */}
+        <Route
+          path="/teacher-profile"
+          element={
+            <TeacherProfile />
+          }
+        />
 
-      <Route
-        path="*"
-        element={
-          <NotFound />
-        }
-      />
 
+        {/* =================================================
+            LIVE CLASS
+        ================================================= */}
 
-    </Routes>
+        <Route
+          path="/live-class"
+          element={
+            <LiveClass />
+          }
+        />
 
-  );
+
+        {/* =================================================
+            404 PAGE
+        ================================================= */}
+
+        <Route
+          path="*"
+          element={
+            <NotFound />
+          }
+        />
+
+
+      </Routes>
+
+    );
+
+  };
 
 
   /* =======================================================
@@ -750,16 +846,16 @@ const AppContent = () => {
             className={
 
               /*
-                 PUBLIC PAGES
+                PUBLIC PAGES
 
-                 Home page must use public-content.
-                 This removes:
-                 - 70px sidebar space
-                 - 24px outer border space
+                Home page must use public-content.
+                This removes:
+                - 70px sidebar space
+                - 24px outer border space
 
-                 DASHBOARD PAGES
+                DASHBOARD PAGES
 
-                 Logged-in users use sidebar layout.
+                Logged-in users use sidebar layout.
               */
 
               !isLoggedIn
@@ -805,7 +901,7 @@ function App() {
 
     <ErrorBoundary>
 
-      <Router>
+      <BrowserRouter>
 
         <LiveClassProvider>
 
@@ -813,7 +909,7 @@ function App() {
 
         </LiveClassProvider>
 
-      </Router>
+      </BrowserRouter>
 
     </ErrorBoundary>
 

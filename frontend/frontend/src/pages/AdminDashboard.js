@@ -2634,664 +2634,1269 @@ const AdminDashboard = () => {
       </h1>
 
 
-      {/* =====================================================
-          PENDING STUDENTS
-      ===================================================== */}
+      {/* ── Pending Students ── */}
+<div className="admin-section-header">
+  <div>
+    <h2>Pending Students</h2>
+    <p className="admin-section-subtitle">
+      Review student registration details and documents
+    </p>
+  </div>
 
-      <h2>
-        Pending Students
-      </h2>
+  <div className="admin-section-count">
+    {pendingStudents.length} Pending
+  </div>
+</div>
+
+{pendingStudents.length === 0 ? (
+
+  <div className="empty-state-card">
+    <div className="empty-state-icon">🎓</div>
+    <h3>No Pending Students</h3>
+    <p>
+      There are currently no students waiting for approval.
+    </p>
+  </div>
+
+) : (
+
+  <div className="pending-student-list">
+
+    {pendingStudents.map((student) => (
+
+      <React.Fragment key={student._id}>
+
+        {/* STUDENT CARD */}
+        <div
+          className={`student-request-card ${
+            selectedStudent?._id === student._id
+              ? "student-request-card-active"
+              : ""
+          }`}
+          onClick={() => {
+
+            if (
+              selectedStudent?._id ===
+              student._id
+            ) {
+
+              setSelectedStudent(null);
+
+            } else {
+
+              setSelectedStudent(student);
+              setSelectedTeacher(null);
+              setRejectReason("");
+
+            }
+
+          }}
+        >
+
+          {/* Avatar */}
+          <div className="student-request-avatar">
+
+            {(
+              `${student.firstName?.[0] || ""}${
+                student.lastName?.[0] || ""
+              }`
+            ).toUpperCase()}
+
+          </div>
 
 
-      {pendingStudents.length === 0 ? (
+          {/* Main Information */}
+          <div className="student-request-info">
 
-        <p>
-          No pending students
-        </p>
+            <div className="student-request-name">
 
-      ) : (
+              {student.salutation}{" "}
+              {student.firstName}{" "}
+              {student.lastName}
 
-        pendingStudents.map(
-          (student) => (
+            </div>
 
-            <React.Fragment
-              key={student._id}
-            >
+            <div className="student-request-email">
+              {student.email}
+            </div>
 
-              <div
-                className={`card ${
-                  selectedStudent?._id ===
-                  student._id
-                    ? "card-active"
-                    : ""
-                }`}
+            <div className="student-request-meta">
 
-                onClick={() => {
+              <span>
+                🏫 {student.class || "N/A"}
+              </span>
 
-                  if (
-                    selectedStudent?._id ===
-                    student._id
-                  ) {
+              <span>
+                📚 {student.syllabus || "N/A"}
+              </span>
 
-                    setSelectedStudent(
-                      null
-                    );
+              <span>
+                📱 {student.mobile || "N/A"}
+              </span>
 
-                  } else {
+            </div>
 
-                    setSelectedStudent(
-                      student
-                    );
-
-                    setSelectedTeacher(
-                      null
-                    );
-
-                    setRejectReason("");
-                  }
-                }}
-              >
-
-                <strong>
-                  {student.firstName}{" "}
-                  {student.lastName}
-                </strong>
-
-                {" "}
-                ({student.email})
-
-              </div>
+          </div>
 
 
-              {selectedStudent?._id ===
-                student._id && (
+          {/* Status */}
+          <div className="student-request-status">
 
-                <div className="detail-box">
+            <span className="pending-status-badge">
+              ● Pending
+            </span>
+
+          </div>
+
+
+          {/* Arrow */}
+          <div className="student-request-arrow">
+
+            {selectedStudent?._id ===
+            student._id
+              ? "▲"
+              : "›"}
+
+          </div>
+
+        </div>
+
+
+        {/* STUDENT DETAILS */}
+        {selectedStudent?._id === student._id && (
+
+          <div className="student-detail-panel">
+
+            {/* PANEL HEADER */}
+            <div className="student-detail-header">
+
+              <div className="student-detail-title">
+
+                <div className="student-detail-avatar">
+
+                  {(
+                    `${selectedStudent.firstName?.[0] || ""}${
+                      selectedStudent.lastName?.[0] || ""
+                    }`
+                  ).toUpperCase()}
+
+                </div>
+
+                <div>
 
                   <h3>
-                    Student Details
-                  </h3>
-
-
-                  <p>
-                    <strong>
-                      Name:
-                    </strong>{" "}
                     {selectedStudent.salutation}{" "}
                     {selectedStudent.firstName}{" "}
                     {selectedStudent.lastName}
-                  </p>
-
+                  </h3>
 
                   <p>
-                    <strong>
-                      Email:
-                    </strong>{" "}
                     {selectedStudent.email}
                   </p>
 
-
-                  <p>
-                    <strong>
-                      Mobile:
-                    </strong>{" "}
-                    {selectedStudent.mobile}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Timezone:
-                    </strong>{" "}
-                    {selectedStudent.timezone}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Class:
-                    </strong>{" "}
-                    {selectedStudent.class}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Group:
-                    </strong>{" "}
-                    {selectedStudent.group ||
-                      "—"}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Syllabus:
-                    </strong>{" "}
-                    {selectedStudent.syllabus}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      EMIS Number:
-                    </strong>{" "}
-                    {selectedStudent.emisNumber}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      PAN Number:
-                    </strong>{" "}
-                    {selectedStudent.panNumber ||
-                      "—"}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Status:
-                    </strong>{" "}
-                    {selectedStudent.status}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Approval Status:
-                    </strong>{" "}
-                    {selectedStudent.approvalStatus}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Registered At:
-                    </strong>{" "}
-                    {new Date(
-                      selectedStudent.registeredAt
-                    ).toLocaleString()}
-                  </p>
-
-
-                  {selectedStudent.proof ? (
-
-  <div
-    style={{
-      marginTop: "10px",
-    }}
-  >
-
-    <strong>
-      Student Proof:
-    </strong>
-
-    <br />
-
-    <iframe
-      src={selectedStudent.proof}
-      title="Student ID Proof"
-      width="100%"
-      height="500px"
-      style={{
-        marginTop: "10px",
-        border: "1px solid #d1d5db",
-        borderRadius: "10px",
-        background: "#fff",
-      }}
-    />
-
-  </div>
-
-) : (
-
-  <p>
-    No proof uploaded
-  </p>
-
-)}
-
-{selectedStudent.documentReuploadToken ? (
-
-  <div
-    style={{
-      width: "100%",
-      padding: "14px 20px",
-      borderRadius: "8px",
-      background: "#fff7ed",
-      border: "1px solid #fdba74",
-      color: "#ea580c",
-      fontWeight: "600",
-      textAlign: "center",
-      fontSize: "15px",
-      marginTop: "15px",
-    }}
-  >
-    Waiting for re-upload document
-  </div>
-
-) : (
-    <>
-
-                  {/* STUDENT APPROVE */}
-
-                  <div className="button-group">
-
-                    <button
-                      disabled={loading}
-                      onClick={() =>
-                        handleStudentApproval(
-                          "Approved"
-                        )
-                      }
-                      className="approve-btn"
-                    >
-
-                      {loading
-                        ? "Processing..."
-                        : "Approve"}
-
-                    </button>
-
-                    <button
-                      disabled={loading}
-                      onClick={() =>
-                        handleStudentApproval(
-                          "Rejected"
-                        )
-                      }
-                      className="reject-btn"
-                    >
-
-                      {loading
-                        ? "Processing..."
-                        : "Reject"}
-
-                    </button>
-
-                    <button
-  disabled={loading}
-  onClick={() =>
-    handleStudentApproval(
-      "Reject Document"
-    )
-  }
-  className="reject-document-btn"
->
-  {loading
-    ? "Processing..."
-    : "Reject Document"}
-</button>
-
-                  </div>
-
-
-                  {/* STUDENT FULL REJECTION */}
-
-                  <div className="reject-section">
-
-                    <textarea
-                      placeholder="Enter rejection reason..."
-                      value={
-                        rejectReason
-                      }
-                      onChange={(e) =>
-                        setRejectReason(
-                          e.target.value
-                        )
-                      }
-                      rows="3"
-                    />
-
-
-                    
-
-                                    </div>
-
-                </>
-
-              )}
+                </div>
 
               </div>
 
-            )}
 
-            </React.Fragment>
-          )
-        )
-      )}
-
-
-      {/* =====================================================
-          PENDING TEACHERS
-      ===================================================== */}
-
-      <h2>
-        Pending Teachers
-      </h2>
-
-
-      {pendingTeachers.length === 0 ? (
-
-        <p>
-          No pending teachers
-        </p>
-
-      ) : (
-
-        pendingTeachers.map(
-          (teacher) => (
-
-            <React.Fragment
-              key={teacher._id}
-            >
-
-              <div
-                className={`card ${
-                  selectedTeacher?._id ===
-                  teacher._id
-                    ? "card-active"
-                    : ""
-                }`}
-
-                onClick={() => {
-
-                  if (
-                    selectedTeacher?._id ===
-                    teacher._id
-                  ) {
-
-                    setSelectedTeacher(
-                      null
-                    );
-
-                  } else {
-
-                    setSelectedTeacher(
-                      teacher
-                    );
-
-                    setSelectedStudent(
-                      null
-                    );
-
-                    setRejectReason("");
-                  }
-                }}
+              <button
+                type="button"
+                className="student-detail-close"
+                onClick={() =>
+                  setSelectedStudent(null)
+                }
               >
+                ✕
+              </button>
+
+            </div>
+
+
+            {/* STATUS BAR */}
+            <div className="student-detail-status-bar">
+
+              <div>
+
+                <span className="detail-status-label">
+                  Registration Status
+                </span>
 
                 <strong>
-                  {teacher.firstName}{" "}
-                  {teacher.lastName}
+                  {selectedStudent.approvalStatus ||
+                    "Pending"}
                 </strong>
 
-                {" "}
-                ({teacher.email})
+              </div>
+
+              <div>
+
+                <span className="detail-status-label">
+                  Payment
+                </span>
+
+                <strong>
+                  {selectedStudent.paymentStatus ||
+                    selectedStudent.payment ||
+                    "Unpaid"}
+                </strong>
+
+              </div>
+
+            </div>
+
+
+            {/* DETAILS GRID */}
+            <div className="student-details-grid">
+
+              <div className="student-detail-item">
+                <span>👤 Full Name</span>
+                <strong>
+                  {selectedStudent.salutation}{" "}
+                  {selectedStudent.firstName}{" "}
+                  {selectedStudent.lastName}
+                </strong>
+              </div>
+
+
+              <div className="student-detail-item">
+                <span>✉ Email</span>
+                <strong>
+                  {selectedStudent.email || "N/A"}
+                </strong>
+              </div>
+
+
+              <div className="student-detail-item">
+                <span>📱 Mobile</span>
+                <strong>
+                  {selectedStudent.mobile || "N/A"}
+                </strong>
+              </div>
+
+
+              <div className="student-detail-item">
+                <span>🌍 Timezone</span>
+                <strong>
+                  {selectedStudent.timezone || "N/A"}
+                </strong>
+              </div>
+
+
+              <div className="student-detail-item">
+                <span>🏫 Class</span>
+                <strong>
+                  {selectedStudent.class || "N/A"}
+                </strong>
+              </div>
+
+
+              <div className="student-detail-item">
+                <span>📚 Syllabus</span>
+                <strong>
+                  {selectedStudent.syllabus || "N/A"}
+                </strong>
+              </div>
+
+
+              <div className="student-detail-item">
+                <span>🆔 EMIS Number</span>
+                <strong>
+                  {selectedStudent.emisNumber || "N/A"}
+                </strong>
+              </div>
+
+
+              <div className="student-detail-item">
+                <span>🪪 PAN Number</span>
+                <strong>
+                  {selectedStudent.panNumber || "N/A"}
+                </strong>
+              </div>
+
+
+              <div className="student-detail-item">
+                <span>👨‍👩‍👦 Group</span>
+                <strong>
+                  {selectedStudent.group || "N/A"}
+                </strong>
+              </div>
+
+
+              <div className="student-detail-item">
+                <span>📅 Registered</span>
+                <strong>
+                  {selectedStudent.registeredAt
+                    ? new Date(
+                        selectedStudent.registeredAt
+                      ).toLocaleString()
+                    : "N/A"}
+                </strong>
+              </div>
+
+            </div>
+
+
+            {/* ID PROOF */}
+            <div className="student-document-section">
+
+              <div className="student-document-header">
+
+                <div>
+                  <h4>🪪 Student ID Proof</h4>
+
+                  <p>
+                    Review the uploaded student document
+                    before approving the registration.
+                  </p>
+                </div>
 
               </div>
 
 
-              {selectedTeacher?._id ===
-                teacher._id && (
+              {selectedStudent.proof ? (
 
-                <div className="detail-box">
+                <div className="student-document-preview">
 
-                  <h3>
-                    Teacher Details
-                  </h3>
+                  {selectedStudent.proof.startsWith(
+                    "data:application/pdf"
+                  ) ? (
 
-
-                  <p>
-                    <strong>
-                      First Name:
-                    </strong>{" "}
-                    {selectedTeacher.firstName}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Last Name:
-                    </strong>{" "}
-                    {selectedTeacher.lastName}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Email:
-                    </strong>{" "}
-                    {selectedTeacher.email}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Phone:
-                    </strong>{" "}
-                    {selectedTeacher.mobile}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Timezone:
-                    </strong>{" "}
-                    {selectedTeacher.timezone}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Qualification:
-                    </strong>{" "}
-                    {selectedTeacher.qualification}
-                  </p>
-
-
-                  <p>
-                    <strong>
-                      Preferred Subject:
-                    </strong>{" "}
-                    {selectedTeacher.preferredSubject}
-                  </p>
-
-
-                  {selectedTeacher.degreeCertificate ? (
-
-                    <div>
-
-                      <strong>
-                        Certificate:
-                      </strong>
-
-                      <br />
-
-
-                      {selectedTeacher.degreeCertificate.startsWith(
-                        "data:image"
-                      ) ? (
-
-                        <img
-                          src={
-                            selectedTeacher.degreeCertificate
-                          }
-                          alt="Certificate"
-                          style={{
-                            width:
-                              "100%",
-                            maxHeight:
-                              "400px",
-                            objectFit:
-                              "contain",
-                            border:
-                              "1px solid #ccc",
-                            marginTop:
-                              "10px",
-                          }}
-                        />
-
-                      ) : (
-
-                        <iframe
-                          src={
-                            selectedTeacher.degreeCertificate
-                          }
-                          title="Teacher degree certificate document"
-                          width="100%"
-                          height="400px"
-                          style={{
-                            marginTop:
-                              "10px",
-                          }}
-                        />
-
-                      )}
-
-                    </div>
+                    <iframe
+                      src={selectedStudent.proof}
+                      title="Student ID Proof"
+                      className="student-proof-frame"
+                    />
 
                   ) : (
 
-                    <p>
-                      No certificate uploaded
-                    </p>
-
-                  )}
-
-
-                  {/* =====================================================
-                      TEACHER STATUS ACTIONS
-                  ===================================================== */}
-
-                  {selectedTeacher.documentReuploadToken ? (
-
-                    /* DOCUMENT REJECTED - WAITING FOR NEW DOCUMENT */
-
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        width: "100%",
-                        marginTop: "15px",
-                      }}
-                    >
-
-                      <div
-                        style={{
-                          width: "100%",
-                          padding: "14px 20px",
-                          borderRadius: "8px",
-                          background: "#fff7ed",
-                          border: "1px solid #fdba74",
-                          color: "#ea580c",
-                          fontWeight: "600",
-                          textAlign: "center",
-                          fontSize: "15px",
-                        }}
-                      >
-                        Waiting for re-upload document
-                      </div>
-
-                    </div>
-
-                  ) : (
-
-                    /* NORMAL PENDING TEACHER */
-
-                    <>
-
-                      <div className="button-group">
-
-                        {/* APPROVE TEACHER */}
-
-                        <button
-                          disabled={loading}
-                          onClick={() =>
-                            handleTeacherApproval(
-                              "Approved"
-                            )
-                          }
-                          className="approve-btn"
-                        >
-
-                          {loading
-                            ? "Processing..."
-                            : "Approve"}
-
-                        </button>
-
-<button
-                          disabled={loading}
-                          onClick={() =>
-                            handleTeacherApproval(
-                              "Rejected"
-                            )
-                          }
-                          className="reject-btn"
-                        >
-
-                          {loading
-                            ? "Processing..."
-                            : "Reject"}
-
-                        </button>
-
-                        {/* REJECT DOCUMENT */}
-
-                        <button
-                          disabled={loading}
-                          onClick={() =>
-                            handleTeacherApproval(
-                              "Reject Document"
-                            )
-                          }
-                          className="reject-document-btn"
-                        >
-
-                          {loading
-                            ? "Processing..."
-                            : "Reject Document"}
-
-                        </button>
-
-                      </div>
-
-
-                      {/* FULL REGISTRATION REJECTION */}
-
-                      <div className="reject-section">
-
-                        <textarea
-                          placeholder="Enter rejection reason..."
-                          value={
-                            rejectReason
-                          }
-                          onChange={(e) =>
-                            setRejectReason(
-                              e.target.value
-                            )
-                          }
-                          rows="3"
-                        />
-
-
-                        
-
-                      </div>
-
-                    </>
+                    <img
+                      src={selectedStudent.proof}
+                      alt="Student ID Proof"
+                      className="student-proof-image"
+                    />
 
                   )}
 
                 </div>
+
+              ) : (
+
+                <div className="no-document-box">
+
+                  <span>📄</span>
+
+                  <strong>
+                    No document uploaded
+                  </strong>
+
+                  <p>
+                    The student has not uploaded an ID
+                    proof.
+                  </p>
+
+                </div>
+
               )}
 
-            </React.Fragment>
-          )
-        )
-      )}
 
+              {selectedStudent.proof && (
+
+                <div className="document-actions">
+
+                  <button
+                    type="button"
+                    className="document-view-btn"
+                    onClick={() => {
+
+                      const win =
+                        window.open(
+                          "",
+                          "_blank"
+                        );
+
+                      if (!win) return;
+
+                      win.document.write(`
+                        <html>
+                          <head>
+                            <title>Student ID Proof</title>
+                            <style>
+                              body {
+                                margin: 0;
+                                background: #111827;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                min-height: 100vh;
+                              }
+
+                              img,
+                              iframe {
+                                max-width: 95vw;
+                                max-height: 95vh;
+                                border: none;
+                              }
+                            </style>
+                          </head>
+
+                          <body>
+                            ${
+                              selectedStudent.proof.startsWith(
+                                "data:application/pdf"
+                              )
+                                ? `<iframe src="${selectedStudent.proof}" width="100%" height="1000px"></iframe>`
+                                : `<img src="${selectedStudent.proof}" />`
+                            }
+                          </body>
+                        </html>
+                      `);
+
+                      win.document.close();
+
+                    }}
+                  >
+                    👁 View Document
+                  </button>
+
+
+                  <a
+                    href={selectedStudent.proof}
+                    download="student-id-proof"
+                    className="document-download-btn"
+                  >
+                    ⬇ Download
+                  </a>
+
+                </div>
+
+              )}
+
+            </div>
+
+            {/* =========================================
+                WAITING FOR DOCUMENT RE-UPLOAD
+            ========================================= */}
+
+            {/* =========================================
+    WAITING FOR DOCUMENT RE-UPLOAD
+========================================= */}
+
+{selectedStudent.documentReuploadToken && (
+  <div className="student-reupload-waiting-card">
+
+    <div className="student-reupload-waiting-icon">
+      📄
+    </div>
+
+    <div className="student-reupload-waiting-content">
+
+      <h4>
+        Waiting for Document Re-upload
+      </h4>
+
+      <p>
+        The student has been asked to upload
+        a new ID proof.
+      </p>
+
+      <span>
+        The approval actions will become available
+        after the student submits the new document.
+      </span>
+
+    </div>
+
+  </div>
+)}
+            {/* =========================================
+    REJECTION REASON
+========================================= */}
+
+{!selectedStudent.documentReuploadToken && (
+  <div className="student-rejection-section">
+
+    <label>
+      Rejection Reason
+    </label>
+
+    <textarea
+      value={rejectReason}
+      onChange={(e) =>
+        setRejectReason(
+          e.target.value
+        )
+      }
+      placeholder="Enter rejection reason..."
+      rows="3"
+    />
+
+    <small>
+      A reason is required only for full
+      student rejection.
+    </small>
+
+  </div>
+)}
+
+
+            {/* ACTION BUTTONS */}
+
+{!selectedStudent.documentReuploadToken && (
+  <div className="student-detail-actions">
+
+    <button
+      type="button"
+      disabled={loading}
+      className="student-approve-btn"
+      onClick={() =>
+        handleStudentApproval("Approved")
+      }
+    >
+      {loading
+        ? "Processing..."
+        : "✓ Approve Participant"}
+    </button>
+
+
+    <button
+      type="button"
+      disabled={loading}
+      className="student-reject-document-btn"
+      onClick={() =>
+        handleStudentApproval(
+          "Reject Document"
+        )
+      }
+    >
+      {loading
+        ? "Processing..."
+        : "📄 Reject Document"}
+    </button>
+
+
+    <button
+      type="button"
+      disabled={loading}
+      className="student-reject-btn"
+      onClick={() =>
+        handleStudentApproval("Rejected")
+      }
+    >
+      {loading
+        ? "Processing..."
+        : "✕ Reject Participant"}
+    </button>
+
+  </div>
+)}
+
+          </div>
+
+        )}
+
+      </React.Fragment>
+
+    ))}
+
+  </div>
+
+)}
+
+
+      {/* =====================================================
+    PENDING TEACHERS
+===================================================== */}
+
+<div className="admin-section-header">
+
+  <div>
+    <h2>Pending Teachers</h2>
+
+    <p className="admin-section-subtitle">
+      Review teacher registration details and certificates
+    </p>
+  </div>
+
+  <div className="admin-section-count">
+    {pendingTeachers.length} Pending
+  </div>
+
+</div>
+
+
+{pendingTeachers.length === 0 ? (
+
+  <div className="empty-state-card">
+
+    <div className="empty-state-icon">
+      👨‍🏫
+    </div>
+
+    <h3>
+      No Pending Teachers
+    </h3>
+
+    <p>
+      There are currently no teachers waiting for approval.
+    </p>
+
+  </div>
+
+) : (
+
+  <div className="pending-teacher-list">
+
+    {pendingTeachers.map((teacher) => (
+
+      <React.Fragment key={teacher._id}>
+
+        {/* =========================================
+            TEACHER CARD
+        ========================================= */}
+
+        <div
+          className={`teacher-request-card ${
+            selectedTeacher?._id === teacher._id
+              ? "teacher-request-card-active"
+              : ""
+          }`}
+          onClick={() => {
+
+            if (
+              selectedTeacher?._id ===
+              teacher._id
+            ) {
+
+              setSelectedTeacher(null);
+
+            } else {
+
+              setSelectedTeacher(teacher);
+              setSelectedStudent(null);
+              setRejectReason("");
+
+            }
+
+          }}
+        >
+
+          {/* AVATAR */}
+
+          <div className="teacher-request-avatar">
+
+            {(
+              `${teacher.firstName?.[0] || ""}${
+                teacher.lastName?.[0] || ""
+              }`
+            ).toUpperCase()}
+
+          </div>
+
+
+          {/* INFORMATION */}
+
+          <div className="teacher-request-info">
+
+            <div className="teacher-request-name">
+
+              {teacher.firstName}{" "}
+              {teacher.lastName}
+
+            </div>
+
+            <div className="teacher-request-email">
+
+              {teacher.email}
+
+            </div>
+
+
+            <div className="teacher-request-meta">
+
+              <span>
+                📚{" "}
+                {teacher.preferredSubject ||
+                  "N/A"}
+              </span>
+
+              <span>
+                🎓{" "}
+                {teacher.qualification ||
+                  "N/A"}
+              </span>
+
+              <span>
+                📱{" "}
+                {teacher.mobile ||
+                  "N/A"}
+              </span>
+
+            </div>
+
+          </div>
+
+
+          {/* STATUS */}
+
+          <div className="teacher-request-status">
+
+            {teacher.documentReuploadToken ? (
+
+              <span className="teacher-waiting-badge">
+                ● Waiting for Re-upload
+              </span>
+
+            ) : (
+
+              <span className="pending-status-badge">
+                ● Pending
+              </span>
+
+            )}
+
+          </div>
+
+
+          {/* ARROW */}
+
+          <div className="teacher-request-arrow">
+
+            {selectedTeacher?._id ===
+            teacher._id
+              ? "▲"
+              : "›"}
+
+          </div>
+
+        </div>
+
+
+        {/* =========================================
+            TEACHER DETAILS
+        ========================================= */}
+
+        {selectedTeacher?._id === teacher._id && (
+
+          <div className="teacher-detail-panel">
+
+            {/* HEADER */}
+
+            <div className="teacher-detail-header">
+
+              <div className="teacher-detail-title">
+
+                <div className="teacher-detail-avatar">
+
+                  {(
+                    `${selectedTeacher.firstName?.[0] || ""}${
+                      selectedTeacher.lastName?.[0] || ""
+                    }`
+                  ).toUpperCase()}
+
+                </div>
+
+
+                <div>
+
+                  <h3>
+                    {selectedTeacher.firstName}{" "}
+                    {selectedTeacher.lastName}
+                  </h3>
+
+                  <p>
+                    {selectedTeacher.email}
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <button
+                type="button"
+                className="teacher-detail-close"
+                onClick={() =>
+                  setSelectedTeacher(null)
+                }
+              >
+                ✕
+              </button>
+
+            </div>
+
+
+            {/* STATUS */}
+
+            <div className="teacher-detail-status-bar">
+
+              <div>
+
+                <span className="detail-status-label">
+                  Registration Status
+                </span>
+
+                <strong>
+
+                  {selectedTeacher.documentReuploadToken
+                    ? "Waiting for Re-upload"
+                    : "Pending"}
+
+                </strong>
+
+              </div>
+
+
+              <div>
+
+                <span className="detail-status-label">
+                  Subject
+                </span>
+
+                <strong>
+                  {selectedTeacher.preferredSubject ||
+                    "N/A"}
+                </strong>
+
+              </div>
+
+            </div>
+
+
+            {/* DETAILS GRID */}
+
+            <div className="teacher-details-grid">
+
+              <div className="teacher-detail-item">
+
+                <span>
+                  👤 First Name
+                </span>
+
+                <strong>
+                  {selectedTeacher.firstName ||
+                    "N/A"}
+                </strong>
+
+              </div>
+
+
+              <div className="teacher-detail-item">
+
+                <span>
+                  👤 Last Name
+                </span>
+
+                <strong>
+                  {selectedTeacher.lastName ||
+                    "N/A"}
+                </strong>
+
+              </div>
+
+
+              <div className="teacher-detail-item">
+
+                <span>
+                  ✉ Email
+                </span>
+
+                <strong>
+                  {selectedTeacher.email ||
+                    "N/A"}
+                </strong>
+
+              </div>
+
+
+              <div className="teacher-detail-item">
+
+                <span>
+                  📱 Mobile
+                </span>
+
+                <strong>
+                  {selectedTeacher.mobile ||
+                    "N/A"}
+                </strong>
+
+              </div>
+
+
+              <div className="teacher-detail-item">
+
+                <span>
+                  🌍 Timezone
+                </span>
+
+                <strong>
+                  {selectedTeacher.timezone ||
+                    "N/A"}
+                </strong>
+
+              </div>
+
+
+              <div className="teacher-detail-item">
+
+                <span>
+                  🎓 Qualification
+                </span>
+
+                <strong>
+                  {selectedTeacher.qualification ||
+                    "N/A"}
+                </strong>
+
+              </div>
+
+
+              <div className="teacher-detail-item">
+
+                <span>
+                  📚 Preferred Subject
+                </span>
+
+                <strong>
+                  {selectedTeacher.preferredSubject ||
+                    "N/A"}
+                </strong>
+
+              </div>
+
+            </div>
+
+
+            {/* =========================================
+                DEGREE CERTIFICATE
+            ========================================= */}
+
+            <div className="teacher-document-section">
+
+              <div className="teacher-document-header">
+
+                <div>
+
+                  <h4>
+                    🎓 Degree Certificate
+                  </h4>
+
+                  <p>
+                    Review the uploaded certificate
+                    before approving the teacher.
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              {selectedTeacher.degreeCertificate ? (
+
+                <div className="teacher-document-preview">
+
+                  {selectedTeacher.degreeCertificate.startsWith(
+                    "data:application/pdf"
+                  ) ? (
+
+                    <iframe
+                      src={
+                        selectedTeacher.degreeCertificate
+                      }
+                      title="Teacher Degree Certificate"
+                      className="teacher-certificate-frame"
+                    />
+
+                  ) : (
+
+                    <img
+                      src={
+                        selectedTeacher.degreeCertificate
+                      }
+                      alt="Teacher Degree Certificate"
+                      className="teacher-certificate-image"
+                    />
+
+                  )}
+
+                </div>
+
+              ) : (
+
+                <div className="teacher-no-document">
+
+                  <span>
+                    📄
+                  </span>
+
+                  <strong>
+                    No certificate uploaded
+                  </strong>
+
+                  <p>
+                    The teacher has not uploaded
+                    a degree certificate.
+                  </p>
+
+                </div>
+
+              )}
+
+
+              {/* VIEW + DOWNLOAD */}
+
+              {selectedTeacher.degreeCertificate && (
+
+                <div className="teacher-document-actions">
+
+                  <button
+                    type="button"
+                    className="teacher-view-document-btn"
+                    onClick={() => {
+
+                      const win =
+                        window.open(
+                          "",
+                          "_blank"
+                        );
+
+                      if (!win) {
+
+                        alert(
+                          "Please allow pop-ups to view the certificate."
+                        );
+
+                        return;
+
+                      }
+
+
+                      const certificate =
+                        selectedTeacher.degreeCertificate;
+
+
+                      win.document.write(`
+                        <html>
+
+                          <head>
+
+                            <title>
+                              Teacher Degree Certificate
+                            </title>
+
+                            <style>
+
+                              body {
+                                margin: 0;
+                                background: #111827;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                min-height: 100vh;
+                              }
+
+                              img {
+                                max-width: 95vw;
+                                max-height: 95vh;
+                                object-fit: contain;
+                              }
+
+                              iframe {
+                                width: 95vw;
+                                height: 95vh;
+                                border: none;
+                              }
+
+                            </style>
+
+                          </head>
+
+                          <body>
+
+                            ${
+                              certificate.startsWith(
+                                "data:application/pdf"
+                              )
+
+                                ? `
+                                  <iframe
+                                    src="${certificate}"
+                                  ></iframe>
+                                `
+
+                                : `
+                                  <img
+                                    src="${certificate}"
+                                    alt="Certificate"
+                                  />
+                                `
+                            }
+
+                          </body>
+
+                        </html>
+                      `);
+
+                      win.document.close();
+
+                    }}
+                  >
+                    👁 View Certificate
+                  </button>
+
+
+                  <a
+                    href={
+                      selectedTeacher.degreeCertificate
+                    }
+                    download="teacher-degree-certificate"
+                    className="teacher-download-document-btn"
+                  >
+                    ↓ Download
+                  </a>
+
+                </div>
+
+              )}
+
+            </div>
+
+
+            {/* =========================================
+                WAITING FOR RE-UPLOAD
+            ========================================= */}
+
+            {selectedTeacher.documentReuploadToken ? (
+
+              <div className="teacher-reupload-waiting-card">
+
+                <div className="teacher-reupload-waiting-icon">
+                  📄
+                </div>
+
+
+                <div className="teacher-reupload-waiting-content">
+
+                  <h4>
+                    Waiting for Document Re-upload
+                  </h4>
+
+                  <p>
+                    The teacher has been asked to
+                    upload a new certificate.
+                  </p>
+
+                  <span>
+                    Approval actions will become
+                    available after the teacher
+                    submits the new document.
+                  </span>
+
+                </div>
+
+              </div>
+
+            ) : (
+
+              <>
+                {/* =========================================
+                    REJECTION REASON
+                ========================================= */}
+
+                <div className="teacher-rejection-section">
+
+                  <label>
+                    Rejection Reason
+                  </label>
+
+                  <textarea
+                    placeholder="Enter rejection reason..."
+                    value={rejectReason}
+                    onChange={(e) =>
+                      setRejectReason(
+                        e.target.value
+                      )
+                    }
+                    rows="3"
+                  />
+
+                  <small>
+                    A reason is required only
+                    for full teacher rejection.
+                  </small>
+
+                </div>
+
+
+                {/* =========================================
+                    ACTION BUTTONS
+                ========================================= */}
+
+                <div className="teacher-detail-actions">
+
+                  <button
+                    type="button"
+                    disabled={loading}
+                    className="teacher-approve-btn"
+                    onClick={() =>
+                      handleTeacherApproval(
+                        "Approved"
+                      )
+                    }
+                  >
+                    {loading
+                      ? "Processing..."
+                      : "✓ Approve Faculty"}
+                  </button>
+
+
+                  <button
+                    type="button"
+                    disabled={loading}
+                    className="teacher-reject-document-btn"
+                    onClick={() =>
+                      handleTeacherApproval(
+                        "Reject Document"
+                      )
+                    }
+                  >
+                    {loading
+                      ? "Processing..."
+                      : "📄 Reject Document"}
+                  </button>
+
+
+                  <button
+                    type="button"
+                    disabled={loading}
+                    className="teacher-reject-btn"
+                    onClick={() =>
+                      handleTeacherApproval(
+                        "Rejected"
+                      )
+                    }
+                  >
+                    {loading
+                      ? "Processing..."
+                      : "✕ Reject Faculty"}
+                  </button>
+
+                </div>
+
+              </>
+
+            )}
+
+          </div>
+
+        )}
+
+      </React.Fragment>
+
+    ))}
+
+  </div>
+
+)}
 
       {/* =====================================================
           CHECK STUDENT ATTENDANCE

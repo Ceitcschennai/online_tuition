@@ -966,15 +966,15 @@ router.put(
 
       let reuploadLink = "";
 
-      if (status === "Reject Document") {
-        reuploadLink =
-          `${
-            process.env.FRONTEND_URL ||
-            "https://online-tuition-1wvb.vercel.app"
-          }/register/teacher?reupload=${
-            teacher.documentReuploadToken
-          }`;
-      }
+if (status === "Reject Document") {
+  reuploadLink =
+    `${
+      process.env.FRONTEND_URL ||
+      "https://online-tuition-1wvb.vercel.app"
+    }/login?reuploadToken=${
+      teacher.documentReuploadToken
+    }&role=teacher`;
+}
 
       // =================================================
       // CUSTOMER ID

@@ -13,7 +13,12 @@ const sendOTPEmail = require("../utils/mailer");
 ========================= */
 router.post("/login", async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const {
+  email,
+  password,
+  role,
+  reuploadToken
+} = req.body;
 
     if (!email || !password || !role) {
       return res.status(400).json({
@@ -21,10 +26,10 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    const emailLower = email.toLowerCase();
+    const emailLower = email.toLowerCase().trim();
 
     /* =========================
-       ✅ HARDCODED ADMIN LOGIN
+       ADMIN LOGIN
     ========================= */
     if (role === "admin") {
       if (
@@ -32,104 +37,298 @@ router.post("/login", async (req, res) => {
         password === "Pooja@2306"
       ) {
         const token = jwt.sign(
-          { role: "admin", email: emailLower },
+          {
+            role: "admin",
+            email: emailLower
+          },
           process.env.JWT_SECRET,
-          { expiresIn: "1d" }
+          {
+            expiresIn: "1d"
+          }
         );
 
         return res.json({
           success: true,
           token,
           role: "admin",
+
           user: {
             email: emailLower,
             role: "admin"
-          }
+          },
+
+          approvalStatus: "Approved",
+          isApproved: true,
+          isRejected: false
         });
       }
 
-      return res.status(401).json({ message: "Admin not found" });
+      return res.status(401).json({
+        message: "Admin not found"
+      });
     }
 
     /* =========================
-       👩‍🎓 STUDENT LOGIN
+       STUDENT LOGIN
     ========================= */
     if (role === "student") {
-      const user = await Student.findOne({ email: emailLower });
-      if (!user) {
-        return res.status(404).json({ message: "Student not found" });
-      }
+      const user = await Student.findOne({
+        email: emailLower
+      });
 
-      if (user.approvalStatus !== "Approved") {
-        return res.status(403).json({
-          message: "Student account pending admin approval"
+      if (!user) {
+        return res.status(404).json({
+          message: "Student not found"
         });
       }
 
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(401).json({ message: "Invalid credentials" });
+      /* =========================
+         REJECTED STUDENT
+      ========================= */
+      if (user.approvalStatus === "Rejected") {
+        return res.status(403).json({
+          message: "Student account has been rejected"
+        });
       }
 
-      const token = jwt.sign(
-        { id: user._id, role: "student" },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
+      /* =========================
+         PASSWORD CHECK
+      ========================= */
+      const isMatch = await bcrypt.compare(
+        password,
+        user.password
       );
 
+      if (!isMatch) {
+        return res.status(401).json({
+          message: "Invalid credentials"
+        });
+      }
+
+      /* =========================
+         CREATE JWT TOKEN
+      ========================= */
+      const token = jwt.sign(
+        {
+          id: user._id,
+          role: "student"
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1d"
+        }
+      );
+
+      /* =========================
+         REMOVE PASSWORD
+      ========================= */
       const userObj = user.toObject();
+
       delete userObj.password;
 
+      /* =========================
+         STUDENT LOGIN RESPONSE
+      ========================= */
       return res.json({
         success: true,
         token,
         role: "student",
-        user: userObj
+
+        user: userObj,
+
+        approvalStatus:
+          user.approvalStatus || "Pending",
+
+        isApproved:
+          user.approvalStatus === "Approved",
+
+        isRejected:
+          user.approvalStatus === "Rejected"
       });
     }
 
     /* =========================
-       👨‍🏫 TEACHER LOGIN
+       TEACHER LOGIN
     ========================= */
     if (role === "teacher") {
-      const user = await Teacher.findOne({ email: emailLower });
-      if (!user) {
-        return res.status(404).json({ message: "Teacher not found" });
-      }
+      const user = await Teacher.findOne({
+        email: emailLower
+      });
 
-      if (!user.isApproved) {
-        return res.status(403).json({
-          message: "Teacher account pending admin approval"
+      if (!user) {
+        return res.status(404).json({
+          message: "Teacher not found"
         });
       }
 
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(401).json({ message: "Invalid credentials" });
+      /* =========================
+         REJECTED TEACHER
+      ========================= */
+      if (user.isRejected) {
+        return res.status(403).json({
+          message: "Teacher account has been rejected"
+        });
       }
+if (role === "teacher") {
+  const user = await Teacher.findOne({
+    email: emailLower
+  });
 
-      const token = jwt.sign(
-        { id: user._id, role: "teacher" },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
+  if (!user) {
+    return res.status(404).json({
+      message: "Teacher not found"
+    });
+  }
+
+  /* =========================
+     RE-UPLOAD LOGIN
+  ========================= */
+
+  let isReuploadLogin = false;
+
+  if (reuploadToken) {
+    if (
+      user.documentReuploadToken === reuploadToken &&
+      user.documentReuploadExpires &&
+      user.documentReuploadExpires > new Date()
+    ) {
+      isReuploadLogin = true;
+    } else {
+      return res.status(403).json({
+        message: "Invalid or expired document re-upload link"
+      });
+    }
+  }
+
+  /* =========================
+     REJECTED TEACHER
+  ========================= */
+
+  if (
+    user.isRejected &&
+    !isReuploadLogin
+  ) {
+    return res.status(403).json({
+      message: "Teacher account has been rejected"
+    });
+  }
+
+  /* =========================
+     PASSWORD CHECK
+  ========================= */
+
+  const isMatch = await bcrypt.compare(
+    password,
+    user.password
+  );
+
+  if (!isMatch) {
+    return res.status(401).json({
+      message: "Invalid credentials"
+    });
+  }
+
+  /* =========================
+     CREATE TOKEN
+  ========================= */
+
+  const token = jwt.sign(
+    {
+      id: user._id,
+      role: "teacher"
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "1d"
+    }
+  );
+
+  const userObj = user.toObject();
+
+  delete userObj.password;
+
+  return res.json({
+    success: true,
+    token,
+    role: "teacher",
+    user: userObj,
+    isReuploadLogin
+  });
+}
+      /* =========================
+         PASSWORD CHECK
+      ========================= */
+      const isMatch = await bcrypt.compare(
+        password,
+        user.password
       );
 
+      if (!isMatch) {
+        return res.status(401).json({
+          message: "Invalid credentials"
+        });
+      }
+
+      /* =========================
+         CREATE JWT TOKEN
+      ========================= */
+      const token = jwt.sign(
+        {
+          id: user._id,
+          role: "teacher"
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1d"
+        }
+      );
+
+      /* =========================
+         REMOVE PASSWORD
+      ========================= */
       const userObj = user.toObject();
+
       delete userObj.password;
 
+      /* =========================
+         TEACHER LOGIN RESPONSE
+      ========================= */
       return res.json({
         success: true,
         token,
         role: "teacher",
-        user: userObj
+
+        user: userObj,
+
+        approvalStatus:
+          user.isApproved
+            ? "Approved"
+            : "Pending",
+
+        isApproved:
+          user.isApproved === true,
+
+        isRejected:
+          user.isRejected === true
       });
     }
 
-    return res.status(400).json({ message: "Invalid role" });
+    /* =========================
+       INVALID ROLE
+    ========================= */
+    return res.status(400).json({
+      message: "Invalid role"
+    });
 
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error(
+      "LOGIN ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      message: "Server error"
+    });
   }
 });
 
@@ -151,7 +350,9 @@ router.post("/forgot-password/send-otp", async (req, res) => {
     let user;
 
     if (role === "student") {
-      user = await Student.findOne({ email: emailLower });
+      user = await Student.findOne({
+        email: emailLower
+      });
 
       if (!user) {
         return res.status(404).json({
@@ -164,8 +365,11 @@ router.post("/forgot-password/send-otp", async (req, res) => {
           message: "Student account is not approved"
         });
       }
+
     } else if (role === "teacher") {
-      user = await Teacher.findOne({ email: emailLower });
+      user = await Teacher.findOne({
+        email: emailLower
+      });
 
       if (!user) {
         return res.status(404).json({
@@ -178,15 +382,20 @@ router.post("/forgot-password/send-otp", async (req, res) => {
           message: "Teacher account is not approved"
         });
       }
+
     } else {
       return res.status(400).json({
         message: "Invalid role"
       });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
 
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const expiresAt = new Date(
+      Date.now() + 10 * 60 * 1000
+    );
 
     await PasswordReset.deleteMany({
       email: emailLower,
@@ -200,7 +409,10 @@ router.post("/forgot-password/send-otp", async (req, res) => {
       expiresAt
     });
 
-    await sendOTPEmail(emailLower, otp);
+    await sendOTPEmail(
+      emailLower,
+      otp
+    );
 
     res.json({
       success: true,
@@ -208,7 +420,10 @@ router.post("/forgot-password/send-otp", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("SEND OTP ERROR:", err);
+    console.error(
+      "SEND OTP ERROR:",
+      err
+    );
 
     res.status(500).json({
       message: "Unable to send OTP"
@@ -259,6 +474,7 @@ router.post("/forgot-password/verify-otp", async (req, res) => {
     }
 
     resetRequest.verified = true;
+
     await resetRequest.save();
 
     res.json({
@@ -267,7 +483,10 @@ router.post("/forgot-password/verify-otp", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("VERIFY OTP ERROR:", err);
+    console.error(
+      "VERIFY OTP ERROR:",
+      err
+    );
 
     res.status(500).json({
       message: "Unable to verify OTP"
@@ -280,75 +499,103 @@ router.post("/forgot-password/verify-otp", async (req, res) => {
 ========================= */
 router.post("/forgot-password/reset-password", async (req, res) => {
   try {
-    const { email, role, newPassword } = req.body;
+    const {
+      email,
+      role,
+      newPassword
+    } = req.body;
 
     if (!email || !role || !newPassword) {
       return res.status(400).json({
-        message: "Email, role, and new password are required"
+        message:
+          "Email, role, and new password are required"
       });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({
-        message: "Password must be at least 6 characters"
+        message:
+          "Password must be at least 6 characters"
       });
     }
 
-    const emailLower = email.toLowerCase().trim();
+    const emailLower =
+      email.toLowerCase().trim();
 
-    const resetRequest = await PasswordReset.findOne({
-      email: emailLower,
-      role,
-      verified: true
-    });
+    const resetRequest =
+      await PasswordReset.findOne({
+        email: emailLower,
+        role,
+        verified: true
+      });
 
     if (!resetRequest) {
       return res.status(400).json({
-        message: "Please verify the OTP first"
+        message:
+          "Please verify the OTP first"
       });
     }
 
-    if (resetRequest.expiresAt < new Date()) {
+    if (
+      resetRequest.expiresAt <
+      new Date()
+    ) {
       await PasswordReset.deleteOne({
         _id: resetRequest._id
       });
 
       return res.status(400).json({
-        message: "Password reset session has expired"
+        message:
+          "Password reset session has expired"
       });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword =
+      await bcrypt.hash(
+        newPassword,
+        10
+      );
 
     if (role === "student") {
-      const student = await Student.findOne({
-        email: emailLower
-      });
+
+      const student =
+        await Student.findOne({
+          email: emailLower
+        });
 
       if (!student) {
         return res.status(404).json({
-          message: "Student not found"
+          message:
+            "Student not found"
         });
       }
 
-      student.password = hashedPassword;
+      student.password =
+        hashedPassword;
+
       await student.save();
 
     } else if (role === "teacher") {
-      const teacher = await Teacher.findOne({
-        email: emailLower
-      });
+
+      const teacher =
+        await Teacher.findOne({
+          email: emailLower
+        });
 
       if (!teacher) {
         return res.status(404).json({
-          message: "Teacher not found"
+          message:
+            "Teacher not found"
         });
       }
 
-      teacher.password = hashedPassword;
+      teacher.password =
+        hashedPassword;
+
       await teacher.save();
 
     } else {
+
       return res.status(400).json({
         message: "Invalid role"
       });
@@ -360,14 +607,20 @@ router.post("/forgot-password/reset-password", async (req, res) => {
 
     res.json({
       success: true,
-      message: "Password reset successfully"
+      message:
+        "Password reset successfully"
     });
 
   } catch (err) {
-    console.error("RESET PASSWORD ERROR:", err);
+
+    console.error(
+      "RESET PASSWORD ERROR:",
+      err
+    );
 
     res.status(500).json({
-      message: "Unable to reset password"
+      message:
+        "Unable to reset password"
     });
   }
 });

@@ -696,7 +696,8 @@ const ManageStudents = () => {
                     WAITING FOR RE-UPLOAD
                 ======================================= */}
 
-                {student.documentReuploadToken ? (
+                {student.approvalStatus === "Pending" &&
+ student.documentReuploadToken ? (
 
                   <div
                     style={{

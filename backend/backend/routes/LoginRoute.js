@@ -73,14 +73,18 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // ✅ Approval checks
-    if (role === "teacher" && !user.isApproved) {
-      return res.status(403).json({ message: "Teacher account pending admin approval" });
-    }
+   // ✅ Approval status
+// Pending users are allowed to login.
+// Frontend will restrict their access until admin approval.
 
-    if (role === "student" && user.approvalStatus !== "Approved") {
-      return res.status(403).json({ message: "Student account pending admin approval" });
-    }
+const approvalStatus =
+  role === "teacher"
+    ? user.isApproved
+      ? "Approved"
+      : user.isRejected
+      ? "Rejected"
+      : "Pending"
+    : user.approvalStatus;
 
     // 🔐 Generate JWT
     const token = jwt.sign(
@@ -91,13 +95,13 @@ router.post("/login", async (req, res) => {
 
     const userObj = user.toObject();
     delete userObj.password;
-
-    res.json({
-      success: true,
-      token,
-      role,
-      user: userObj
-    });
+res.json({
+  success: true,
+  token,
+  role,
+  approvalStatus,
+  user: userObj
+});
 
   } catch (err) {
     console.error("LOGIN ERROR:", err);

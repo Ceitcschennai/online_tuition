@@ -49,6 +49,7 @@ const MobilePopup = ({ onClose }) => {
   return (
     <div className="mobile-popup-overlay">
       <div className="mobile-popup-card">
+
         <button
           type="button"
           className="mobile-popup-close"
@@ -81,6 +82,7 @@ const MobilePopup = ({ onClose }) => {
         >
           Got it
         </button>
+
       </div>
     </div>
   );
@@ -91,13 +93,48 @@ const MobilePopup = ({ onClose }) => {
 // ============================================================
 
 const Login = () => {
+
+  // ==========================================================
+  // RE-UPLOAD LOGIN PARAMETERS
+  // ==========================================================
+
+  const searchParams =
+    new URLSearchParams(window.location.search);
+
+  /*
+    Support both:
+      ?reuploadToken=TOKEN
+    and:
+      ?reupload=TOKEN
+  */
+
+  const reuploadToken =
+    searchParams.get("reuploadToken") ||
+    searchParams.get("reupload");
+
+  const reuploadRole =
+    searchParams.get("role");
+
   // ==========================================================
   // STATES
   // ==========================================================
 
+  /*
+    If the user comes from a document re-upload email,
+    automatically select the correct role.
+  */
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("admin");
+
+  const [role, setRole] = useState(
+    reuploadRole === "teacher"
+      ? "teacher"
+      : reuploadRole === "student"
+      ? "student"
+      : "admin"
+  );
+
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
@@ -120,39 +157,58 @@ const Login = () => {
   // ==========================================================
 
   const handleLogin = async (e) => {
+
     e.preventDefault();
 
     setError("");
 
-    // Participant cannot login from mobile
-    if (role === "student" && isMobileDevice()) {
+    // ========================================================
+    // PARTICIPANT MOBILE RESTRICTION
+    // ========================================================
+
+    if (
+      role === "student" &&
+      isMobileDevice()
+    ) {
       setShowMobilePopup(true);
       return;
     }
 
-    // Email validation
+    // ========================================================
+    // EMAIL VALIDATION
+    // ========================================================
+
     if (!email.trim()) {
       setError("Please enter your email address.");
       return;
     }
 
-    // Password validation
+    // ========================================================
+    // PASSWORD VALIDATION
+    // ========================================================
+
     if (!password.trim()) {
       setError("Please enter your password.");
       return;
     }
 
     try {
+
       setLoading(true);
 
+      // ======================================================
+      // LOGIN API
+      // ======================================================
+
       const response = await axios.post(
-        `${API_BASE_URL}/api/auth/login`,
-        {
-          email,
-          password,
-          role,
-        }
-      );
+  `${API_BASE_URL}/api/auth/login`,
+  {
+    email: email.trim(),
+    password,
+    role,
+    reuploadToken: reuploadToken || null
+  }
+);
 
       // ======================================================
       // SAVE LOGIN INFORMATION
@@ -168,12 +224,49 @@ const Login = () => {
         role
       );
 
+      // ======================================================
+      // SAVE USER INFORMATION
+      // ======================================================
+
+      const loggedInUser = {
+        ...response.data.user,
+
+        /*
+          approvalStatus is saved so the application can
+          determine whether the account is approved or pending.
+        */
+
+        approvalStatus:
+          response.data.approvalStatus ??
+          response.data.user?.approvalStatus,
+
+        /*
+          Teacher accounts may use isApproved instead of
+          approvalStatus.
+        */
+
+        isApproved:
+          response.data.isApproved ??
+          response.data.user?.isApproved,
+
+        isRejected:
+          response.data.isRejected ??
+          response.data.user?.isRejected,
+      };
+
       localStorage.setItem(
         "user",
-        JSON.stringify(response.data.user)
+        JSON.stringify(loggedInUser)
       );
 
-      if (role === "teacher") {
+      // ======================================================
+      // SAVE TEACHER ID
+      // ======================================================
+
+      if (
+        role === "teacher" &&
+        response.data.user?._id
+      ) {
         localStorage.setItem(
           "teacherId",
           response.data.user._id
@@ -185,34 +278,101 @@ const Login = () => {
       // ======================================================
 
       if (rememberMe) {
+
         localStorage.setItem(
           "rememberEmail",
-          email
+          email.trim()
         );
+
       } else {
-        localStorage.removeItem("rememberEmail");
+
+        localStorage.removeItem(
+          "rememberEmail"
+        );
+
       }
 
       // ======================================================
-      // REDIRECT
+      // RE-UPLOAD FLOW
+      // ======================================================
+
+      /*
+        IMPORTANT:
+
+        If the user arrived from a rejected-document email,
+        do NOT send them to the dashboard.
+
+        Send them to the appropriate re-upload page after
+        successful login.
+      */
+
+      if (reuploadToken) {
+
+        if (reuploadRole === "teacher") {
+
+          window.location.href =
+            `/register/teacher?reupload=${encodeURIComponent(
+              reuploadToken
+            )}`;
+
+        } else if (reuploadRole === "student") {
+
+          window.location.href =
+            `/register/student?reuploadToken=${encodeURIComponent(
+              reuploadToken
+            )}`;
+
+        } else {
+
+          /*
+            If the token exists but the role is missing,
+            return to home rather than guessing the account type.
+          */
+
+          window.location.href = "/";
+
+        }
+
+        return;
+      }
+
+      // ======================================================
+      // NORMAL LOGIN REDIRECT
       // ======================================================
 
       if (role === "admin") {
-        window.location.href = "/admin-dashboard";
+
+        window.location.href =
+          "/admin-dashboard";
+
       } else if (role === "teacher") {
-        window.location.href = "/teacher-dashboard";
+
+        window.location.href =
+          "/teacher-dashboard";
+
       } else {
-        window.location.href = "/student-dashboard";
+
+        window.location.href =
+          "/student-dashboard";
       }
+
     } catch (err) {
-      console.error("Login error:", err);
+
+      console.error(
+        "Login error:",
+        err
+      );
 
       setError(
         err.response?.data?.message ||
-          "Login failed. Please check your email and password."
+        err.response?.data?.error ||
+        "Login failed. Please check your email and password."
       );
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
@@ -221,11 +381,19 @@ const Login = () => {
   // ==========================================================
 
   React.useEffect(() => {
-    document.body.classList.add("login-active");
+
+    document.body.classList.add(
+      "login-active"
+    );
 
     return () => {
-      document.body.classList.remove("login-active");
+
+      document.body.classList.remove(
+        "login-active"
+      );
+
     };
+
   }, []);
 
   // ==========================================================
@@ -233,13 +401,19 @@ const Login = () => {
   // ==========================================================
 
   React.useEffect(() => {
+
     const savedEmail =
-      localStorage.getItem("rememberEmail");
+      localStorage.getItem(
+        "rememberEmail"
+      );
 
     if (savedEmail) {
+
       setEmail(savedEmail);
       setRememberMe(true);
+
     }
+
   }, []);
 
   // ==========================================================
@@ -247,8 +421,10 @@ const Login = () => {
   // ==========================================================
 
   const selectRole = (selectedRole) => {
+
     setRole(selectedRole);
     setError("");
+
   };
 
   // ==========================================================
@@ -256,6 +432,7 @@ const Login = () => {
   // ==========================================================
 
   return (
+
     <div className="login-page">
 
       {/* ====================================================
@@ -263,9 +440,13 @@ const Login = () => {
       ==================================================== */}
 
       {showMobilePopup && (
+
         <MobilePopup
-          onClose={() => setShowMobilePopup(false)}
+          onClose={() =>
+            setShowMobilePopup(false)
+          }
         />
+
       )}
 
       {/* ====================================================
@@ -283,10 +464,15 @@ const Login = () => {
           </div>
 
           <div className="brand-text">
-            <h2>ONLINE TUITION</h2>
+
+            <h2>
+              ONLINE TUITION
+            </h2>
+
             <span>
               Learn • Grow • Achieve
             </span>
+
           </div>
 
         </div>
@@ -323,27 +509,39 @@ const Login = () => {
             <button
               type="button"
               className={`login-register-button ${
-                registerMenuOpen ? "open" : ""
+                registerMenuOpen
+                  ? "open"
+                  : ""
               }`}
               onClick={() =>
                 setRegisterMenuOpen(
-                  (previous) => !previous
+                  (previous) =>
+                    !previous
                 )
               }
-              aria-expanded={registerMenuOpen}
+              aria-expanded={
+                registerMenuOpen
+              }
             >
-              <span>Register</span>
+
+              <span>
+                Register
+              </span>
 
               <FaChevronDown
                 className={`login-register-arrow ${
-                  registerMenuOpen ? "rotate" : ""
+                  registerMenuOpen
+                    ? "rotate"
+                    : ""
                 }`}
               />
+
             </button>
 
             {/* REGISTER MENU */}
 
             {registerMenuOpen && (
+
               <div className="login-register-menu">
 
                 <a
@@ -361,6 +559,7 @@ const Login = () => {
                 </a>
 
               </div>
+
             )}
 
           </div>
@@ -375,20 +574,27 @@ const Login = () => {
           type="button"
           className="mobile-menu-toggle"
           onClick={() => {
+
             setMobileMenuOpen(
-              (previous) => !previous
+              (previous) =>
+                !previous
             );
 
             setRegisterMenuOpen(false);
+
           }}
           aria-label="Toggle menu"
-          aria-expanded={mobileMenuOpen}
+          aria-expanded={
+            mobileMenuOpen
+          }
         >
+
           {mobileMenuOpen ? (
             <FaTimes />
           ) : (
             <FaBars />
           )}
+
         </button>
 
       </header>
@@ -398,6 +604,7 @@ const Login = () => {
       ==================================================== */}
 
       {mobileMenuOpen && (
+
         <nav className="mobile-nav-dropdown">
 
           {/* HOME */}
@@ -428,21 +635,31 @@ const Login = () => {
               className="mobile-register-button"
               onClick={() =>
                 setRegisterMenuOpen(
-                  (previous) => !previous
+                  (previous) =>
+                    !previous
                 )
               }
-              aria-expanded={registerMenuOpen}
+              aria-expanded={
+                registerMenuOpen
+              }
             >
-              <span>Register</span>
+
+              <span>
+                Register
+              </span>
 
               <FaChevronDown
                 className={`login-register-arrow ${
-                  registerMenuOpen ? "rotate" : ""
+                  registerMenuOpen
+                    ? "rotate"
+                    : ""
                 }`}
               />
+
             </button>
 
             {registerMenuOpen && (
+
               <div className="mobile-register-options">
 
                 <a
@@ -460,11 +677,13 @@ const Login = () => {
                 </a>
 
               </div>
+
             )}
 
           </div>
 
         </nav>
+
       )}
 
       {/* ====================================================
@@ -492,9 +711,12 @@ const Login = () => {
             </h1>
 
             <p className="hero-description">
-              Join learners around the world and start your
-              learning journey with expert faculty,
-              interactive classes and real progress.
+
+              Join learners around the world
+              and start your learning journey
+              with expert faculty, interactive
+              classes and real progress.
+
             </p>
 
             {/* FEATURES */}
@@ -508,8 +730,13 @@ const Login = () => {
                 </div>
 
                 <div>
-                  <strong>Quality</strong>
-                  <span>Education</span>
+                  <strong>
+                    Quality
+                  </strong>
+
+                  <span>
+                    Education
+                  </span>
                 </div>
 
               </div>
@@ -521,8 +748,13 @@ const Login = () => {
                 </div>
 
                 <div>
-                  <strong>Expert</strong>
-                  <span>Faculty</span>
+                  <strong>
+                    Expert
+                  </strong>
+
+                  <span>
+                    Faculty
+                  </span>
                 </div>
 
               </div>
@@ -534,8 +766,13 @@ const Login = () => {
                 </div>
 
                 <div>
-                  <strong>Track Your</strong>
-                  <span>Progress</span>
+                  <strong>
+                    Track Your
+                  </strong>
+
+                  <span>
+                    Progress
+                  </span>
                 </div>
 
               </div>
@@ -547,8 +784,13 @@ const Login = () => {
                 </div>
 
                 <div>
-                  <strong>Community</strong>
-                  <span>Support</span>
+                  <strong>
+                    Community
+                  </strong>
+
+                  <span>
+                    Support
+                  </span>
                 </div>
 
               </div>
@@ -566,13 +808,17 @@ const Login = () => {
               <div className="learning-box-content">
 
                 <p>
-                  Start learning today and unlock endless
-                  possibilities for tomorrow.
+                  Start learning today and
+                  unlock endless possibilities
+                  for tomorrow.
                 </p>
 
                 <button type="button">
+
                   Learn More
+
                   <FaArrowRight />
+
                 </button>
 
               </div>
@@ -592,8 +838,13 @@ const Login = () => {
           <div className="login-card">
 
             <h2 className="login-title">
-              <FaGraduationCap className="login-title-icon" />
+
+              <FaGraduationCap
+                className="login-title-icon"
+              />
+
               Welcome Back!
+
             </h2>
 
             <div className="login-title-line"></div>
@@ -605,9 +856,11 @@ const Login = () => {
             {/* ERROR */}
 
             {error && (
+
               <div className="login-error">
                 {error}
               </div>
+
             )}
 
             {/* FORM */}
@@ -618,18 +871,24 @@ const Login = () => {
 
               <div className="input-group">
 
-                <label>EMAIL</label>
+                <label>
+                  EMAIL
+                </label>
 
                 <div className="input-wrapper">
 
-                  <FaEnvelope className="input-icon" />
+                  <FaEnvelope
+                    className="input-icon"
+                  />
 
                   <input
                     type="email"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) =>
-                      setEmail(e.target.value)
+                      setEmail(
+                        e.target.value
+                      )
                     }
                     autoComplete="email"
                     required
@@ -639,63 +898,79 @@ const Login = () => {
 
               </div>
 
-             {/* PASSWORD */}
+              {/* PASSWORD */}
 
-<div className="input-group">
+              <div className="input-group">
 
-  <div className="password-label-row">
+                <div className="password-label-row">
 
-    <label>PASSWORD</label>
+                  <label>
+                    PASSWORD
+                  </label>
 
-    <button
-      type="button"
-      className="forgot-password"
-      onClick={() => {
-  window.location.href = "/forgot-password";
-}}
-    >
-      Forgot Password?
-    </button>
+                  <button
+                    type="button"
+                    className="forgot-password"
+                    onClick={() => {
+                      window.location.href =
+                        "/forgot-password";
+                    }}
+                  >
+                    Forgot Password?
+                  </button>
 
-  </div>
+                </div>
 
-  <div className="input-wrapper">
+                <div className="input-wrapper">
 
-    <FaLock className="input-icon" />
+                  <FaLock
+                    className="input-icon"
+                  />
 
-    <input
-      type={showPassword ? "text" : "password"}
-      placeholder="Enter your password"
-      value={password}
-      onChange={(e) =>
-        setPassword(e.target.value)
-      }
-      autoComplete="current-password"
-      required
-    />
+                  <input
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) =>
+                      setPassword(
+                        e.target.value
+                      )
+                    }
+                    autoComplete="current-password"
+                    required
+                  />
 
-    <button
-      type="button"
-      className="password-toggle"
-      onClick={() =>
-        setShowPassword(!showPassword)
-      }
-      aria-label={
-        showPassword
-          ? "Hide password"
-          : "Show password"
-      }
-    >
-      {showPassword ? (
-        <FaEyeSlash />
-      ) : (
-        <FaEye />
-      )}
-    </button>
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() =>
+                      setShowPassword(
+                        !showPassword
+                      )
+                    }
+                    aria-label={
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
+                    }
+                  >
 
-  </div>
+                    {showPassword ? (
+                      <FaEyeSlash />
+                    ) : (
+                      <FaEye />
+                    )}
 
-</div>
+                  </button>
+
+                </div>
+
+              </div>
+
               {/* LOGIN AS */}
 
               <div className="role-section">
@@ -724,12 +999,16 @@ const Login = () => {
                       <FaUserShield />
                     </div>
 
-                    <span>Admin</span>
+                    <span>
+                      Admin
+                    </span>
 
                     {role === "admin" && (
+
                       <div className="role-check">
                         ✓
                       </div>
+
                     )}
 
                   </button>
@@ -752,12 +1031,16 @@ const Login = () => {
                       <FaChalkboardTeacher />
                     </div>
 
-                    <span>Faculty</span>
+                    <span>
+                      Faculty
+                    </span>
 
                     {role === "teacher" && (
+
                       <div className="role-check">
                         ✓
                       </div>
+
                     )}
 
                   </button>
@@ -780,12 +1063,16 @@ const Login = () => {
                       <FaUserGraduate />
                     </div>
 
-                    <span>Participant</span>
+                    <span>
+                      Participant
+                    </span>
 
                     {role === "student" && (
+
                       <div className="role-check">
                         ✓
                       </div>
+
                     )}
 
                   </button>
@@ -825,17 +1112,23 @@ const Login = () => {
                 className="sign-in-button"
                 disabled={loading}
               >
+
                 {loading ? (
+
                   <>
                     <span className="button-spinner"></span>
                     Signing In...
                   </>
+
                 ) : (
+
                   <>
                     Sign In
                     <FaArrowRight />
                   </>
+
                 )}
+
               </button>
 
               {/* DIVIDER */}
@@ -844,7 +1137,9 @@ const Login = () => {
 
                 <span></span>
 
-                <strong>OR</strong>
+                <strong>
+                  OR
+                </strong>
 
                 <span></span>
 
@@ -856,8 +1151,10 @@ const Login = () => {
                 type="button"
                 className="create-account-button"
                 onClick={() =>
-                  (window.location.href =
-                    "/register/student")
+                  (
+                    window.location.href =
+                      "/register/student"
+                  )
                 }
               >
 

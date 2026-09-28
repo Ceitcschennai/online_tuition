@@ -537,7 +537,7 @@ if (status === "Approved" || status === "Rejected") {
 if (status === "Reject Document") {
   try {
     const reuploadLink =
-      `${process.env.FRONTEND_URL || "https://online-tuition-1wvb.vercel.app"}/register/student?reuploadToken=${student.documentReuploadToken}`;
+  `${process.env.FRONTEND_URL || "https://online-tuition-1wvb.vercel.app"}/login?reuploadToken=${student.documentReuploadToken}&reuploadRole=student`;
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
