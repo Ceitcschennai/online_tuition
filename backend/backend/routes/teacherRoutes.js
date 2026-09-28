@@ -1667,6 +1667,129 @@ if (status === "Reject Document") {
 );
 
 /* =================================================
+   ACTIVATE / DEACTIVATE TEACHER
+================================================= */
+
+router.put(
+  "/admin/teacher/:id/status",
+  async (req, res) => {
+    try {
+      const { action } = req.body;
+
+      if (
+        !isValidObjectId(req.params.id)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid teacher ID",
+        });
+      }
+
+      if (
+        !["activate", "deactivate"].includes(
+          action
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status action",
+        });
+      }
+
+      const teacher =
+        await Teacher.findById(
+          req.params.id
+        );
+
+      if (!teacher) {
+        return res.status(404).json({
+          success: false,
+          message: "Teacher not found",
+        });
+      }
+
+      /* =========================================
+         ONLY APPROVED TEACHERS CAN BE
+         ACTIVATED / DEACTIVATED
+      ========================================= */
+
+      if (!teacher.isApproved) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Only approved faculty can be activated or deactivated",
+        });
+      }
+
+      /* =========================================
+         UPDATE ACTIVE STATUS
+      ========================================= */
+
+      teacher.isActive =
+        action === "activate";
+
+      await teacher.save();
+
+      /* =========================================
+         ACTIVITY LOG
+      ========================================= */
+
+      try {
+        await Activity.create({
+          type: "teacher",
+
+          message:
+            `Teacher ${teacher.firstName} ${teacher.lastName} was ${
+              action === "activate"
+                ? "activated"
+                : "deactivated"
+            }`,
+
+          time: new Date(),
+        });
+      } catch (activityError) {
+        console.error(
+          "Teacher status activity error:",
+          activityError.message
+        );
+      }
+
+      return res.json({
+        success: true,
+
+        message:
+          action === "activate"
+            ? "Faculty activated successfully"
+            : "Faculty deactivated successfully",
+
+        teacher: {
+          _id: teacher._id,
+          isApproved:
+            teacher.isApproved,
+          isRejected:
+            teacher.isRejected,
+          isActive:
+            teacher.isActive,
+        },
+      });
+
+    } catch (error) {
+      console.error(
+        "Teacher status update error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Failed to update teacher status",
+        error: error.message,
+      });
+    }
+  }
+);
+
+/* =================================================
    TEACHER DASHBOARD STATS
 ================================================= */
 
@@ -1686,11 +1809,11 @@ router.get(
       }
 
       const teacher =
-        await Teacher.findById(
-          teacherId
-        ).select(
-          "firstName lastName classesAssigned subjects isApproved isRejected"
-        );
+  await Teacher.findById(
+    teacherId
+  ).select(
+    "firstName lastName classesAssigned subjects preferredSubject isApproved isRejected"
+  );
 
       if (!teacher) {
         return res.status(404).json({
@@ -1705,17 +1828,36 @@ router.get(
           teacher.classesAssigned
         );
 
-      const assignedSubjects =
-        await Subject.find({
-          teacher: teacherId,
-          isActive: true,
-        })
-          .select(
-            "name classes category"
-          )
-          .sort({
-            name: 1,
-          });
+      let assignedSubjects =
+  await Subject.find({
+    teacher: teacherId,
+    isActive: true,
+  })
+    .select(
+      "name classes category"
+    )
+    .sort({
+      name: 1,
+    });
+
+/* =================================================
+   USE REGISTERED SUBJECT IF ADMIN HAS NOT
+   ASSIGNED A SUBJECT YET
+================================================= */
+
+if (
+  assignedSubjects.length === 0 &&
+  teacher.preferredSubject
+) {
+  assignedSubjects = [
+    {
+      _id: null,
+      name: teacher.preferredSubject,
+      classes: teacherClasses,
+      category: "Regular",
+    },
+  ];
+}
 
       const subjectNames =
         assignedSubjects.map(

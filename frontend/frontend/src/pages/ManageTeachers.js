@@ -139,84 +139,150 @@ const ManageTeachers = () => {
   // =====================================================
 
   const updateStatus = async (id, status) => {
+  try {
 
-    try {
+    /* =================================================
+       ACTIVATE / DEACTIVATE FACULTY
+    ================================================= */
 
-      let reason = "";
+    if (
+  status === "Activate" ||
+  status === "Deactivate"
+) {
+  const action =
+    status === "Activate"
+      ? "activate"
+      : "deactivate";
 
-      // -------------------------------------------------
-      // FULL REJECTION
-      // -------------------------------------------------
+  await axios.put(
+    `${API_BASE_URL}/api/teacher/admin/teacher/${id}/status`,
+    {
+      action,
+    }
+  );
 
-      if (status === "Rejected") {
+  /* =========================================
+     UPDATE UI IMMEDIATELY
+  ========================================= */
 
-        reason = window.prompt(
-          "Enter the reason for rejecting this faculty:"
-        );
+  const newActiveStatus =
+    status === "Activate";
 
-        if (!reason || !reason.trim()) {
-          return;
-        }
-      }
+  setTeachers((prevTeachers) =>
+    prevTeachers.map((teacher) =>
+      teacher._id === id
+        ? {
+            ...teacher,
+            isActive: newActiveStatus,
+          }
+        : teacher
+    )
+  );
 
-      // -------------------------------------------------
-      // SEND STATUS TO BACKEND
-      // -------------------------------------------------
+  setFilteredTeachers((prevTeachers) =>
+    prevTeachers.map((teacher) =>
+      teacher._id === id
+        ? {
+            ...teacher,
+            isActive: newActiveStatus,
+          }
+        : teacher
+    )
+  );
 
-      await axios.put(
-        `${API_BASE_URL}/api/teacher/admin/teacher/${id}/approve`,
-        {
-          status,
-          reason: reason.trim(),
-        }
+  alert(
+    status === "Activate"
+      ? "Faculty activated successfully."
+      : "Faculty deactivated successfully."
+  );
+
+  return;
+}
+
+
+    /* =================================================
+       NORMAL APPROVE / REJECT FLOW
+    ================================================= */
+
+    let reason = "";
+
+
+    /* -------------------------------------------------
+       FULL REJECTION
+    ------------------------------------------------- */
+
+    if (status === "Rejected") {
+
+      reason = window.prompt(
+        "Enter the reason for rejecting this faculty:"
       );
 
-      // -------------------------------------------------
-      // SUCCESS MESSAGE
-      // -------------------------------------------------
-
-      if (status === "Rejected") {
-
-        alert(
-          "Faculty rejected successfully."
-        );
-
-      } else if (
-        status === "Reject Document"
-      ) {
-
-        alert(
-          "Document rejected successfully."
-        );
-
-      } else if (
-        status === "Approved"
-      ) {
-
-        alert(
-          "Faculty approved successfully."
-        );
+      if (!reason || !reason.trim()) {
+        return;
       }
+    }
 
-      // -------------------------------------------------
-      // REFRESH TEACHER LIST
-      // -------------------------------------------------
 
-      await fetchTeachers();
+    /* -------------------------------------------------
+       SEND STATUS TO BACKEND
+    ------------------------------------------------- */
 
-    } catch (error) {
+    await axios.put(
+      `${API_BASE_URL}/api/teacher/admin/teacher/${id}/approve`,
+      {
+        status,
+        reason: reason.trim(),
+      }
+    );
 
-      console.error(
-        "Status update failed:",
-        error
-      );
+
+    /* -------------------------------------------------
+       SUCCESS MESSAGE
+    ------------------------------------------------- */
+
+    if (status === "Rejected") {
 
       alert(
-        error.response?.data?.message ||
-          "Failed to update faculty."
+        "Faculty rejected successfully."
+      );
+
+    } else if (
+      status === "Reject Document"
+    ) {
+
+      alert(
+        "Document rejected successfully."
+      );
+
+    } else if (
+      status === "Approved"
+    ) {
+
+      alert(
+        "Faculty approved successfully."
       );
     }
-  };
+
+
+    /* -------------------------------------------------
+       REFRESH TEACHER LIST
+    ------------------------------------------------- */
+
+    await fetchTeachers();
+
+  } catch (error) {
+
+    console.error(
+      "Status update failed:",
+      error
+    );
+
+    alert(
+      error.response?.data?.message ||
+        "Failed to update faculty."
+    );
+  }
+};
 
   // =====================================================
   // EDIT CLASSES
@@ -772,105 +838,122 @@ const ManageTeachers = () => {
                       STATUS ACTIONS
                   ================================================= */}
 
-                  <div className="action-row action-row-status">
+                  {/* =================================================
+    STATUS ACTIONS
+================================================= */}
 
+<div className="action-row action-row-status">
 
-                    {/* ---------------------------------------------
-                        FULLY REJECTED
-                        Show ONLY "Rejected"
-                    --------------------------------------------- */}
+  {/* =================================================
+      FULLY REJECTED
+      Show ONLY "Rejected"
+  ================================================= */}
 
-                    {teacher.isRejected ? (
+  {teacher.isRejected ? (
 
-                      <span className="rejected-label">
-                        Rejected
-                      </span>
+    <span className="rejected-label">
+      Rejected
+    </span>
 
+  ) : teacher.documentReuploadToken ? (
 
-                    ) : teacher.documentReuploadToken ? (
+    /* =================================================
+       DOCUMENT REJECTED
+       WAITING FOR RE-UPLOAD
+    ================================================= */
 
+    <span className="document-reupload-label">
+      Waiting for reupload document
+    </span>
 
-                      /* ---------------------------------------------
-                          DOCUMENT REJECTED
-                          WAITING FOR RE-UPLOAD
-                      --------------------------------------------- */
+  ) : !teacher.isApproved ? (
 
-                      <span className="document-reupload-label">
-                        Waiting for reupload document
-                      </span>
+    /* =================================================
+       PENDING TEACHER
+       SHOW APPROVE + REJECT DOCUMENT + REJECT
+    ================================================= */
 
+    <>
 
-                    ) : (
+      <button
+        className="btn-approve"
+        onClick={() =>
+          updateStatus(
+            teacher._id,
+            "Approved"
+          )
+        }
+      >
+        Approve
+      </button>
 
+      <button
+        className="btn-reject-document"
+        onClick={() =>
+          updateStatus(
+            teacher._id,
+            "Reject Document"
+          )
+        }
+      >
+        Reject Document
+      </button>
 
-                      <>
+      <button
+        className="btn-reject"
+        onClick={() =>
+          updateStatus(
+            teacher._id,
+            "Rejected"
+          )
+        }
+      >
+        Reject
+      </button>
 
+    </>
 
-                        {/* -----------------------------------------
-                            APPROVE
-                            Only pending teachers
-                        ----------------------------------------- */}
+  ) : teacher.isActive === false ? (
 
-                        {!teacher.isApproved && (
+    /* =================================================
+       APPROVED BUT DEACTIVATED
+       SHOW ACTIVATE
+    ================================================= */
 
-                          <button
-                            className="btn-approve"
-                            onClick={() =>
-                              updateStatus(
-                                teacher._id,
-                                "Approved"
-                              )
-                            }
-                          >
-                            Approve
-                          </button>
+    <button
+      className="btn-activate"
+      onClick={() =>
+        updateStatus(
+          teacher._id,
+          "Activate"
+        )
+      }
+    >
+      ✓ Activate
+    </button>
 
-                        )}
+  ) : (
 
+    /* =================================================
+       APPROVED + ACTIVE
+       SHOW DEACTIVATE
+    ================================================= */
 
-                        {/* -----------------------------------------
-                            REJECT DOCUMENT
-                            Only pending teachers
-                        ----------------------------------------- */}
+    <button
+      className="btn-deactivate"
+      onClick={() =>
+        updateStatus(
+          teacher._id,
+          "Deactivate"
+        )
+      }
+    >
+      ⏸ Deactivate
+    </button>
 
-                        {!teacher.isApproved && (
+  )}
 
-                          <button
-                            className="btn-reject-document"
-                            onClick={() =>
-                              updateStatus(
-                                teacher._id,
-                                "Reject Document"
-                              )
-                            }
-                          >
-                            Reject Document
-                          </button>
-
-                        )}
-
-
-                        {/* -----------------------------------------
-                            FULL REJECT
-                        ----------------------------------------- */}
-
-                        <button
-                          className="btn-reject"
-                          onClick={() =>
-                            updateStatus(
-                              teacher._id,
-                              "Rejected"
-                            )
-                          }
-                        >
-                          Reject
-                        </button>
-
-                      </>
-
-                    )}
-
-                  </div>
+</div>
 
 
                   {/* =================================================

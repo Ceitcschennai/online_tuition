@@ -65,6 +65,11 @@ const TeacherDashboard = () => {
       );
 
       const data = await response.json();
+      console.log("Teacher Dashboard Data:", data);
+console.log(
+  "Assigned Subjects:",
+  data.teacherInfo?.assignedSubjects
+);
 
       if (!response.ok || !data.success) {
         throw new Error(

@@ -2615,6 +2615,62 @@ const AdminDashboard = () => {
       }
     };
 
+const handleTeacherStatus = async (
+  teacherId,
+  action
+) => {
+  try {
+    setLoading(true);
+
+    const res = await fetch(
+      `${API_BASE_URL}/api/teacher/admin/teacher/${teacherId}/status`,
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          action,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        data.message ||
+          "Failed to update teacher status"
+      );
+    }
+
+    alert(
+      data.message ||
+        "Faculty status updated successfully"
+    );
+
+    resetState();
+
+    await fetchPendingTeachers();
+
+  } catch (err) {
+    console.error(
+      "Teacher status update error:",
+      err
+    );
+
+    alert(
+      err.message ||
+        "Failed to update faculty status"
+    );
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   const resetState = () => {
 
@@ -3828,59 +3884,103 @@ const AdminDashboard = () => {
 
 
                 {/* =========================================
-                    ACTION BUTTONS
-                ========================================= */}
+    ACTION BUTTONS
+========================================= */}
 
-                <div className="teacher-detail-actions">
+<div className="teacher-detail-actions">
 
-                  <button
-                    type="button"
-                    disabled={loading}
-                    className="teacher-approve-btn"
-                    onClick={() =>
-                      handleTeacherApproval(
-                        "Approved"
-                      )
-                    }
-                  >
-                    {loading
-                      ? "Processing..."
-                      : "✓ Approve Faculty"}
-                  </button>
-
-
-                  <button
-                    type="button"
-                    disabled={loading}
-                    className="teacher-reject-document-btn"
-                    onClick={() =>
-                      handleTeacherApproval(
-                        "Reject Document"
-                      )
-                    }
-                  >
-                    {loading
-                      ? "Processing..."
-                      : "📄 Reject Document"}
-                  </button>
+  {!selectedTeacher.isApproved && (
+    <>
+      <button
+        type="button"
+        disabled={loading}
+        className="teacher-approve-btn"
+        onClick={() =>
+          handleTeacherApproval(
+            "Approved"
+          )
+        }
+      >
+        {loading
+          ? "Processing..."
+          : "✓ Approve Faculty"}
+      </button>
 
 
-                  <button
-                    type="button"
-                    disabled={loading}
-                    className="teacher-reject-btn"
-                    onClick={() =>
-                      handleTeacherApproval(
-                        "Rejected"
-                      )
-                    }
-                  >
-                    {loading
-                      ? "Processing..."
-                      : "✕ Reject Faculty"}
-                  </button>
+      <button
+        type="button"
+        disabled={loading}
+        className="teacher-reject-document-btn"
+        onClick={() =>
+          handleTeacherApproval(
+            "Reject Document"
+          )
+        }
+      >
+        {loading
+          ? "Processing..."
+          : "📄 Reject Document"}
+      </button>
 
-                </div>
+
+      <button
+        type="button"
+        disabled={loading}
+        className="teacher-reject-btn"
+        onClick={() =>
+          handleTeacherApproval(
+            "Rejected"
+          )
+        }
+      >
+        {loading
+          ? "Processing..."
+          : "✕ Reject Faculty"}
+      </button>
+    </>
+  )}
+
+
+  {selectedTeacher.isApproved &&
+    selectedTeacher.isActive && (
+      <button
+        type="button"
+        disabled={loading}
+        className="teacher-deactivate-btn"
+        onClick={() =>
+          handleTeacherStatus(
+            selectedTeacher._id,
+            "deactivate"
+          )
+        }
+      >
+        {loading
+          ? "Processing..."
+          : "⏸ Deactivate Faculty"}
+      </button>
+  )}
+
+
+  {selectedTeacher.isApproved &&
+    !selectedTeacher.isActive && (
+      <button
+        type="button"
+        disabled={loading}
+        className="teacher-activate-btn"
+        onClick={() =>
+          handleTeacherStatus(
+            selectedTeacher._id,
+            "activate"
+          )
+        }
+      >
+        {loading
+          ? "Processing..."
+          : "✓ Activate Faculty"}
+      </button>
+  )}
+
+</div>
 
               </>
 
