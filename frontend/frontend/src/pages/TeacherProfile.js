@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import API_BASE_URL from "../config/api";
+
 import {
   FaUser,
   FaUniversity,
@@ -10,11 +11,14 @@ import {
 
 import "../styles/teacherProfile.css";
 
+
 const TeacherProfile = () => {
+
   const [teacher, setTeacher] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [editingBank, setEditingBank] = useState(false);
+  const [editingBank, setEditingBank] =
+    useState(false);
 
   const [bankDetails, setBankDetails] = useState({
     accountHolderName: "",
@@ -24,30 +28,48 @@ const TeacherProfile = () => {
     accountType: ""
   });
 
-  const [savingBank, setSavingBank] = useState(false);
+  const [savingBank, setSavingBank] =
+    useState(false);
 
-  const teacherId = localStorage.getItem("teacherId");
-  const token = localStorage.getItem("token");
+
+  const teacherId =
+    localStorage.getItem("teacherId");
+
+  const token =
+    localStorage.getItem("token");
+
 
   const loggedInUser = JSON.parse(
     localStorage.getItem("user") || "{}"
   );
 
+
   const isTeacherApproved =
-  loggedInUser?.isApproved === true;
+    teacher?.isApproved === true ||
+    loggedInUser?.isApproved === true;
+
 
   /* =========================================================
      FETCH TEACHER PROFILE
   ========================================================= */
 
   useEffect(() => {
+
     const fetchProfile = async () => {
+
       try {
+
         if (!teacherId) {
-          console.error("Teacher ID not found");
+
+          console.error(
+            "Teacher ID not found"
+          );
+
           setLoading(false);
+
           return;
         }
+
 
         const response = await fetch(
           `${API_BASE_URL}/api/teacher/profile/${teacherId}`,
@@ -58,25 +80,41 @@ const TeacherProfile = () => {
           }
         );
 
-        const data = await response.json();
 
-        if (!response.ok || !data.success) {
+        const data =
+          await response.json();
+
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+
           throw new Error(
-            data.message || "Failed to fetch profile"
+            data.message ||
+            "Failed to fetch profile"
           );
         }
 
+
         setTeacher(data.teacher);
 
+
       } catch (error) {
+
         console.error(
           "Teacher profile error:",
           error
         );
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
+
 
     fetchProfile();
 
@@ -90,23 +128,161 @@ const TeacherProfile = () => {
   const handleEditBank = () => {
 
     setBankDetails({
+
       accountHolderName:
-        teacher.bankDetails?.accountHolderName || "",
+        teacher.bankDetails?.accountHolderName ||
+        "",
 
       bankName:
-        teacher.bankDetails?.bankName || "",
+        teacher.bankDetails?.bankName ||
+        "",
 
       accountNumber:
-        teacher.bankDetails?.accountNumber || "",
+        teacher.bankDetails?.accountNumber ||
+        "",
 
       ifscCode:
-        teacher.bankDetails?.ifscCode || "",
+        teacher.bankDetails?.ifscCode ||
+        "",
 
       accountType:
-        teacher.bankDetails?.accountType || ""
+        teacher.bankDetails?.accountType ||
+        ""
+
     });
 
+
     setEditingBank(true);
+
+  };
+
+
+  /* =========================================================
+     REQUEST ACTIVATION
+  ========================================================= */
+
+  const handleRequestActivation = async () => {
+
+    try {
+
+      if (!teacherId || !token) {
+
+        alert(
+          "Please login again."
+        );
+
+        return;
+      }
+
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/teacher/request-activation/${teacherId}`,
+        {
+          method: "POST",
+
+          headers: {
+            Authorization:
+              `Bearer ${token}`,
+
+            "Content-Type":
+              "application/json"
+          }
+        }
+      );
+
+
+      const data =
+        await response.json();
+
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+
+        throw new Error(
+          data.message ||
+          "Failed to submit activation request"
+        );
+
+      }
+
+
+      /* ==========================================
+         UPDATE PROFILE STATE
+      ========================================== */
+
+      setTeacher((prev) => ({
+        ...prev,
+
+        isActive: false,
+
+        activationRequested:
+          true
+      }));
+
+
+      /* ==========================================
+         UPDATE LOCAL STORAGE
+      ========================================== */
+
+      const storedUser =
+        JSON.parse(
+          localStorage.getItem(
+            "user"
+          ) || "null"
+        );
+
+
+      if (storedUser) {
+
+        localStorage.setItem(
+          "user",
+
+          JSON.stringify({
+            ...storedUser,
+
+            isActive: false,
+
+            activationRequested:
+              true
+          })
+        );
+
+      }
+
+
+      /* ==========================================
+         INFORM SIDEBAR
+      ========================================== */
+
+      window.dispatchEvent(
+        new Event(
+          "userStatusUpdated"
+        )
+      );
+
+
+      alert(
+        "Activation request submitted successfully. Please wait for admin approval."
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Activation request error:",
+        error
+      );
+
+
+      alert(
+        error.message ||
+        "Failed to submit activation request"
+      );
+
+    }
+
   };
 
 
@@ -121,10 +297,15 @@ const TeacherProfile = () => {
       value
     } = e.target;
 
+
     setBankDetails((prev) => ({
+
       ...prev,
+
       [name]: value
+
     }));
+
   };
 
 
@@ -138,46 +319,65 @@ const TeacherProfile = () => {
 
       setSavingBank(true);
 
+
       const response = await fetch(
         `${API_BASE_URL}/api/teacher/profile/${teacherId}/bank-details`,
         {
           method: "PUT",
 
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${token}`
+
           },
 
-          body: JSON.stringify(
-            bankDetails
-          )
+          body:
+            JSON.stringify(
+              bankDetails
+            )
+
         }
       );
 
+
       const data =
         await response.json();
+
 
       if (
         !response.ok ||
         !data.success
       ) {
+
         throw new Error(
           data.message ||
           "Failed to save bank details"
         );
+
       }
 
+
       setTeacher((prev) => ({
+
         ...prev,
+
         bankDetails:
           data.bankDetails
+
       }));
 
+
       setEditingBank(false);
+
 
       alert(
         "Bank details saved successfully."
       );
+
 
     } catch (error) {
 
@@ -186,16 +386,19 @@ const TeacherProfile = () => {
         error
       );
 
+
       alert(
         error.message ||
         "Failed to save bank details."
       );
+
 
     } finally {
 
       setSavingBank(false);
 
     }
+
   };
 
 
@@ -206,9 +409,13 @@ const TeacherProfile = () => {
   if (loading) {
 
     return (
+
       <div className="teacher-profile-page">
+
         Loading...
+
       </div>
+
     );
 
   }
@@ -221,9 +428,13 @@ const TeacherProfile = () => {
   if (!teacher) {
 
     return (
+
       <div className="teacher-profile-page">
+
         Teacher profile not found.
+
       </div>
+
     );
 
   }
@@ -250,9 +461,11 @@ const TeacherProfile = () => {
             MY PROFILE
           </span>
 
+
           <h1>
             Teacher Profile
           </h1>
+
 
           <p>
             View your registered information and
@@ -270,6 +483,7 @@ const TeacherProfile = () => {
 
       <div className="teacher-profile-section">
 
+
         <div className="teacher-profile-section-title">
 
           <FaUser />
@@ -283,6 +497,7 @@ const TeacherProfile = () => {
 
         <div className="teacher-profile-grid">
 
+
           <div>
 
             <label>
@@ -290,9 +505,13 @@ const TeacherProfile = () => {
             </label>
 
             <p>
+
               {teacher.salutation || ""}{" "}
+
               {teacher.firstName}{" "}
+
               {teacher.lastName}
+
             </p>
 
           </div>
@@ -336,6 +555,7 @@ const TeacherProfile = () => {
 
           </div>
 
+
         </div>
 
       </div>
@@ -346,6 +566,7 @@ const TeacherProfile = () => {
       ===================================================== */}
 
       <div className="teacher-profile-section">
+
 
         <div className="teacher-profile-section-title">
 
@@ -359,6 +580,7 @@ const TeacherProfile = () => {
 
 
         <div className="teacher-profile-grid">
+
 
           <div>
 
@@ -415,6 +637,7 @@ const TeacherProfile = () => {
 
           </div>
 
+
         </div>
 
       </div>
@@ -433,6 +656,7 @@ const TeacherProfile = () => {
 
         <div className="teacher-profile-section-title bank-title-row">
 
+
           <div className="bank-title">
 
             <FaUniversity />
@@ -444,9 +668,13 @@ const TeacherProfile = () => {
           </div>
 
 
-          {/* EDIT BUTTON ONLY AFTER APPROVAL */}
+          {/* =================================================
+              EDIT BUTTON
+              ONLY ACTIVE APPROVED FACULTY
+          ================================================= */}
 
           {isTeacherApproved &&
+            teacher.isActive !== false &&
             !editingBank && (
 
               <button
@@ -474,12 +702,16 @@ const TeacherProfile = () => {
 
           <div className="bank-approval-waiting">
 
+
             <div className="bank-approval-waiting-icon">
+
               ⏳
+
             </div>
 
 
             <div className="bank-approval-waiting-content">
+
 
               <h3>
                 Waiting for Admin Approval
@@ -487,29 +719,103 @@ const TeacherProfile = () => {
 
 
               <p>
+
                 Bank details can be added only
                 after your faculty account is
                 approved by the administrator.
+
               </p>
 
 
               <span>
+
                 Your profile is available, but
                 bank details will remain locked
                 until approval.
+
               </span>
+
 
             </div>
 
+
           </div>
+
+
+        ) : teacher.isActive === false ? (
+
+
+          /* =================================================
+             DEACTIVATED APPROVED FACULTY
+          ================================================= */
+
+          <div className="teacher-activation-status-card">
+
+
+            <div className="teacher-activation-status-icon">
+
+              🔒
+
+            </div>
+
+
+            <div className="teacher-activation-status-content">
+
+
+              <h3>
+                Faculty Account Deactivated
+              </h3>
+
+
+              <p>
+
+                Your faculty account is currently
+                deactivated. You can request
+                activation from the admin.
+
+              </p>
+
+
+            </div>
+
+
+            {!teacher.activationRequested ? (
+
+              <button
+                type="button"
+                className="teacher-request-activation-btn"
+                onClick={
+                  handleRequestActivation
+                }
+              >
+
+                Request Activation
+
+              </button>
+
+            ) : (
+
+              <div className="teacher-activation-requested">
+
+                ⏳ Activation Requested
+
+              </div>
+
+            )}
+
+
+          </div>
+
 
         ) : (
 
+
           /* =================================================
-             APPROVED TEACHER
+             ACTIVE APPROVED FACULTY
           ================================================= */
 
           <>
+
 
             <p className="bank-details-message">
 
@@ -539,6 +845,7 @@ const TeacherProfile = () => {
                       Account Holder Name
                     </label>
 
+
                     <input
                       type="text"
                       name="accountHolderName"
@@ -561,6 +868,7 @@ const TeacherProfile = () => {
                     <label>
                       Bank Name
                     </label>
+
 
                     <input
                       type="text"
@@ -585,6 +893,7 @@ const TeacherProfile = () => {
                       Account Number
                     </label>
 
+
                     <input
                       type="text"
                       name="accountNumber"
@@ -608,6 +917,7 @@ const TeacherProfile = () => {
                       IFSC Code
                     </label>
 
+
                     <input
                       type="text"
                       name="ifscCode"
@@ -630,6 +940,7 @@ const TeacherProfile = () => {
                     <label>
                       Account Type
                     </label>
+
 
                     <select
                       name="accountType"
@@ -657,6 +968,7 @@ const TeacherProfile = () => {
 
                   </div>
 
+
                 </div>
 
 
@@ -673,14 +985,18 @@ const TeacherProfile = () => {
                     }
                     disabled={savingBank}
                   >
+
                     Cancel
+
                   </button>
 
 
                   <button
                     type="button"
                     className="save-bank-button"
-                    onClick={handleSaveBank}
+                    onClick={
+                      handleSaveBank
+                    }
                     disabled={savingBank}
                   >
 
@@ -692,11 +1008,15 @@ const TeacherProfile = () => {
 
                   </button>
 
+
                 </div>
+
 
               </div>
 
+
             ) : (
+
 
               /* =============================================
                  DISPLAY BANK DETAILS
@@ -712,11 +1032,13 @@ const TeacherProfile = () => {
                   </label>
 
                   <p>
+
                     {
                       teacher.bankDetails
                         ?.accountHolderName ||
                       "Not added"
                     }
+
                   </p>
 
                 </div>
@@ -729,11 +1051,13 @@ const TeacherProfile = () => {
                   </label>
 
                   <p>
+
                     {
                       teacher.bankDetails
                         ?.bankName ||
                       "Not added"
                     }
+
                   </p>
 
                 </div>
@@ -746,11 +1070,13 @@ const TeacherProfile = () => {
                   </label>
 
                   <p>
+
                     {
                       teacher.bankDetails
                         ?.accountNumber ||
                       "Not added"
                     }
+
                   </p>
 
                 </div>
@@ -763,11 +1089,13 @@ const TeacherProfile = () => {
                   </label>
 
                   <p>
+
                     {
                       teacher.bankDetails
                         ?.ifscCode ||
                       "Not added"
                     }
+
                   </p>
 
                 </div>
@@ -780,14 +1108,17 @@ const TeacherProfile = () => {
                   </label>
 
                   <p>
+
                     {
                       teacher.bankDetails
                         ?.accountType ||
                       "Not added"
                     }
+
                   </p>
 
                 </div>
+
 
               </div>
 
@@ -797,12 +1128,15 @@ const TeacherProfile = () => {
 
         )}
 
+
       </div>
+
 
     </div>
 
   );
 
 };
+
 
 export default TeacherProfile;

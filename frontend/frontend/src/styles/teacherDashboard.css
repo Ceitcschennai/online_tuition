@@ -1564,3 +1564,334 @@
   }
 
 }
+/* =====================================================
+   ACTIVATION REQUEST ONLY VIEW
+===================================================== */
+
+.teacher-activation-only-card {
+  width: 100%;
+
+  min-height: 120px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 25px;
+
+  padding: 24px 28px;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+
+  border: 1px solid #dbeafe;
+
+  border-radius: 16px;
+
+  box-shadow:
+    0 6px 20px rgba(15, 23, 42, 0.06);
+}
+
+
+/* =====================================================
+   LEFT SIDE
+   LOCK ICON + TEXT
+===================================================== */
+
+.teacher-activation-left {
+  display: flex;
+
+  align-items: center;
+
+  gap: 18px;
+
+  flex: 1;
+
+  min-width: 0;
+}
+
+
+/* =====================================================
+   LOCK / HOURGLASS ICON
+===================================================== */
+
+.teacher-activation-only-icon {
+  width: 56px;
+  height: 56px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 14px;
+
+  background: #eff6ff;
+
+  font-size: 28px;
+}
+
+
+/* =====================================================
+   TEXT CONTENT
+===================================================== */
+
+.teacher-activation-only-content {
+  flex: 1;
+
+  min-width: 0;
+}
+
+
+.teacher-activation-only-content h2 {
+  margin: 0 0 7px;
+
+  color: #172554;
+
+  font-size: 19px;
+
+  font-weight: 700;
+
+  line-height: 1.3;
+}
+
+
+.teacher-activation-only-content p {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+}
+
+
+/* =====================================================
+   REQUEST ACTIVATION BUTTON
+   RIGHT SIDE
+===================================================== */
+
+.teacher-activation-only-card
+.teacher-request-activation-btn {
+  flex-shrink: 0;
+
+  margin-left: auto;
+
+  padding: 12px 22px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: #2563eb;
+
+  color: #ffffff;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.teacher-activation-only-card
+.teacher-request-activation-btn:hover {
+  background: #1d4ed8;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 16px rgba(37, 99, 235, 0.25);
+}
+
+
+.teacher-activation-only-card
+.teacher-request-activation-btn:active {
+  transform: translateY(0);
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 768px) {
+
+  .teacher-activation-only-card {
+    min-height: auto;
+
+    padding: 20px;
+
+    gap: 18px;
+  }
+
+
+  .teacher-activation-left {
+    gap: 12px;
+  }
+
+
+  .teacher-activation-only-icon {
+    width: 48px;
+    height: 48px;
+
+    font-size: 24px;
+  }
+
+
+  .teacher-activation-only-content h2 {
+    font-size: 16px;
+  }
+
+
+  .teacher-activation-only-content p {
+    font-size: 12px;
+  }
+
+
+  .teacher-activation-only-card
+  .teacher-request-activation-btn {
+    padding: 10px 15px;
+
+    font-size: 12px;
+  }
+
+}
+
+
+/* =====================================================
+   SMALL MOBILE
+===================================================== */
+
+@media (max-width: 480px) {
+
+  .teacher-activation-only-card {
+    align-items: flex-start;
+
+    padding: 18px;
+
+    gap: 12px;
+  }
+
+
+  .teacher-activation-left {
+    align-items: flex-start;
+
+    gap: 10px;
+  }
+
+
+  .teacher-activation-only-icon {
+    width: 44px;
+    height: 44px;
+
+    font-size: 22px;
+  }
+
+
+  .teacher-activation-only-content h2 {
+    font-size: 15px;
+  }
+
+
+  .teacher-activation-only-content p {
+    font-size: 11px;
+  }
+
+
+  .teacher-activation-only-card
+  .teacher-request-activation-btn {
+    padding: 9px 12px;
+
+    font-size: 11px;
+  }
+
+}
+
+
+
+/* =====================================================
+   ACTIVATION ICON
+===================================================== */
+
+.teacher-activation-only-icon {
+  width: 65px;
+  height: 65px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 16px;
+
+  background: #eff6ff;
+
+  font-size: 32px;
+}
+
+
+/* =====================================================
+   ACTIVATION CONTENT
+===================================================== */
+
+.teacher-activation-only-content h2 {
+  margin: 0 0 8px;
+
+  color: #2563eb;
+
+  font-size: 24px;
+  font-weight: 700;
+}
+
+
+.teacher-activation-only-content p {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 15px;
+
+  line-height: 1.6;
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 600px) {
+
+  .teacher-activation-only-card {
+    flex-direction: column;
+
+    text-align: center;
+
+    padding: 30px 20px;
+
+    min-height: 200px;
+  }
+
+  .teacher-activation-only-content h2 {
+    font-size: 21px;
+  }
+
+  .teacher-activation-only-content p {
+    font-size: 14px;
+  }
+
+}

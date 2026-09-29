@@ -366,3 +366,13 @@
   font-size: 13px;
   font-weight: 600;
 }
+.teacher-activation-requested {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  border-radius: 9px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}

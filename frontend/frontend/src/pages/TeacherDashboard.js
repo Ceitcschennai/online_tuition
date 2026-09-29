@@ -27,14 +27,15 @@ const TeacherDashboard = () => {
   });
 
   const [teacherInfo, setTeacherInfo] = useState({
-  name: "",
-  classes: [],
-  subjects: [],
-  assignedSubjects: [],
-  isApproved: false,
-  isActive: false,
-  activationRequested: false
-});
+    name: "",
+    classes: [],
+    subjects: [],
+    assignedSubjects: [],
+    isApproved: false,
+    isActive: false,
+    activationRequested: false
+  });
+
   const [queries, setQueries] = useState([]);
   const [scheduledClasses, setScheduledClasses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,33 +68,40 @@ const TeacherDashboard = () => {
       );
 
       const data = await response.json();
+
       console.log("Teacher Dashboard Data:", data);
+
       const storedUser = JSON.parse(
-  localStorage.getItem("user") || "null"
-);
+        localStorage.getItem("user") || "null"
+      );
 
-if (storedUser) {
-  const updatedUser = {
-    ...storedUser,
-    isApproved: data.teacherInfo?.isApproved || false,
-    isActive: data.teacherInfo?.isActive || false,
-    activationRequested:
-      data.teacherInfo?.activationRequested || false
-  };
+      if (storedUser) {
+        const updatedUser = {
+          ...storedUser,
+          isApproved:
+            data.teacherInfo?.isApproved || false,
 
-  localStorage.setItem(
-    "user",
-    JSON.stringify(updatedUser)
-  );
+          isActive:
+            data.teacherInfo?.isActive || false,
 
-  window.dispatchEvent(
-    new Event("userStatusUpdated")
-  );
-}
-console.log(
-  "Assigned Subjects:",
-  data.teacherInfo?.assignedSubjects
-);
+          activationRequested:
+            data.teacherInfo?.activationRequested || false
+        };
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(updatedUser)
+        );
+
+        window.dispatchEvent(
+          new Event("userStatusUpdated")
+        );
+      }
+
+      console.log(
+        "Assigned Subjects:",
+        data.teacherInfo?.assignedSubjects
+      );
 
       if (!response.ok || !data.success) {
         throw new Error(
@@ -116,39 +124,45 @@ console.log(
       });
 
       setTeacherInfo({
-  name:
-    data.teacherInfo?.name || "",
+        name:
+          data.teacherInfo?.name || "",
 
-  classes:
-    Array.isArray(data.teacherInfo?.classes)
-      ? data.teacherInfo.classes
-      : [],
+        classes:
+          Array.isArray(data.teacherInfo?.classes)
+            ? data.teacherInfo.classes
+            : [],
 
-  subjects:
-    Array.isArray(data.teacherInfo?.subjects)
-      ? data.teacherInfo.subjects
-      : [],
+        subjects:
+          Array.isArray(data.teacherInfo?.subjects)
+            ? data.teacherInfo.subjects
+            : [],
 
-  assignedSubjects:
-    Array.isArray(data.teacherInfo?.assignedSubjects)
-      ? data.teacherInfo.assignedSubjects
-      : [],
+        assignedSubjects:
+          Array.isArray(
+            data.teacherInfo?.assignedSubjects
+          )
+            ? data.teacherInfo.assignedSubjects
+            : [],
 
-  isApproved:
-    data.teacherInfo?.isApproved || false,
+        isApproved:
+          data.teacherInfo?.isApproved || false,
 
-  isActive:
-    data.teacherInfo?.isActive || false,
+        isActive:
+          data.teacherInfo?.isActive || false,
 
-  activationRequested:
-    data.teacherInfo?.activationRequested || false
-});
+        activationRequested:
+          data.teacherInfo?.activationRequested || false
+      });
 
     } catch (err) {
-      console.error("Dashboard error:", err);
+      console.error(
+        "Dashboard error:",
+        err
+      );
 
       setError(
-        err.message || "Failed to load dashboard"
+        err.message ||
+        "Failed to load dashboard"
       );
 
     } finally {
@@ -156,55 +170,62 @@ console.log(
     }
   }, [teacherId, token, navigate]);
 
+
+  /* =========================================================
+     REQUEST ACTIVATION
+  ========================================================= */
+
   const handleRequestActivation = async () => {
-  try {
-    if (!teacherId || !token) {
-      navigate("/login");
-      return;
-    }
-
-    const response = await fetch(
-      `${API_BASE_URL}/api/teacher/request-activation/${teacherId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+    try {
+      if (!teacherId || !token) {
+        navigate("/login");
+        return;
       }
-    );
 
-    const data = await response.json();
+      const response = await fetch(
+        `${API_BASE_URL}/api/teacher/request-activation/${teacherId}`,
+        {
+          method: "POST",
 
-    if (!response.ok || !data.success) {
-      throw new Error(
-        data.message ||
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+          "Failed to submit activation request"
+        );
+      }
+
+      setTeacherInfo((prev) => ({
+        ...prev,
+        isActive: false,
+        activationRequested: true
+      }));
+
+      alert(
+        "Activation request submitted successfully. Please wait for admin approval."
+      );
+
+    } catch (error) {
+      console.error(
+        "Activation request error:",
+        error
+      );
+
+      alert(
+        error.message ||
         "Failed to submit activation request"
       );
     }
+  };
 
-    setTeacherInfo((prev) => ({
-      ...prev,
-      isActive: false,
-      activationRequested: true
-    }));
-
-    alert(
-      "Activation request submitted successfully. Please wait for admin approval."
-    );
-
-  } catch (error) {
-    console.error(
-      "Activation request error:",
-      error
-    );
-
-    alert(
-      error.message ||
-      "Failed to submit activation request"
-    );
-  }
-};
 
   /* =========================================================
      FETCH STUDENT QUERIES
@@ -230,7 +251,8 @@ console.log(
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to fetch queries"
+          data.message ||
+          "Failed to fetch queries"
         );
       }
 
@@ -250,53 +272,58 @@ console.log(
     }
   }, [teacherId, token]);
 
-/* =========================================================
-   FETCH THIS FACULTY'S SCHEDULED CLASSES
-========================================================= */
 
-const fetchScheduledClasses = useCallback(async () => {
-  try {
-    if (!teacherId) {
-      setScheduledClasses([]);
-      return;
-    }
+  /* =========================================================
+     FETCH THIS FACULTY'S SCHEDULED CLASSES
+  ========================================================= */
 
-    const response = await fetch(
-      `${API_BASE_URL}/api/live-classes/scheduled?teacherId=${teacherId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+  const fetchScheduledClasses = useCallback(async () => {
+    try {
+      if (!teacherId) {
+        setScheduledClasses([]);
+        return;
       }
-    );
 
-    const data = await response.json();
-
-    console.log("Scheduled classes:", data);
-
-    if (!response.ok || !data.success) {
-      throw new Error(
-        data.message || "Failed to fetch scheduled classes"
+      const response = await fetch(
+        `${API_BASE_URL}/api/live-classes/scheduled?teacherId=${teacherId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
       );
+
+      const data = await response.json();
+
+      console.log(
+        "Scheduled classes:",
+        data
+      );
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+          "Failed to fetch scheduled classes"
+        );
+      }
+
+      setScheduledClasses(
+        Array.isArray(
+          data.scheduledClasses
+        )
+          ? data.scheduledClasses
+          : []
+      );
+
+    } catch (err) {
+      console.error(
+        "Scheduled classes fetch error:",
+        err
+      );
+
+      setScheduledClasses([]);
     }
-
-    setScheduledClasses(
-      Array.isArray(data.scheduledClasses)
-        ? data.scheduledClasses
-        : []
-    );
-
-  } catch (err) {
-    console.error(
-      "Scheduled classes fetch error:",
-      err
-    );
-
-    setScheduledClasses([]);
-  }
-}, [teacherId, token]);
-
-
+  }, [teacherId, token]);
 
 
   /* =========================================================
@@ -327,7 +354,8 @@ const fetchScheduledClasses = useCallback(async () => {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to update query"
+          data.message ||
+          "Failed to update query"
         );
       }
 
@@ -349,7 +377,8 @@ const fetchScheduledClasses = useCallback(async () => {
       );
 
       alert(
-        err.message || "Failed to update query"
+        err.message ||
+        "Failed to update query"
       );
     }
   };
@@ -360,87 +389,94 @@ const fetchScheduledClasses = useCallback(async () => {
   ========================================================= */
 
   useEffect(() => {
-  fetchDashboardData();
-  fetchQueries();
-  fetchScheduledClasses();
-}, [
-  fetchDashboardData,
-  fetchQueries,
-  fetchScheduledClasses
-]);
+    fetchDashboardData();
+    fetchQueries();
+    fetchScheduledClasses();
+  }, [
+    fetchDashboardData,
+    fetchQueries,
+    fetchScheduledClasses
+  ]);
 
 
   /* =========================================================
      TODAY DATE
   ========================================================= */
 
-  const today = new Date().toLocaleDateString(
-    "en-GB",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
+  const today =
+    new Date().toLocaleDateString(
+      "en-GB",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      }
+    );
+
+
+  /* =========================================================
+     FILTER TODAY'S CLASSES
+  ========================================================= */
+
+  const getDateKey = (dateValue) => {
+    if (!dateValue) {
+      return "";
     }
-  );
 
- /* =========================================================
-   FILTER TODAY'S CLASSES
-========================================================= */
+    /*
+      If the backend sends a date like:
+      2026-08-27
+      or
+      2026-08-27T00:00:00.000Z
 
-const getDateKey = (dateValue) => {
-  if (!dateValue) {
-    return "";
-  }
+      We take only the date part.
+    */
+
+    return String(dateValue).slice(0, 10);
+  };
+
+
+  /* =========================================================
+     TODAY'S DATE IN YYYY-MM-DD FORMAT
+  ========================================================= */
+
+  const now = new Date();
+
+  const todayDateKey =
+    `${now.getFullYear()}-${String(
+      now.getMonth() + 1
+    ).padStart(2, "0")}-${String(
+      now.getDate()
+    ).padStart(2, "0")}`;
+
 
   /*
-    If the backend sends a date like:
-    2026-08-27
-    or
-    2026-08-27T00:00:00.000Z
+    Show only:
 
-    We take only the date part.
+    1. Classes scheduled for today
+    2. Classes belonging to this particular faculty
   */
 
-  return String(dateValue).slice(0, 10);
-};
+  const todaysClasses =
+    scheduledClasses.filter(
+      (scheduledClass) => {
 
+        const classDateKey =
+          getDateKey(
+            scheduledClass.scheduledDate
+          );
 
-/* Today's date in YYYY-MM-DD format */
+        const classTeacherId =
+          scheduledClass.teacherId?._id ||
+          scheduledClass.teacherId;
 
-const now = new Date();
-
-const todayDateKey =
-  `${now.getFullYear()}-${String(
-    now.getMonth() + 1
-  ).padStart(2, "0")}-${String(
-    now.getDate()
-  ).padStart(2, "0")}`;
-
-
-/*
-  Show only:
-
-  1. Classes scheduled for today
-  2. Classes belonging to this particular faculty
-*/
-
-const todaysClasses = scheduledClasses.filter(
-  (scheduledClass) => {
-
-    const classDateKey = getDateKey(
-      scheduledClass.scheduledDate
+        return (
+          classDateKey === todayDateKey &&
+          String(classTeacherId) ===
+            String(teacherId)
+        );
+      }
     );
-
-    const classTeacherId =
-      scheduledClass.teacherId?._id ||
-      scheduledClass.teacherId;
-
-    return (
-      classDateKey === todayDateKey &&
-      String(classTeacherId) === String(teacherId)
-    );
-  }
-);
 
 
   /* =========================================================
@@ -460,7 +496,8 @@ const todaysClasses = scheduledClasses.filter(
           </h2>
 
           <p>
-            Please wait while we fetch your faculty information.
+            Please wait while we fetch your
+            faculty information.
           </p>
 
         </div>
@@ -507,6 +544,75 @@ const todaysClasses = scheduledClasses.filter(
 
 
   /* =========================================================
+     ACTIVATION REQUEST PENDING VIEW
+  ========================================================= */
+
+  /* =========================================================
+   INACTIVE FACULTY VIEW
+========================================================= */
+
+if (!teacherInfo.isActive) {
+  return (
+    <div className="teacher-dashboard">
+
+      <div className="teacher-activation-only-card">
+
+        {/* =================================================
+            LEFT SIDE
+            LOCK ICON + TEXT
+        ================================================= */}
+
+        <div className="teacher-activation-left">
+
+          <div className="teacher-activation-only-icon">
+            {teacherInfo.activationRequested
+              ? "⏳"
+              : "🔒"}
+          </div>
+
+
+          <div className="teacher-activation-only-content">
+
+            <h2>
+              {teacherInfo.activationRequested
+                ? "Activation Request Pending"
+                : "Faculty Account Deactivated"}
+            </h2>
+
+
+            <p>
+              {teacherInfo.activationRequested
+                ? "Your activation request has been submitted. Please wait for admin approval."
+                : "Your faculty account is currently deactivated. You can request activation from the admin."}
+            </p>
+
+          </div>
+
+        </div>
+
+
+        {/* =================================================
+            RIGHT SIDE
+            REQUEST ACTIVATION BUTTON
+        ================================================= */}
+
+        {!teacherInfo.activationRequested && (
+          <button
+            type="button"
+            className="teacher-request-activation-btn"
+            onClick={handleRequestActivation}
+          >
+            Request Activation
+          </button>
+        )}
+
+      </div>
+
+    </div>
+  );
+}
+
+  /* =========================================================
      SAFE DATA
   ========================================================= */
 
@@ -517,6 +623,7 @@ const todaysClasses = scheduledClasses.filter(
       ? teacherInfo.assignedSubjects
       : [];
 
+
   const classes =
     Array.isArray(
       teacherInfo.classes
@@ -524,10 +631,12 @@ const todaysClasses = scheduledClasses.filter(
       ? teacherInfo.classes
       : [];
 
-  const pendingQueries = queries.filter(
-    (query) =>
-      query.status === "Pending"
-  );
+
+  const pendingQueries =
+    queries.filter(
+      (query) =>
+        query.status === "Pending"
+    );
 
 
   /* =========================================================
@@ -588,45 +697,48 @@ const todaysClasses = scheduledClasses.filter(
         </div>
 
 
-      {/* ===================================================
-          FACULTY ACCOUNT STATUS
-      =================================================== */}
+        {/* ===================================================
+            FACULTY ACCOUNT STATUS
+        =================================================== */}
 
-      {!teacherInfo.isActive && (
-        <div className="teacher-activation-status-card">
+        {!teacherInfo.isActive && (
+          <div className="teacher-activation-status-card">
 
-          <div className="teacher-activation-status-icon">
-            {teacherInfo.activationRequested ? "⏳" : "🔒"}
-          </div>
-
-          <div className="teacher-activation-status-content">
-
-            <h3>
+            <div className="teacher-activation-status-icon">
               {teacherInfo.activationRequested
-                ? "Activation Request Pending"
-                : "Faculty Account Deactivated"}
-            </h3>
+                ? "⏳"
+                : "🔒"}
+            </div>
 
-            <p>
-              {teacherInfo.activationRequested
-                ? "Your activation request has been submitted. Please wait for admin approval."
-                : "Your faculty account is currently deactivated. You can request activation from the admin."}
-            </p>
+            <div className="teacher-activation-status-content">
+
+              <h3>
+                {teacherInfo.activationRequested
+                  ? "Activation Request Pending"
+                  : "Faculty Account Deactivated"}
+              </h3>
+
+              <p>
+                {teacherInfo.activationRequested
+                  ? "Your activation request has been submitted. Please wait for admin approval."
+                  : "Your faculty account is currently deactivated. You can request activation from the admin."}
+              </p>
+
+            </div>
+
+            {!teacherInfo.activationRequested && (
+              <button
+                type="button"
+                className="teacher-request-activation-btn"
+                onClick={handleRequestActivation}
+              >
+                Request Activation
+              </button>
+            )}
 
           </div>
+        )}
 
-          {!teacherInfo.activationRequested && (
-            <button
-              type="button"
-              className="teacher-request-activation-btn"
-              onClick={handleRequestActivation}
-            >
-              Request Activation
-            </button>
-          )}
-
-        </div>
-      )}
 
         {/* ===================================================
             HEADER STATS
@@ -706,8 +818,10 @@ const todaysClasses = scheduledClasses.filter(
           ALERT
       ===================================================== */}
 
-      {(stats.assignmentsToReview > 0 ||
-        pendingQueries.length > 0) && (
+      {(
+        stats.assignmentsToReview > 0 ||
+        pendingQueries.length > 0
+      ) && (
 
         <div className="teacher-alert-banner">
 
@@ -871,85 +985,97 @@ const todaysClasses = scheduledClasses.filter(
 
         {todaysClasses.length === 0 ? (
 
-  <div className="teacher-empty-box">
+          <div className="teacher-empty-box">
 
-    <FaClock />
-
-    <p>
-      No classes scheduled for today
-    </p>
-
-    <span>
-      Today's scheduled classes will appear here.
-    </span>
-
-  </div>
-
-) : (
-
-  <div className="teacher-today-classes-list">
-
-    {todaysClasses.map((scheduledClass, index) => (
-
-      <div
-        key={scheduledClass._id || index}
-        className="teacher-today-class-card"
-      >
-
-        <div className="teacher-today-class-info">
-
-          <h4>
-            {scheduledClass.className || "Scheduled Class"}
-          </h4>
-
-          <p>
-            <FaBook />
-
-            {" "}
-            {scheduledClass.subject?.name ||
-              scheduledClass.subject ||
-              "Subject"}
-          </p>
-
-          <p>
             <FaClock />
 
-            {" "}
-            {scheduledClass.scheduledTime || "Time not available"}
-          </p>
+            <p>
+              No classes scheduled for today
+            </p>
 
-          <p>
-            <FaGraduationCap />
+            <span>
+              Today's scheduled classes will appear here.
+            </span>
 
-            {" "}
-            {scheduledClass.studentClass ||
-              scheduledClass.class ||
-              "Class not available"}
-          </p>
+          </div>
 
-        </div>
+        ) : (
+
+          <div className="teacher-today-classes-list">
+
+            {todaysClasses.map(
+              (scheduledClass, index) => (
+
+                <div
+                  key={
+                    scheduledClass._id ||
+                    index
+                  }
+                  className="teacher-today-class-card"
+                >
+
+                  <div className="teacher-today-class-info">
+
+                    <h4>
+                      {scheduledClass.className ||
+                        "Scheduled Class"}
+                    </h4>
+
+                    <p>
+                      <FaBook />
+
+                      {" "}
+
+                      {scheduledClass.subject?.name ||
+                        scheduledClass.subject ||
+                        "Subject"}
+                    </p>
+
+                    <p>
+                      <FaClock />
+
+                      {" "}
+
+                      {scheduledClass.scheduledTime ||
+                        "Time not available"}
+                    </p>
+
+                    <p>
+                      <FaGraduationCap />
+
+                      {" "}
+
+                      {scheduledClass.studentClass ||
+                        scheduledClass.class ||
+                        "Class not available"}
+                    </p>
+
+                  </div>
 
 
-        {scheduledClass.meetingLink && (
+                  {scheduledClass.meetingLink && (
 
-          <a
-            href={scheduledClass.meetingLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="teacher-join-class-btn"
-          >
-            Join Class
-          </a>
+                    <a
+                      href={
+                        scheduledClass.meetingLink
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="teacher-join-class-btn"
+                    >
+                      Join Class
+                    </a>
+
+                  )}
+
+                </div>
+
+              )
+            )}
+
+          </div>
 
         )}
-
-      </div>
-
-    ))}
-
-  </div>
-
-)}
 
       </div>
 
@@ -1009,11 +1135,13 @@ const todaysClasses = scheduledClasses.filter(
                 <div className="teacher-query-top">
 
                   <strong>
-                    {query.studentName || "Student"}
+                    {query.studentName ||
+                      "Student"}
                   </strong>
 
                   <span>
-                    {query.studentClass || "—"}
+                    {query.studentClass ||
+                      "—"}
                   </span>
 
                 </div>
@@ -1040,7 +1168,8 @@ const todaysClasses = scheduledClasses.filter(
                         : "teacher-status-answered"
                     }
                   >
-                    {query.status || "Pending"}
+                    {query.status ||
+                      "Pending"}
                   </span>
 
 
@@ -1049,7 +1178,9 @@ const todaysClasses = scheduledClasses.filter(
                     <button
                       type="button"
                       onClick={() =>
-                        acceptQuery(query._id)
+                        acceptQuery(
+                          query._id
+                        )
                       }
                     >
                       Mark Answered
@@ -1114,7 +1245,8 @@ const todaysClasses = scheduledClasses.filter(
 
                 <div
                   key={
-                    subject._id || index
+                    subject._id ||
+                    index
                   }
                   className="teacher-subject-card"
                 >
@@ -1127,13 +1259,16 @@ const todaysClasses = scheduledClasses.filter(
                   <div className="teacher-subject-content">
 
                     <h4>
-                      {subject.name || "Subject"}
+                      {subject.name ||
+                        "Subject"}
                     </h4>
 
 
                     <p>
 
                       <FaGraduationCap />
+
+                      {" "}
 
                       Classes:{" "}
 
@@ -1170,59 +1305,71 @@ const todaysClasses = scheduledClasses.filter(
 
       </div>
 
-{/* =====================================================
-    FACULTY ACCOUNT STATUS
-===================================================== */}
 
-{teacherInfo.isApproved && (
-  <div className="teacher-account-status-card">
+      {/* =====================================================
+          FACULTY ACCOUNT STATUS
+      ===================================================== */}
 
-    <div className="teacher-account-status-content">
+      {teacherInfo.isApproved && (
+        <div className="teacher-account-status-card">
 
-      <div>
-        <span className="teacher-account-status-label">
-          ACCOUNT STATUS
-        </span>
+          <div className="teacher-account-status-content">
 
-        <h3>
-          {teacherInfo.isActive
-            ? "Active Faculty"
-            : teacherInfo.activationRequested
-              ? "Activation Request Pending"
-              : "Faculty Account Deactivated"}
-        </h3>
+            <div>
 
-        <p>
-          {teacherInfo.isActive
-            ? "Your faculty account is currently active."
-            : teacherInfo.activationRequested
-              ? "Your activation request has been submitted. Please wait for admin approval."
-              : "Your account has been deactivated by the administrator. You can request activation below."}
-        </p>
-      </div>
+              <span className="teacher-account-status-label">
+                ACCOUNT STATUS
+              </span>
 
-      {!teacherInfo.isActive &&
-        !teacherInfo.activationRequested && (
-          <button
-            type="button"
-            className="teacher-request-activation-btn"
-            onClick={handleRequestActivation}
-          >
-            Request Activation
-          </button>
-        )}
+              <h3>
+                {teacherInfo.isActive
+                  ? "Active Faculty"
+                  : teacherInfo.activationRequested
+                    ? "Activation Request Pending"
+                    : "Faculty Account Deactivated"}
+              </h3>
 
-      {!teacherInfo.isActive &&
-        teacherInfo.activationRequested && (
-          <span className="teacher-activation-pending">
-            Activation Requested
-          </span>
-        )}
+              <p>
+                {teacherInfo.isActive
+                  ? "Your faculty account is currently active."
+                  : teacherInfo.activationRequested
+                    ? "Your activation request has been submitted. Please wait for admin approval."
+                    : "Your account has been deactivated by the administrator. You can request activation below."}
+              </p>
 
-    </div>
+            </div>
 
-  </div>
-)}
+
+            {!teacherInfo.isActive &&
+              !teacherInfo.activationRequested && (
+
+                <button
+                  type="button"
+                  className="teacher-request-activation-btn"
+                  onClick={
+                    handleRequestActivation
+                  }
+                >
+                  Request Activation
+                </button>
+
+              )}
+
+
+            {!teacherInfo.isActive &&
+              teacherInfo.activationRequested && (
+
+                <span className="teacher-activation-pending">
+                  Activation Requested
+                </span>
+
+              )}
+
+          </div>
+
+        </div>
+      )}
+
 
       {/* =====================================================
           FACULTY OVERVIEW
@@ -1279,6 +1426,7 @@ const todaysClasses = scheduledClasses.filter(
         </div>
 
       </div>
+
 
     </div>
   );

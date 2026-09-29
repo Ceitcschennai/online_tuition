@@ -911,3 +911,116 @@
   }
 
 }
+.activation-requested-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin: 12px 0;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.activation-request-action {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.btn-activate-faculty {
+  width: 100%;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.btn-activate-faculty:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.btn-activate-faculty:active {
+  transform: translateY(0);
+}
+
+/* =====================================================
+   ACTIVATION REQUEST SECTION
+===================================================== */
+
+.activation-request-section {
+  width: 100%;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+
+/* =====================================================
+   ACTIVATION REQUESTED BADGE
+===================================================== */
+
+.activation-requested-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+
+  padding: 7px 12px;
+
+  border-radius: 8px;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* =====================================================
+   ACTIVATE FACULTY BUTTON
+===================================================== */
+
+.btn-activation-request {
+  width: 100%;
+
+  padding: 11px 16px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #4f46e5;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn-activation-request:hover {
+  background: #4338ca;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 5px 12px rgba(79, 70, 229, 0.25);
+}
+
+.btn-activation-request:active {
+  transform: translateY(0);
+}

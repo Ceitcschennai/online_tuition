@@ -79,6 +79,7 @@ const ManageTeachers = () => {
   // =====================================================
 
   const fetchTeachers = async () => {
+
     try {
 
       const res = await axios.get(
@@ -99,11 +100,20 @@ const ManageTeachers = () => {
       const teacherArray =
         res.data.teachers || [];
 
-      setTeachers(teacherArray);
-      setFilteredTeachers(teacherArray);
+      setTeachers(
+        teacherArray
+      );
+
+      setFilteredTeachers(
+        teacherArray
+      );
 
       if (res.data.stats) {
-        setStats(res.data.stats);
+
+        setStats(
+          res.data.stats
+        );
+
       }
 
     } catch (error) {
@@ -114,6 +124,7 @@ const ManageTeachers = () => {
       );
 
       setTeachers([]);
+
       setFilteredTeachers([]);
 
       setStats({
@@ -123,7 +134,9 @@ const ManageTeachers = () => {
         rejected: 0,
         assigned: 0,
       });
+
     }
+
   };
 
   // =====================================================
@@ -131,166 +144,260 @@ const ManageTeachers = () => {
   // =====================================================
 
   useEffect(() => {
+
     fetchTeachers();
+
   }, [search, filter]);
 
   // =====================================================
   // UPDATE TEACHER STATUS
   // =====================================================
 
-  const updateStatus = async (id, status) => {
-  try {
+  const updateStatus = async (
+    id,
+    status
+  ) => {
 
-    /* =================================================
-       ACTIVATE / DEACTIVATE FACULTY
-    ================================================= */
+    try {
 
-    if (
-  status === "Activate" ||
-  status === "Deactivate"
-) {
-  const action =
-    status === "Activate"
-      ? "activate"
-      : "deactivate";
+      // =================================================
+      // ACTIVATE / DEACTIVATE FACULTY
+      // =================================================
 
-  await axios.put(
-    `${API_BASE_URL}/api/teacher/admin/teacher/${id}/status`,
-    {
-      action,
-    }
-  );
+      if (
+        status === "Activate" ||
+        status === "Deactivate"
+      ) {
 
-  /* =========================================
-     UPDATE UI IMMEDIATELY
-  ========================================= */
+        const action =
+          status === "Activate"
+            ? "activate"
+            : "deactivate";
 
-  const newActiveStatus =
-    status === "Activate";
-
-  setTeachers((prevTeachers) =>
-    prevTeachers.map((teacher) =>
-      teacher._id === id
-        ? {
-            ...teacher,
-            isActive: newActiveStatus,
+        await axios.put(
+          `${API_BASE_URL}/api/teacher/admin/teacher/${id}/status`,
+          {
+            action,
           }
-        : teacher
-    )
-  );
+        );
 
-  setFilteredTeachers((prevTeachers) =>
-    prevTeachers.map((teacher) =>
-      teacher._id === id
-        ? {
-            ...teacher,
-            isActive: newActiveStatus,
-          }
-        : teacher
-    )
-  );
+        // =================================================
+        // UPDATE UI IMMEDIATELY
+        // =================================================
 
-  alert(
-    status === "Activate"
-      ? "Faculty activated successfully."
-      : "Faculty deactivated successfully."
-  );
+        const newActiveStatus =
+          status === "Activate";
 
-  return;
-}
+        setTeachers(
+          (prevTeachers) =>
+            prevTeachers.map(
+              (teacher) =>
+                teacher._id === id
+                  ? {
+                      ...teacher,
+                      isActive:
+                        newActiveStatus,
+                      activationRequested:
+                        false,
+                    }
+                  : teacher
+            )
+        );
 
+        setFilteredTeachers(
+          (prevTeachers) =>
+            prevTeachers.map(
+              (teacher) =>
+                teacher._id === id
+                  ? {
+                      ...teacher,
+                      isActive:
+                        newActiveStatus,
+                      activationRequested:
+                        false,
+                    }
+                  : teacher
+            )
+        );
 
-    /* =================================================
-       NORMAL APPROVE / REJECT FLOW
-    ================================================= */
+        alert(
+          status === "Activate"
+            ? "Faculty activated successfully."
+            : "Faculty deactivated successfully."
+        );
 
-    let reason = "";
-
-
-    /* -------------------------------------------------
-       FULL REJECTION
-    ------------------------------------------------- */
-
-    if (status === "Rejected") {
-
-      reason = window.prompt(
-        "Enter the reason for rejecting this faculty:"
-      );
-
-      if (!reason || !reason.trim()) {
         return;
+
       }
-    }
 
 
-    /* -------------------------------------------------
-       SEND STATUS TO BACKEND
-    ------------------------------------------------- */
+      // =================================================
+      // NORMAL APPROVE / REJECT FLOW
+      // =================================================
 
-    await axios.put(
-      `${API_BASE_URL}/api/teacher/admin/teacher/${id}/approve`,
-      {
-        status,
-        reason: reason.trim(),
+      let reason = "";
+
+
+      // =================================================
+      // FULL REJECTION
+      // =================================================
+
+      if (
+        status === "Rejected"
+      ) {
+
+        reason = window.prompt(
+          "Enter the reason for rejecting this faculty:"
+        );
+
+        if (
+          !reason ||
+          !reason.trim()
+        ) {
+
+          return;
+
+        }
+
       }
-    );
 
 
-    /* -------------------------------------------------
-       SUCCESS MESSAGE
-    ------------------------------------------------- */
+      // =================================================
+      // SEND STATUS TO BACKEND
+      // =================================================
 
-    if (status === "Rejected") {
-
-      alert(
-        "Faculty rejected successfully."
+      await axios.put(
+        `${API_BASE_URL}/api/teacher/admin/teacher/${id}/approve`,
+        {
+          status,
+          reason:
+            reason.trim(),
+        }
       );
 
-    } else if (
-      status === "Reject Document"
-    ) {
 
-      alert(
-        "Document rejected successfully."
+      // =================================================
+      // SUCCESS MESSAGE
+      // =================================================
+
+      if (
+        status === "Rejected"
+      ) {
+
+        alert(
+          "Faculty rejected successfully."
+        );
+
+      } else if (
+        status === "Reject Document"
+      ) {
+
+        alert(
+          "Document rejected successfully."
+        );
+
+      } else if (
+        status === "Approved"
+      ) {
+
+        alert(
+          "Faculty approved successfully."
+        );
+
+      }
+
+
+      // =================================================
+      // REFRESH TEACHER LIST
+      // =================================================
+
+      await fetchTeachers();
+
+    } catch (error) {
+
+      console.error(
+        "Status update failed:",
+        error
       );
 
-    } else if (
-      status === "Approved"
-    ) {
-
       alert(
-        "Faculty approved successfully."
-      );
-    }
-
-
-    /* -------------------------------------------------
-       REFRESH TEACHER LIST
-    ------------------------------------------------- */
-
-    await fetchTeachers();
-
-  } catch (error) {
-
-    console.error(
-      "Status update failed:",
-      error
-    );
-
-    alert(
-      error.response?.data?.message ||
+        error.response?.data?.message ||
         "Failed to update faculty."
-    );
-  }
-};
+      );
+
+    }
+
+  };
+
+
+  // =====================================================
+  // ACTIVATE FACULTY
+  // =====================================================
+
+  const activateFaculty = async (
+    teacherId
+  ) => {
+
+    try {
+
+      const response =
+        await axios.put(
+          `${API_BASE_URL}/api/teacher/admin/teacher/${teacherId}/status`,
+          {
+            action: "activate",
+          }
+        );
+
+
+      if (
+        !response.data.success
+      ) {
+
+        throw new Error(
+          response.data.message ||
+          "Failed to activate faculty"
+        );
+
+      }
+
+
+      alert(
+        "Faculty activated successfully."
+      );
+
+
+      await fetchTeachers();
+
+    } catch (error) {
+
+      console.error(
+        "Faculty activation error:",
+        error
+      );
+
+
+      alert(
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to activate faculty"
+      );
+
+    }
+
+  };
+
 
   // =====================================================
   // EDIT CLASSES
   // =====================================================
 
-  const openEditClasses = (teacher) => {
+  const openEditClasses = (
+    teacher
+  ) => {
 
-    setEditingClassesFor(teacher);
+    setEditingClassesFor(
+      teacher
+    );
 
     setEditClasses(
       Array.isArray(
@@ -299,22 +406,32 @@ const ManageTeachers = () => {
         ? teacher.classesAssigned
         : []
     );
+
   };
+
 
   // =====================================================
   // TOGGLE CLASS
   // =====================================================
 
-  const toggleEditClass = (cls) => {
+  const toggleEditClass = (
+    cls
+  ) => {
 
-    setEditClasses((prev) =>
-      prev.includes(cls)
-        ? prev.filter(
-            (c) => c !== cls
-          )
-        : [...prev, cls]
+    setEditClasses(
+      (prev) =>
+        prev.includes(cls)
+          ? prev.filter(
+              (c) => c !== cls
+            )
+          : [
+              ...prev,
+              cls,
+            ]
     );
+
   };
+
 
   // =====================================================
   // SAVE CLASSES
@@ -322,27 +439,37 @@ const ManageTeachers = () => {
 
   const saveClasses = async () => {
 
-    if (editClasses.length === 0) {
+    if (
+      editClasses.length === 0
+    ) {
 
       alert(
         "Select at least one class"
       );
 
       return;
+
     }
+
 
     try {
 
       await axios.put(
         `${API_BASE_URL}/api/admin/teachers/${editingClassesFor._id}/classes`,
         {
-          classes: editClasses,
+          classes:
+            editClasses,
         }
       );
 
-      setEditingClassesFor(null);
+
+      setEditingClassesFor(
+        null
+      );
+
 
       await fetchTeachers();
+
 
       alert(
         "Classes updated successfully"
@@ -355,49 +482,69 @@ const ManageTeachers = () => {
         error
       );
 
+
       alert(
         error.response?.data?.message ||
-          "Failed to update classes"
+        "Failed to update classes"
       );
+
     }
+
   };
+
 
   // =====================================================
   // OPEN EDIT SUBJECT
   // =====================================================
 
-  const openEditSubject = (teacher) => {
+  const openEditSubject = (
+    teacher
+  ) => {
 
-    setEditingSubjectFor(teacher);
+    setEditingSubjectFor(
+      teacher
+    );
 
-    let currentSubject = "";
+    let currentSubject =
+      "";
+
 
     if (
-      Array.isArray(teacher.subjects) &&
+      Array.isArray(
+        teacher.subjects
+      ) &&
       teacher.subjects.length > 0
     ) {
 
       const subject =
         teacher.subjects[0];
 
+
       if (
-        typeof subject === "object"
+        typeof subject ===
+        "object"
       ) {
 
         currentSubject =
-          subject.name || "";
+          subject.name ||
+          "";
 
       } else {
 
         currentSubject =
           subject;
+
       }
+
     }
+
 
     setSelectedSubject(
       currentSubject
     );
+
   };
+
 
   // =====================================================
   // SAVE SUBJECT
@@ -408,6 +555,7 @@ const ManageTeachers = () => {
     const subjectName =
       selectedSubject;
 
+
     if (!subjectName) {
 
       alert(
@@ -415,7 +563,9 @@ const ManageTeachers = () => {
       );
 
       return;
+
     }
+
 
     try {
 
@@ -427,22 +577,31 @@ const ManageTeachers = () => {
           }
         );
 
+
       console.log(
         "Backend response:",
         response.data
       );
 
-      if (response.data.success) {
+
+      if (
+        response.data.success
+      ) {
 
         alert(
           "Subject updated successfully"
         );
 
+
         setEditingSubjectFor(
           null
         );
 
-        setSelectedSubject("");
+
+        setSelectedSubject(
+          ""
+        );
+
 
         await fetchTeachers();
 
@@ -450,8 +609,9 @@ const ManageTeachers = () => {
 
         alert(
           response.data.message ||
-            "Failed to update teacher subject"
+          "Failed to update teacher subject"
         );
+
       }
 
     } catch (error) {
@@ -459,15 +619,19 @@ const ManageTeachers = () => {
       console.error(
         "SUBJECT UPDATE ERROR:",
         error.response?.data ||
-          error.message
+        error.message
       );
+
 
       alert(
         error.response?.data?.message ||
-          "Failed to update teacher subject"
+        "Failed to update teacher subject"
       );
+
     }
+
   };
+
 
   // =====================================================
   // GET CURRENT SUBJECT
@@ -477,7 +641,10 @@ const ManageTeachers = () => {
     teacher
   ) => {
 
-    // Admin-assigned subject
+    // =================================================
+    // ADMIN-ASSIGNED SUBJECT
+    // =================================================
+
     if (
       Array.isArray(
         teacher.subjects
@@ -488,36 +655,53 @@ const ManageTeachers = () => {
       const subject =
         teacher.subjects[0];
 
+
       if (
-        typeof subject === "object"
+        typeof subject ===
+        "object"
       ) {
 
         return (
           subject.name ||
           "No subject assigned"
         );
+
       }
 
+
       return "Subject assigned";
+
     }
 
-    // Subject selected during registration
+
+    // =================================================
+    // REGISTRATION SUBJECT
+    // =================================================
+
     if (
       teacher.preferredSubject
     ) {
 
-      return teacher.preferredSubject;
+      return (
+        teacher.preferredSubject
+      );
+
     }
 
+
     return "No subject assigned";
+
   };
+
 
   // =====================================================
   // UI
   // =====================================================
 
   return (
+
     <div className="manage-teachers-container">
+
 
       {/* =================================================
           PAGE TITLE
@@ -533,6 +717,7 @@ const ManageTeachers = () => {
       ================================================= */}
 
       <div className="stats-container">
+
 
         <div className="stat-card">
 
@@ -607,6 +792,7 @@ const ManageTeachers = () => {
 
       <div className="top-controls">
 
+
         <input
           type="text"
           placeholder="Search by name, email, mobile..."
@@ -644,6 +830,10 @@ const ManageTeachers = () => {
             Rejected
           </option>
 
+          <option value="activationRequested">
+            Activation Requested
+          </option>
+
         </select>
 
       </div>
@@ -655,6 +845,7 @@ const ManageTeachers = () => {
 
       <div className="teachers-grid">
 
+
         {Array.isArray(
           filteredTeachers
         ) &&
@@ -665,16 +856,22 @@ const ManageTeachers = () => {
 
               <div
                 className="teacher-card"
-                key={teacher._id}
+                key={
+                  teacher._id
+                }
               >
+
 
                 {/* =================================================
                     TEACHER NAME
                 ================================================= */}
 
                 <h3>
+
                   {teacher.firstName}{" "}
+
                   {teacher.lastName}
+
                 </h3>
 
 
@@ -789,8 +986,11 @@ const ManageTeachers = () => {
 
                   <div className="teacher-certificate">
 
+
                     <span className="certificate-file-name">
+
                       📄 Degree Certificate.pdf
+
                     </span>
 
 
@@ -805,7 +1005,9 @@ const ManageTeachers = () => {
                       className="certificate-view-icon"
                       title="View Certificate"
                     >
+
                       👁
+
                     </a>
 
 
@@ -819,7 +1021,9 @@ const ManageTeachers = () => {
                       className="certificate-download-icon"
                       title="Download Certificate"
                     >
+
                       ↓
+
                     </a>
 
                   </div>
@@ -828,166 +1032,238 @@ const ManageTeachers = () => {
 
 
                 {/* =================================================
-                    ACTION BUTTONS
+                    ACTIVATION REQUEST SECTION
+                    ONLY FOR FACULTY WHO REQUESTED ACTIVATION
                 ================================================= */}
 
-                <div className="teacher-actions">
+                {teacher.activationRequested &&
+                  teacher.isApproved &&
+                  !teacher.isActive && (
+
+                    <div className="activation-request-section">
 
 
-                  {/* =================================================
-                      STATUS ACTIONS
-                  ================================================= */}
+                      <div className="activation-requested-badge">
 
-                  {/* =================================================
-    STATUS ACTIONS
-================================================= */}
+                        🔔 Activation Requested
 
-<div className="action-row action-row-status">
-
-  {/* =================================================
-      FULLY REJECTED
-      Show ONLY "Rejected"
-  ================================================= */}
-
-  {teacher.isRejected ? (
-
-    <span className="rejected-label">
-      Rejected
-    </span>
-
-  ) : teacher.documentReuploadToken ? (
-
-    /* =================================================
-       DOCUMENT REJECTED
-       WAITING FOR RE-UPLOAD
-    ================================================= */
-
-    <span className="document-reupload-label">
-      Waiting for reupload document
-    </span>
-
-  ) : !teacher.isApproved ? (
-
-    /* =================================================
-       PENDING TEACHER
-       SHOW APPROVE + REJECT DOCUMENT + REJECT
-    ================================================= */
-
-    <>
-
-      <button
-        className="btn-approve"
-        onClick={() =>
-          updateStatus(
-            teacher._id,
-            "Approved"
-          )
-        }
-      >
-        Approve
-      </button>
-
-      <button
-        className="btn-reject-document"
-        onClick={() =>
-          updateStatus(
-            teacher._id,
-            "Reject Document"
-          )
-        }
-      >
-        Reject Document
-      </button>
-
-      <button
-        className="btn-reject"
-        onClick={() =>
-          updateStatus(
-            teacher._id,
-            "Rejected"
-          )
-        }
-      >
-        Reject
-      </button>
-
-    </>
-
-  ) : teacher.isActive === false ? (
-
-    /* =================================================
-       APPROVED BUT DEACTIVATED
-       SHOW ACTIVATE
-    ================================================= */
-
-    <button
-      className="btn-activate"
-      onClick={() =>
-        updateStatus(
-          teacher._id,
-          "Activate"
-        )
-      }
-    >
-      ✓ Activate
-    </button>
-
-  ) : (
-
-    /* =================================================
-       APPROVED + ACTIVE
-       SHOW DEACTIVATE
-    ================================================= */
-
-    <button
-      className="btn-deactivate"
-      onClick={() =>
-        updateStatus(
-          teacher._id,
-          "Deactivate"
-        )
-      }
-    >
-      ⏸ Deactivate
-    </button>
-
-  )}
-
-</div>
+                      </div>
 
 
-                  {/* =================================================
-                      EDIT BUTTONS
-                  ================================================= */}
+                      <button
+                        type="button"
+                        className="btn-activation-request"
+                        onClick={() =>
+                          activateFaculty(
+                            teacher._id
+                          )
+                        }
+                      >
 
-                  <div className="action-row action-row-edit">
+                        🔔 Activate Faculty
 
-                    <button
-                      className="btn-edit-classes"
-                      onClick={() =>
-                        openEditClasses(
-                          teacher
-                        )
-                      }
-                    >
-                      Edit Classes
-                    </button>
+                      </button>
 
 
-                    <button
-                      className="btn-edit-subject"
-                      onClick={() =>
-                        openEditSubject(
-                          teacher
-                        )
-                      }
-                    >
-                      Edit Subject
-                    </button>
+                    </div>
+
+                )}
+
+
+                {/* =================================================
+                    NORMAL ACTION BUTTONS
+                    HIDDEN FOR ACTIVATION REQUEST
+                ================================================= */}
+
+                {!(
+                  teacher.activationRequested &&
+                  teacher.isApproved &&
+                  !teacher.isActive
+                ) && (
+
+                  <div className="teacher-actions">
+
+
+                    {/* =================================================
+                        STATUS ACTIONS
+                    ================================================= */}
+
+                    <div className="action-row action-row-status">
+
+
+                      {/* =================================================
+                          FULLY REJECTED
+                      ================================================= */}
+
+                      {teacher.isRejected ? (
+
+                        <span className="rejected-label">
+
+                          Rejected
+
+                        </span>
+
+
+                      ) : teacher.documentReuploadToken ? (
+
+
+                        /* =================================================
+                           DOCUMENT REJECTED
+                           WAITING FOR RE-UPLOAD
+                        ================================================= */
+
+                        <span className="document-reupload-label">
+
+                          Waiting for reupload document
+
+                        </span>
+
+
+                      ) : !teacher.isApproved ? (
+
+
+                        /* =================================================
+                           PENDING TEACHER
+                        ================================================= */
+
+                        <>
+
+
+                          <button
+                            className="btn-approve"
+                            onClick={() =>
+                              updateStatus(
+                                teacher._id,
+                                "Approved"
+                              )
+                            }
+                          >
+
+                            Approve
+
+                          </button>
+
+
+                          <button
+                            className="btn-reject-document"
+                            onClick={() =>
+                              updateStatus(
+                                teacher._id,
+                                "Reject Document"
+                              )
+                            }
+                          >
+
+                            Reject Document
+
+                          </button>
+
+
+                          <button
+                            className="btn-reject"
+                            onClick={() =>
+                              updateStatus(
+                                teacher._id,
+                                "Rejected"
+                              )
+                            }
+                          >
+
+                            Reject
+
+                          </button>
+
+                        </>
+
+
+                      ) : teacher.isActive === false ? (
+
+
+                        /* =================================================
+                           APPROVED BUT DEACTIVATED
+                        ================================================= */
+
+                        <button
+                          className="btn-activate"
+                          onClick={() =>
+                            updateStatus(
+                              teacher._id,
+                              "Activate"
+                            )
+                          }
+                        >
+
+                          ✓ Activate
+
+                        </button>
+
+
+                      ) : (
+
+
+                        /* =================================================
+                           APPROVED + ACTIVE
+                        ================================================= */
+
+                        <button
+                          className="btn-deactivate"
+                          onClick={() =>
+                            updateStatus(
+                              teacher._id,
+                              "Deactivate"
+                            )
+                          }
+                        >
+
+                          ⏸ Deactivate
+
+                        </button>
+
+                      )}
+
+                    </div>
+
+
+                    {/* =================================================
+                        EDIT BUTTONS
+                    ================================================= */}
+
+                    <div className="action-row action-row-edit">
+
+
+                      <button
+                        className="btn-edit-classes"
+                        onClick={() =>
+                          openEditClasses(
+                            teacher
+                          )
+                        }
+                      >
+
+                        Edit Classes
+
+                      </button>
+
+
+                      <button
+                        className="btn-edit-subject"
+                        onClick={() =>
+                          openEditSubject(
+                            teacher
+                          )
+                        }
+                      >
+
+                        Edit Subject
+
+                      </button>
+
+                    </div>
+
 
                   </div>
 
-                </div>
+                )}
 
               </div>
 
@@ -998,7 +1274,9 @@ const ManageTeachers = () => {
         ) : (
 
           <div className="no-data">
+
             No teachers found
+
           </div>
 
         )}
@@ -1028,9 +1306,10 @@ const ManageTeachers = () => {
             }
           >
 
+
             <h3>
 
-              Edit Classes —{" "}
+              Edit Classes {" "}
 
               {
                 editingClassesFor.firstName
@@ -1060,6 +1339,7 @@ const ManageTeachers = () => {
                     editClasses.includes(
                       cls
                     );
+
 
                   return (
 
@@ -1096,6 +1376,7 @@ const ManageTeachers = () => {
 
             <div className="edit-classes-actions">
 
+
               <button
                 className="btn-cancel"
                 onClick={() =>
@@ -1104,15 +1385,21 @@ const ManageTeachers = () => {
                   )
                 }
               >
+
                 Cancel
+
               </button>
 
 
               <button
                 className="btn-save"
-                onClick={saveClasses}
+                onClick={
+                  saveClasses
+                }
               >
+
                 Save
+
               </button>
 
             </div>
@@ -1138,10 +1425,13 @@ const ManageTeachers = () => {
               null
             );
 
-            setSelectedSubject("");
+            setSelectedSubject(
+              ""
+            );
 
           }}
         >
+
 
           <div
             className="edit-subject-modal"
@@ -1149,6 +1439,7 @@ const ManageTeachers = () => {
               e.stopPropagation()
             }
           >
+
 
             <h3>
               Edit Subject
@@ -1180,7 +1471,9 @@ const ManageTeachers = () => {
 
 
             <select
-              value={selectedSubject}
+              value={
+                selectedSubject
+              }
               onChange={(e) =>
                 setSelectedSubject(
                   e.target.value
@@ -1200,7 +1493,9 @@ const ManageTeachers = () => {
                     key={subject}
                     value={subject}
                   >
+
                     {subject}
+
                   </option>
 
                 )
@@ -1211,6 +1506,7 @@ const ManageTeachers = () => {
 
             <div className="edit-subject-actions">
 
+
               <button
                 className="btn-cancel"
                 onClick={() => {
@@ -1219,22 +1515,30 @@ const ManageTeachers = () => {
                     null
                   );
 
-                  setSelectedSubject("");
+                  setSelectedSubject(
+                    ""
+                  );
 
                 }}
               >
+
                 Cancel
+
               </button>
 
 
               <button
                 className="btn-save"
-                onClick={saveSubject}
+                onClick={
+                  saveSubject
+                }
                 disabled={
                   !selectedSubject
                 }
               >
+
                 Save
+
               </button>
 
             </div>
@@ -1246,7 +1550,10 @@ const ManageTeachers = () => {
       )}
 
     </div>
+
   );
+
 };
+
 
 export default ManageTeachers;

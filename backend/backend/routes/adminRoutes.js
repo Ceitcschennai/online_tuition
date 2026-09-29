@@ -793,12 +793,32 @@ router.get("/teachers", async (req, res) => {
       ];
     }
 
-    if (filter === "approved") query.isApproved = true;
-    if (filter === "rejected") query.isRejected = true;
-    if (filter === "pending") {
-      query.isApproved = false;
-      query.isRejected = false;
-    }
+  if (filter === "approved") {
+
+  query.isApproved = true;
+
+}
+
+if (filter === "rejected") {
+
+  query.isRejected = true;
+
+}
+
+if (filter === "pending") {
+
+  query.isApproved = false;
+  query.isRejected = false;
+
+}
+
+if (filter === "activationRequested") {
+
+  query.isApproved = true;
+  query.isActive = false;
+  query.activationRequested = true;
+
+}
 
     const teachers = await Teacher.find(query)
   .select("-password")
