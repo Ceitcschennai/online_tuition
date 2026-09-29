@@ -2190,110 +2190,203 @@ if (
    has been removed.
 ================================================= */
 
+/* =================================================
+   GET TEACHER SUBJECTS
+================================================= */
+
 router.get(
   "/subjects/:teacherId",
   async (req, res) => {
     try {
-      const { teacherId } =
-        req.params;
+
+      const { teacherId } = req.params;
+
+
+      /* =================================================
+         VALIDATE TEACHER ID
+      ================================================= */
 
       if (!isValidObjectId(teacherId)) {
         return res.status(400).json({
           success: false,
-          message:
-            "Invalid teacher ID",
+          message: "Invalid teacher ID"
         });
       }
 
+
+      /* =================================================
+         FIND TEACHER
+      ================================================= */
+
       const teacher =
-        await Teacher.findById(
-          teacherId
-        )
+        await Teacher.findById(teacherId)
           .select(
-            "isApproved isRejected subjects classesAssigned"
+            "isApproved isRejected subjects classesAssigned preferredSubject"
           )
           .populate(
             "subjects",
             "name category classes"
           );
 
+
       if (!teacher) {
         return res.status(404).json({
           success: false,
-          message:
-            "Teacher not found",
+          message: "Teacher not found"
         });
       }
+
+
+      /* =================================================
+         CHECK APPROVAL
+      ================================================= */
 
       if (!teacher.isApproved) {
         return res.status(403).json({
           success: false,
-          message:
-            "Account not approved yet",
+          message: "Account not approved yet"
         });
       }
+
+
+      /* =================================================
+         TEACHER ASSIGNED CLASSES
+      ================================================= */
 
       const teacherClasses =
         normalizeClasses(
           teacher.classesAssigned
         );
 
+
+      /* =================================================
+         GET SUBJECTS DIRECTLY FROM SUBJECT COLLECTION
+         
+         This is the important part.
+
+         The Subject collection contains the teacher ID
+         in the "teacher" field.
+      ================================================= */
+
       const directSubjects =
         await Subject.find({
           teacher: teacherId,
-          isActive: true,
+          isActive: true
         })
           .select(
             "name category classes"
           )
           .sort({
-            name: 1,
+            name: 1
           });
+
+
+      /* =================================================
+         FALLBACK TO TEACHER.SUBJECTS
+         
+         If no subjects are found directly from the
+         Subject collection, use the subjects stored
+         inside the Teacher document.
+      ================================================= */
 
       const rawSubjects =
         directSubjects.length > 0
           ? directSubjects
           : (teacher.subjects || []);
 
-      /*
-        Add fallback classes to every subject.
-      */
+
+      /* =================================================
+         BUILD FINAL SUBJECT LIST
+      ================================================= */
 
       const subjects =
-        rawSubjects.map((subject) => ({
-          _id:
-            subject._id,
+        rawSubjects.map(
+          (subject) => ({
+
+            _id:
+              subject._id,
+
+            name:
+              subject.name || "",
+
+            category:
+              subject.category ||
+              "Regular",
+
+            classes:
+              getSubjectClasses(
+                subject,
+                teacherClasses
+              )
+
+          })
+        );
+
+
+      /* =================================================
+         FALLBACK TO PREFERRED SUBJECT
+         
+         If the teacher has no assigned subject yet,
+         but has a preferred subject from registration,
+         show that subject.
+      ================================================= */
+
+      if (
+        subjects.length === 0 &&
+        teacher.preferredSubject
+      ) {
+
+        subjects.push({
+
+          _id: null,
 
           name:
-            subject.name,
+            teacher.preferredSubject,
 
           category:
-            subject.category ||
             "Regular",
 
           classes:
-            getSubjectClasses(
-              subject,
-              teacherClasses
-            ),
-        }));
+            teacherClasses
+
+        });
+
+      }
+
+
+      /* =================================================
+         RESPONSE
+      ================================================= */
 
       return res.json({
+
         success: true,
-        subjects,
+
+        subjects
+
       });
 
+
     } catch (err) {
+
       console.error(
         "Fetch teacher subjects error:",
         err
       );
 
+
       return res.status(500).json({
+
         success: false,
+
         message:
           "Failed to fetch subjects",
+
+        error:
+          err.message
+
       });
+
     }
   }
 );
