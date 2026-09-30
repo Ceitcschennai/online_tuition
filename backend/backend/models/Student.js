@@ -73,7 +73,12 @@ documentReuploadExpires: {
     enum: ['Pending', 'Approved', 'Rejected'],
     default: 'Pending'
   },
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+
+activationRequested: {
+  type: Boolean,
+  default: false
+}
 }, { timestamps: true });
 
 studentSchema.virtual('isApproved').get(function () {

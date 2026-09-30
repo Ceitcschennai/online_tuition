@@ -82,6 +82,26 @@ router.post("/login", async (req, res) => {
         });
       }
 
+  /* =========================
+     DOCUMENT RE-UPLOAD LOGIN
+  ========================= */
+
+  let isReuploadLogin = false;
+
+  if (reuploadToken) {
+    if (
+      user.documentReuploadToken === reuploadToken &&
+      user.documentReuploadExpires &&
+      user.documentReuploadExpires > new Date()
+    ) {
+      isReuploadLogin = true;
+    } else {
+      return res.status(403).json({
+        message: "Invalid or expired document re-upload link"
+      });
+    }
+  }
+
       /* =========================
          REJECTED STUDENT
       ========================= */
@@ -130,21 +150,23 @@ router.post("/login", async (req, res) => {
          STUDENT LOGIN RESPONSE
       ========================= */
       return res.json({
-        success: true,
-        token,
-        role: "student",
+  success: true,
+  token,
+  role: "student",
 
-        user: userObj,
+  user: userObj,
 
-        approvalStatus:
-          user.approvalStatus || "Pending",
+  approvalStatus:
+    user.approvalStatus || "Pending",
 
-        isApproved:
-          user.approvalStatus === "Approved",
+  isApproved:
+    user.approvalStatus === "Approved",
 
-        isRejected:
-          user.approvalStatus === "Rejected"
-      });
+  isRejected:
+    user.approvalStatus === "Rejected",
+
+  isReuploadLogin
+});
     }
 
     /* =========================

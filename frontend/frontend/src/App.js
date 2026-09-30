@@ -21,6 +21,7 @@ import Subjects from "./pages/Subjects";
 import SubjectDetails from "./pages/SubjectDetails";
 
 import StudentRegister from "./pages/StudentRegister";
+import StudentDocumentReupload from "./pages/StudentDocumentReupload";
 import TeacherRegister from "./pages/TeacherRegister";
 import AdminRegister from "./pages/AdminRegister";
 
@@ -161,6 +162,37 @@ const AppContent = () => {
 
 
   /* =======================================================
+     UPDATE APP USER WHEN USER DATA CHANGES
+  ======================================================= */
+
+  useEffect(() => {
+
+    const handleUserUpdated = () => {
+
+      setStudent(
+        getStoredUser()
+      );
+
+    };
+
+    window.addEventListener(
+      "userUpdated",
+      handleUserUpdated
+    );
+
+    return () => {
+
+      window.removeEventListener(
+        "userUpdated",
+        handleUserUpdated
+      );
+
+    };
+
+  }, []);
+
+
+  /* =======================================================
      LOCATION
   ======================================================= */
 
@@ -211,9 +243,15 @@ const AppContent = () => {
     isAdminRegisterPage;
 
 
+  const isStudentDocumentReuploadPage =
+    location.pathname ===
+    "/student-document-reupload";
+
+
   const isSpecialPage =
     isLoginPage ||
-    isRegistrationPage;
+    isRegistrationPage ||
+    isStudentDocumentReuploadPage;
 
 
   /* =======================================================
@@ -223,36 +261,52 @@ const AppContent = () => {
   const storedUser =
     getStoredUser();
 
-    const isRestrictedTeacher =
-  isLoggedIn &&
-  userRole === "teacher" &&
-  storedUser?.approvalStatus === "Approved" &&
-  storedUser?.isActive === false;
 
-  const isPendingUser =
+  const isRestrictedTeacher =
+    isLoggedIn &&
+    userRole === "teacher" &&
+    storedUser?.approvalStatus === "Approved" &&
+    storedUser?.isActive === false;
+
+
+  const isRestrictedStudent =
+    isLoggedIn &&
+    userRole === "student" &&
+    storedUser?.approvalStatus === "Approved" &&
+    storedUser?.isActive === false;
+
+
+ const isPendingUser =
   isLoggedIn &&
   userRole !== "admin" &&
   (
-    (userRole === "student" &&
-      storedUser?.approvalStatus !== "Approved") ||
-    (userRole === "teacher" &&
-      storedUser?.isApproved !== true)
+    (
+      userRole === "student" &&
+      storedUser?.approvalStatus !== "Approved"
+    ) ||
+    (
+      userRole === "teacher" &&
+      storedUser?.isApproved !== true &&
+      storedUser?.approvalStatus !== "Approved"
+    )
   );
 
-const allowedPendingPaths =
-  userRole === "student"
-    ? [
-        "/",
-        "/student-dashboard",
-        "/profile"
-      ]
-    : userRole === "teacher"
-    ? [
-        "/",
-        "/teacher-dashboard",
-        "/teacher-profile"
-      ]
-    : [];
+  const allowedPendingPaths =
+    userRole === "student"
+      ? [
+          "/",
+          "/student-dashboard",
+          "/profile",
+          "/student-document-reupload"
+        ]
+      : userRole === "teacher"
+      ? [
+          "/",
+          "/teacher-dashboard",
+          "/teacher-profile"
+        ]
+      : [];
+
 
   const isWaitingPage =
     location.pathname ===
@@ -264,16 +318,44 @@ const allowedPendingPaths =
       location.pathname
     );
 
-const allowedRestrictedTeacherPaths = [
-  "/",
-  "/teacher-dashboard",
-  "/teacher-profile"
-];
 
-const isRestrictedTeacherAllowedPath =
-  allowedRestrictedTeacherPaths.includes(
-    location.pathname
-  );
+  /* =======================================================
+     RESTRICTED TEACHER PATHS
+  ======================================================= */
+
+  const allowedRestrictedTeacherPaths = [
+    "/",
+    "/teacher-dashboard",
+    "/teacher-profile"
+  ];
+
+
+  /* =======================================================
+     RESTRICTED STUDENT PATHS
+  ======================================================= */
+
+  const allowedRestrictedStudentPaths = [
+    "/",
+    "/student-dashboard",
+    "/profile"
+  ];
+
+
+  const isRestrictedTeacherAllowedPath =
+    allowedRestrictedTeacherPaths.includes(
+      location.pathname
+    );
+
+
+  const isRestrictedStudentAllowedPath =
+    allowedRestrictedStudentPaths.includes(
+      location.pathname
+    );
+
+
+  /* =======================================================
+     ACCESS CONTROL
+  ======================================================= */
 
   const shouldShowWaitingPage =
     isPendingUser &&
@@ -282,11 +364,19 @@ const isRestrictedTeacherAllowedPath =
     !isLoginPage &&
     !isRegistrationPage;
 
-    const shouldRestrictTeacher =
-  isRestrictedTeacher &&
-  !isRestrictedTeacherAllowedPath &&
-  !isLoginPage &&
-  !isRegistrationPage;
+
+  const shouldRestrictTeacher =
+    isRestrictedTeacher &&
+    !isRestrictedTeacherAllowedPath &&
+    !isLoginPage &&
+    !isRegistrationPage;
+
+
+  const shouldRestrictStudent =
+    isRestrictedStudent &&
+    !isRestrictedStudentAllowedPath &&
+    !isLoginPage &&
+    !isRegistrationPage;
 
 
   /* =======================================================
@@ -454,13 +544,34 @@ const isRestrictedTeacherAllowedPath =
 
     }
 
-   if (shouldRestrictTeacher) {
 
-  return (
-    <WaitingForApproval />
-  );
+    /* =====================================================
+       RESTRICTED TEACHER
+    ===================================================== */
 
-}
+    if (shouldRestrictTeacher) {
+
+      return (
+        <WaitingForApproval />
+      );
+
+    }
+
+
+    /* =====================================================
+       RESTRICTED STUDENT
+    ===================================================== */
+
+    if (shouldRestrictStudent) {
+
+      return (
+        <Navigate
+          to="/student-dashboard"
+          replace
+        />
+      );
+
+    }
 
 
     return (
@@ -508,6 +619,14 @@ const isRestrictedTeacherAllowedPath =
           path="/register/student"
           element={
             <StudentRegister />
+          }
+        />
+
+
+        <Route
+          path="/student-document-reupload"
+          element={
+            <StudentDocumentReupload />
           }
         />
 
@@ -869,34 +988,13 @@ const isRestrictedTeacherAllowedPath =
 
           <main
             className={
-
-              /*
-                PUBLIC PAGES
-
-                Home page must use public-content.
-                This removes:
-                - 70px sidebar space
-                - 24px outer border space
-
-                DASHBOARD PAGES
-
-                Logged-in users use sidebar layout.
-              */
-
               !isLoggedIn
-
                 ? "main-content public-content"
-
                 : isMobile
-
                 ? "main-content"
-
                 : sidebarOpen
-
                 ? "main-content sidebar-open"
-
                 : "main-content sidebar-collapsed"
-
             }
           >
 

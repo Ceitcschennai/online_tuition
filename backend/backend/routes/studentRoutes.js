@@ -495,87 +495,194 @@ router.post(
 
           subject:
             "CeiT Academy - Online Tuition | Registration Received",
+html: `
+  <div
+    style="
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #f4f6f8;
+      padding: 30px 15px;
+    "
+  >
 
-          html: `
-            <div
-              style="
-                font-family: Arial, sans-serif;
-                line-height: 1.7;
-                color: #333;
-                max-width: 650px;
-                margin: 0 auto;
-                padding: 20px;
-              "
-            >
+    <div
+      style="
+        max-width: 650px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 35px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      "
+    >
 
-              <h2 style="color: #4b3f9f;">
-                ${COMPANY_NAME}
-              </h2>
+      <h2
+        style="
+          color: #2c3e50;
+          margin-bottom: 5px;
+        "
+      >
+        ${COMPANY_NAME}
+      </h2>
 
-              <h3>
-                Registration Received
-              </h3>
+      <p
+        style="
+          color: #777;
+          margin-top: 0;
+          font-size: 14px;
+        "
+      >
+        Student Registration Confirmation
+      </p>
 
-              <p>
-                Dear ${firstName},
-              </p>
+      <hr
+        style="
+          border: none;
+          border-top: 1px solid #e5e5e5;
+          margin: 20px 0;
+        "
+      >
 
-              <p>
-                Thank you for registering with
-                <strong>${COMPANY_NAME}</strong>.
-              </p>
+      <p
+        style="
+          font-size: 16px;
+          color: #333;
+        "
+      >
+        Dear ${firstName},
+      </p>
 
-              <p>
-                Your registration has been
-                <strong>successfully received</strong>.
-              </p>
+      <p
+        style="
+          font-size: 16px;
+          color: #333;
+          line-height: 1.6;
+        "
+      >
+        Thank you for registering with
+        <strong>${COMPANY_NAME}</strong>.
+      </p>
 
-              <p>
-                Your profile is currently
-                <strong>waiting for admin approval</strong>.
-              </p>
+      <p
+        style="
+          font-size: 16px;
+          color: #333;
+          line-height: 1.6;
+        "
+      >
+        We have successfully received your
+        registration details and submitted documents.
+      </p>
 
-              <p>
-                Our admin team will review your
-                registration details and submitted documents.
-              </p>
+      <div
+        style="
+          background-color: #fff8e6;
+          border-left: 5px solid #f0ad4e;
+          padding: 15px 18px;
+          margin: 25px 0;
+        "
+      >
 
-              <p>
-                Once your profile has been approved,
-                we will send you another email confirming
-                that your account is ready to use.
-              </p>
+        <p
+          style="
+            margin: 0;
+            color: #8a6d3b;
+            font-size: 17px;
+            font-weight: bold;
+          "
+        >
+          Profile Status: PENDING ADMIN APPROVAL
+        </p>
 
-              <p>
-                After receiving the approval email,
-                you can log in to the
-                <strong>${COMPANY_NAME}</strong>
-                portal using your registered email address
-                and password.
-              </p>
+      </div>
 
-              <p>
-                Please wait for the approval confirmation
-                before attempting to log in.
-              </p>
+      <p
+        style="
+          font-size: 16px;
+          color: #333;
+          line-height: 1.6;
+        "
+      >
+        Your student profile is currently waiting
+        for admin approval.
+        Our admin team will review your registration
+        details and the documents submitted by you.
+      </p>
 
-              <br />
+      <p
+        style="
+          font-size: 16px;
+          color: #333;
+          line-height: 1.6;
+        "
+      >
+        Once your profile has been reviewed and
+        approved, you will receive another email
+        confirming that your student account is
+        ready to use.
+      </p>
 
-              <p>
-                Thank you for choosing
-                <strong>${COMPANY_NAME}</strong>.
-              </p>
+      <p
+        style="
+          font-size: 16px;
+          color: #333;
+          line-height: 1.6;
+        "
+      >
+        Please wait for the approval confirmation
+        email before attempting to log in.
+      </p>
 
-              <p>
-                Regards,<br />
-                <strong>Admin</strong><br />
-                <strong>${COMPANY_NAME}</strong>
-              </p>
+      <p
+        style="
+          font-size: 16px;
+          color: #333;
+          line-height: 1.6;
+        "
+      >
+        After receiving the approval email, you can
+        log in to the
+        <strong>${COMPANY_NAME}</strong>
+        portal using your registered email address
+        and password.
+      </p>
 
-            </div>
-          `,
-        });
+      <hr
+        style="
+          border: none;
+          border-top: 1px solid #e5e5e5;
+          margin: 30px 0 20px;
+        "
+      >
 
+      <p
+        style="
+          font-size: 14px;
+          color: #777;
+          line-height: 1.6;
+          margin-bottom: 0;
+        "
+      >
+        Thank you for choosing
+        <strong>${COMPANY_NAME}</strong>.
+      </p>
+
+      <p
+        style="
+          font-size: 14px;
+          color: #777;
+          line-height: 1.6;
+        "
+      >
+        Regards,<br />
+        <strong>Admin</strong><br />
+        <strong>${COMPANY_NAME}</strong>
+      </p>
+
+    </div>
+
+  </div>
+`,
+  });
         registrationEmailSent = true;
 
         console.log(
@@ -889,6 +996,7 @@ if (status === "Approved") {
 
   student.approvalStatus = "Approved";
   student.isActive = true;
+  student.activationRequested = false;
 
   student.documentReuploadToken = null;
   student.documentReuploadExpires = null;
@@ -897,6 +1005,7 @@ if (status === "Approved") {
 
   student.approvalStatus = "Pending";
   student.isActive = false;
+  student.activationRequested = false;
 
   student.documentReuploadToken =
     crypto.randomBytes(32).toString("hex");
@@ -905,11 +1014,11 @@ if (status === "Approved") {
     new Date(
       Date.now() + 24 * 60 * 60 * 1000
     );
-
 } else {
 
   student.approvalStatus = "Rejected";
   student.isActive = false;
+  student.activationRequested = false;
 
   student.documentReuploadToken = null;
   student.documentReuploadExpires = null;
@@ -1000,7 +1109,7 @@ await student.save();
       try {
 
         const reuploadLink =
-  `${process.env.FRONTEND_URL}/register/student?reuploadToken=${student.documentReuploadToken}`;
+  `${process.env.FRONTEND_URL}/login?reuploadToken=${student.documentReuploadToken}&role=student`;
 
         const emailSubject =
   status === "Approved"
@@ -1383,7 +1492,363 @@ await student.save();
     }
   }
 );
+/* =================================================
+   ADMIN — ACTIVATE / DEACTIVATE STUDENT
+================================================= */
 
+router.put(
+  "/admin/:id/status",
+  async (req, res) => {
+    try {
+      const { action } = req.body;
+
+      if (!["activate", "deactivate"].includes(action)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid action",
+        });
+      }
+
+      const student = await Student.findById(
+        req.params.id
+      );
+
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: "Student not found",
+        });
+      }
+
+      /* =========================================
+         ONLY APPROVED STUDENTS CAN BE
+         ACTIVATED / DEACTIVATED
+      ========================================= */
+
+      if (student.approvalStatus !== "Approved") {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Only approved students can be activated or deactivated",
+        });
+      }
+
+      /* =========================================
+         UPDATE ACTIVE STATUS
+      ========================================= */
+
+      if (action === "activate") {
+
+        student.isActive = true;
+        student.activationRequested = false;
+
+      } else {
+
+        student.isActive = false;
+        student.activationRequested = false;
+
+      }
+
+      await student.save();
+
+      /* =========================================
+         ACTIVITY LOG
+      ========================================= */
+
+      try {
+
+        await Activity.create({
+          type: "student",
+
+          message:
+            `Student ${student.firstName} ${student.lastName} was ${
+              action === "activate"
+                ? "activated"
+                : "deactivated"
+            }`,
+
+          time: new Date(),
+        });
+
+      } catch (activityError) {
+
+        console.error(
+          "Student status activity error:",
+          activityError.message
+        );
+
+      }
+
+      return res.json({
+        success: true,
+
+        message:
+          action === "activate"
+            ? "Student activated successfully"
+            : "Student deactivated successfully",
+
+        student: {
+          _id: student._id,
+
+          approvalStatus:
+            student.approvalStatus,
+
+          isActive:
+            student.isActive,
+
+          activationRequested:
+            student.activationRequested,
+        },
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Student status update error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+
+        message:
+          "Failed to update student status",
+
+        error: error.message,
+      });
+
+    }
+  }
+);
+
+
+/* =================================================
+   STUDENT REQUEST ACTIVATION
+================================================= */
+
+router.post(
+  "/request-activation/:studentId",
+  async (req, res) => {
+
+    try {
+
+      const { studentId } = req.params;
+
+      if (
+        !mongoose.Types.ObjectId.isValid(
+          studentId
+        )
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message: "Invalid student ID",
+        });
+
+      }
+
+      const student =
+        await Student.findById(
+          studentId
+        );
+
+      if (!student) {
+
+        return res.status(404).json({
+          success: false,
+          message: "Student not found",
+        });
+
+      }
+
+      /* =========================================
+         ONLY APPROVED STUDENTS CAN REQUEST
+         ACTIVATION
+      ========================================= */
+
+      if (
+        student.approvalStatus !==
+        "Approved"
+      ) {
+
+        return res.status(403).json({
+          success: false,
+          message:
+            "Only approved students can request activation",
+        });
+
+      }
+
+      /* =========================================
+         STUDENT MUST BE DEACTIVATED
+      ========================================= */
+
+      if (student.isActive) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Your student account is already active",
+        });
+
+      }
+
+      /* =========================================
+         ALREADY REQUESTED
+      ========================================= */
+
+      if (
+        student.activationRequested
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Activation request has already been submitted",
+        });
+
+      }
+
+      /* =========================================
+         CREATE ACTIVATION REQUEST
+      ========================================= */
+
+      student.activationRequested =
+        true;
+
+      student.isActive = false;
+
+      await student.save();
+
+      /* =========================================
+         ACTIVITY LOG
+      ========================================= */
+
+      try {
+
+        await Activity.create({
+          type: "student",
+
+          message:
+            `Student ${student.firstName} ${student.lastName} requested account activation`,
+
+          time: new Date(),
+        });
+
+      } catch (activityError) {
+
+        console.error(
+          "Student activation request activity error:",
+          activityError.message
+        );
+
+      }
+
+      return res.json({
+        success: true,
+
+        message:
+          "Activation request submitted successfully. Please wait for admin approval.",
+
+        student: {
+
+          _id:
+            student._id,
+
+          approvalStatus:
+            student.approvalStatus,
+
+          isActive:
+            student.isActive,
+
+          activationRequested:
+            student.activationRequested,
+
+        },
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Student activation request error:",
+        error
+      );
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to submit activation request",
+
+        error:
+          error.message,
+
+      });
+
+    }
+  }
+);
+
+
+/* =================================================
+   ADMIN — GET STUDENT ACTIVATION REQUESTS
+================================================= */
+
+router.get(
+  "/admin/activation-requests",
+  async (req, res) => {
+
+    try {
+
+      const students =
+        await Student.find({
+
+          approvalStatus:
+            "Approved",
+
+          isActive:
+            false,
+
+          activationRequested:
+            true,
+
+        })
+        .select("-password")
+        .sort({
+          createdAt: -1,
+        });
+
+      return res.json({
+
+        success: true,
+
+        students,
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Fetch student activation requests error:",
+        error
+      );
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to fetch student activation requests",
+
+        error:
+          error.message,
+
+      });
+
+    }
+  }
+);
 /* =================================================
    STUDENT DASHBOARD
 ================================================= */
@@ -1619,24 +2084,30 @@ router.get(
         // =================================================
         // STUDENT
         // =================================================
+student: {
 
-        student: {
+  id:
+    student._id,
 
-          id:
-            student._id,
+  firstName:
+    student.firstName,
 
-          firstName:
-            student.firstName,
+  lastName:
+    student.lastName,
 
-          lastName:
-            student.lastName,
+  class:
+    student.class,
 
-          class:
-            student.class,
+  approvalStatus:
+    student.approvalStatus,
 
-          approvalStatus:
-            student.approvalStatus,
-        },
+  isActive:
+    student.isActive,
+
+  activationRequested:
+    student.activationRequested,
+},
+     
       });
 
     } catch (err) {
@@ -1753,56 +2224,6 @@ router.get(
   }
 );
 
-// =================================================
-// STUDENT DOCUMENT RE-UPLOAD
-// =================================================
-// =================================================
-// GET STUDENT FOR DOCUMENT RE-UPLOAD
-// =================================================
-
-router.get("/document-reupload/:token", async (req, res) => {
-  try {
-    const { token } = req.params;
-
-    const student = await Student.findOne({
-      documentReuploadToken: token,
-      documentReuploadExpires: { $gt: new Date() },
-    }).select(
-      "-password -documentReuploadToken -documentReuploadExpires"
-    );
-
-    if (!student) {
-      return res.status(400).json({
-        message: "Invalid or expired document re-upload link.",
-      });
-    }
-
-    res.json({
-      success: true,
-      student: {
-        title: student.title,
-        firstName: student.firstName,
-        lastName: student.lastName,
-        mobile: student.mobile,
-        syllabus: student.syllabus,
-        studentClass: student.class,
-        timezone: student.timezone,
-        email: student.email,
-        emisNumber: student.emisNumber,
-      },
-    });
-
-  } catch (error) {
-    console.error(
-      "Document re-upload GET error:",
-      error
-    );
-
-    res.status(500).json({
-      message: "Server error.",
-    });
-  }
-});
 
 router.post(
   "/document-reupload/:token",
@@ -1835,6 +2256,7 @@ student.proof = proof;
 
 student.approvalStatus = "Pending";
 student.isActive = false;
+student.activationRequested = false;
 
 student.documentReuploadToken = null;
 student.documentReuploadExpires = null;

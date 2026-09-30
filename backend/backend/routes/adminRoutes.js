@@ -151,11 +151,31 @@ router.get("/students", async (req, res) => {
       ];
     }
 
-    if (filter === "approved") query.approvalStatus = "Approved";
-    if (filter === "pending") query.approvalStatus = "Pending";
-    if (filter === "rejected") query.approvalStatus = "Rejected";
-    if (filter === "paid") query.status = "Paid";
-    if (filter === "unpaid") query.status = "Unpaid";
+    if (filter === "approved") {
+  query.approvalStatus = "Approved";
+}
+
+if (filter === "pending") {
+  query.approvalStatus = "Pending";
+}
+
+if (filter === "rejected") {
+  query.approvalStatus = "Rejected";
+}
+
+if (filter === "paid") {
+  query.status = "Paid";
+}
+
+if (filter === "unpaid") {
+  query.status = "Unpaid";
+}
+
+if (filter === "activationRequested") {
+  query.approvalStatus = "Approved";
+  query.isActive = false;
+  query.activationRequested = true;
+}
 
     let students = await Student.find(query).sort({ createdAt: -1 });
 

@@ -317,12 +317,12 @@ const Login = () => {
 
         } else if (reuploadRole === "student") {
 
-          window.location.href =
-            `/register/student?reuploadToken=${encodeURIComponent(
-              reuploadToken
-            )}`;
+  window.location.href =
+    `/student-document-reupload?reuploadToken=${encodeURIComponent(
+      reuploadToken
+    )}`;
 
-        } else {
+} else {
 
           /*
             If the token exists but the role is missing,

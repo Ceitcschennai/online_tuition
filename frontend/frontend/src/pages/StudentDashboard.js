@@ -75,36 +75,32 @@ const StudentDashboard = ({ student: propStudent }) => {
   // LOAD STUDENT FROM LOCAL STORAGE
   // =========================================================
 
-  useEffect(() => {
+useEffect(() => {
 
-    if (!student) {
+  const loadedStudent = getStudentData();
 
-      const loadedStudent = getStudentData();
+  if (loadedStudent) {
+    setStudent(loadedStudent);
+  } else {
+    setLoading(false);
+  }
 
-      if (loadedStudent) {
-
-        setStudent(loadedStudent);
-      }
-    }
-
-  }, [student]);
-
+}, []);
 
   // =========================================================
   // FETCH DASHBOARD DATA
   // =========================================================
 
-  useEffect(() => {
+ useEffect(() => {
 
-    if (
-      student &&
-      (student.id || student._id)
-    ) {
+  const studentId =
+    student?.id || student?._id;
 
-      fetchDashboardData();
-    }
+  if (studentId) {
+    fetchDashboardData();
+  }
 
-  }, [student]);
+}, [student?.id, student?._id]);
 
 
   // =========================================================
@@ -148,153 +144,290 @@ const StudentDashboard = ({ student: propStudent }) => {
   // FETCH DASHBOARD DATA
   // =========================================================
 
-  const fetchDashboardData = async () => {
+  // =========================================================
+// FETCH DASHBOARD DATA
+// =========================================================
 
-    try {
+const fetchDashboardData = async () => {
 
-      const studentId =
-        student?.id || student?._id;
+  const studentId =
+    student?.id || student?._id;
 
-      if (!studentId) {
+  if (!studentId) {
+    setLoading(false);
+    return;
+  }
+// Stop blocking the dashboard UI while APIs load
+setLoading(false);
 
-        setLoading(false);
+  // =======================================================
+  // 1. FETCH MAIN STUDENT DASHBOARD FIRST
+  // =======================================================
 
-        return;
-      }
+  try {
 
-
-      const studentClass = (
-        student?.class ||
-        localStorage.getItem('studentClass') ||
-        localStorage.getItem('userClass') ||
-        '10'
-      )
-        .toString()
-        .replace(/^Class\s*/i, '');
-
-
-      // =====================================================
-      // FETCH ASSIGNMENTS
-      // =====================================================
-
-      const assignmentsResponse =
-        await fetch(
-          `${API_BASE_URL}/api/assignments/student/${studentId}?class=${studentClass}`
-        );
-
-
-      const assignmentsData =
-        await assignmentsResponse.json();
-
-
-      let pendingCount = 0;
-
-      let completedCount = 0;
-
-
-      if (
-        assignmentsData.success &&
-        assignmentsData.assignments
-      ) {
-
-        pendingCount =
-          assignmentsData.assignments.filter(
-            assignment =>
-              !assignment.hasSubmitted
-          ).length;
-
-
-        completedCount =
-          assignmentsData.assignments.filter(
-            assignment =>
-              assignment.hasSubmitted
-          ).length;
-      }
-
-
-      // =====================================================
-      // FETCH STUDENT DASHBOARD
-      // =====================================================
-
-      const dashboardResponse =
-        await fetch(
-          `${API_BASE_URL}/api/student/${studentId}/dashboard`
-        );
-
-
-      if (dashboardResponse.ok) {
-
-        const dashboardData =
-          await dashboardResponse.json();
-
-
-        if (dashboardData.success) {
-
-          setStats({
-
-            enrolledSubjects:
-              dashboardData.stats?.enrolledSubjects || 0,
-
-            pendingAssignments:
-              pendingCount,
-
-            completedAssignments:
-              completedCount,
-
-            lastPayment:
-              dashboardData.stats?.lastPayment ||
-              'Pending',
-
-            attendance:
-              dashboardData.stats?.attendance || 0
-
-          });
-
-
-          setEnrolledSubjectsList(
-            dashboardData.enrolledSubjectsList || []
-          );
-
-        } else {
-
-          setStats(prev => ({
-            ...prev,
-
-            pendingAssignments:
-              pendingCount,
-
-            completedAssignments:
-              completedCount
-          }));
-        }
-
-      } else {
-
-        setStats(prev => ({
-          ...prev,
-
-          pendingAssignments:
-            pendingCount,
-
-          completedAssignments:
-            completedCount
-        }));
-      }
-
-    } catch (error) {
-
-      console.error(
-        'Error fetching dashboard data:',
-        error
+    const dashboardResponse =
+      await fetch(
+        `${API_BASE_URL}/api/student/${studentId}/dashboard`
       );
 
-    } finally {
 
-      setLoading(false);
+    if (dashboardResponse.ok) {
+
+      const dashboardData =
+        await dashboardResponse.json();
+
+
+      if (dashboardData.success) {
+
+        // -------------------------------------------------
+        // UPDATE STUDENT INFORMATION
+        // -------------------------------------------------
+
+        if (dashboardData.student) {
+
+          const updatedStudent = {
+            ...student,
+            ...dashboardData.student
+          };
+
+          setStudent(updatedStudent);
+
+          localStorage.setItem(
+            "user",
+            JSON.stringify(updatedStudent)
+          );
+
+          window.dispatchEvent(
+            new Event("userUpdated")
+          );
+        }
+
+
+        // -------------------------------------------------
+        // UPDATE MAIN DASHBOARD STATS
+        // -------------------------------------------------
+
+        setStats(prev => ({
+
+          ...prev,
+
+          enrolledSubjects:
+            dashboardData.stats?.enrolledSubjects || 0,
+
+          lastPayment:
+            dashboardData.stats?.lastPayment ||
+            "Pending",
+
+          attendance:
+            dashboardData.stats?.attendance || 0
+
+        }));
+
+
+        // -------------------------------------------------
+        // UPDATE SUBJECT LIST
+        // -------------------------------------------------
+
+        setEnrolledSubjectsList(
+          dashboardData.enrolledSubjectsList || []
+        );
+
+      }
+
     }
-  };
+
+  } catch (error) {
+
+    console.error(
+      "Error fetching student dashboard:",
+      error
+    );
+
+  } finally {
+
+    // IMPORTANT:
+    // Main dashboard is allowed to render
+    // even if assignments have a problem.
+
+    setLoading(false);
+
+  }
 
 
+  // =======================================================
+  // 2. FETCH ASSIGNMENTS SEPARATELY
+  // =======================================================
+
+  try {
+
+    const studentClass = (
+
+      student?.class ||
+
+      localStorage.getItem(
+        "studentClass"
+      ) ||
+
+      localStorage.getItem(
+        "userClass"
+      ) ||
+
+      "10"
+
+    )
+      .toString()
+      .replace(
+        /^Class\s*/i,
+        ""
+      );
+
+
+    const assignmentsResponse =
+      await fetch(
+        `${API_BASE_URL}/api/assignments/student/${studentId}?class=${studentClass}`
+      );
+
+
+    if (!assignmentsResponse.ok) {
+
+      console.warn(
+        "Assignments API returned:",
+        assignmentsResponse.status
+      );
+
+      return;
+    }
+
+
+    const assignmentsData =
+      await assignmentsResponse.json();
+
+
+    let pendingCount = 0;
+
+    let completedCount = 0;
+
+
+    if (
+      assignmentsData.success &&
+      Array.isArray(
+        assignmentsData.assignments
+      )
+    ) {
+
+      pendingCount =
+        assignmentsData.assignments.filter(
+          assignment =>
+            !assignment.hasSubmitted
+        ).length;
+
+
+      completedCount =
+        assignmentsData.assignments.filter(
+          assignment =>
+            assignment.hasSubmitted
+        ).length;
+
+    }
+
+
+    // -----------------------------------------------------
+    // UPDATE ONLY ASSIGNMENT COUNTS
+    // -----------------------------------------------------
+
+    setStats(prev => ({
+
+      ...prev,
+
+      pendingAssignments:
+        pendingCount,
+
+      completedAssignments:
+        completedCount
+
+    }));
+
+
+  } catch (error) {
+
+    console.error(
+      "Error fetching assignments:",
+      error
+    );
+
+    // Do NOT block the dashboard
+    // because assignments failed.
+
+  }
+
+};
+
+// =========================================================
+// REQUEST ACCOUNT ACTIVATION
+// =========================================================
+
+const handleRequestActivation = async () => {
+
+  try {
+
+    const studentId =
+      student?.id || student?._id;
+
+    if (!studentId) {
+      alert('Student information not found.');
+      return;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/student/request-activation/${studentId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success) {
+
+      const updatedStudent = {
+  ...student,
+  isActive: false,
+  activationRequested: true
+};
+
+setStudent(updatedStudent);
+localStorage.setItem("user", JSON.stringify(updatedStudent));
+window.dispatchEvent(new Event("userUpdated"));
+
+      alert(
+        'Activation request sent successfully. Please wait for admin approval.'
+      );
+
+    } else {
+
+      alert(
+        data.message ||
+        'Unable to send activation request.'
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      'Error requesting student activation:',
+      error
+    );
+
+    alert(
+      'Something went wrong while sending the activation request.'
+    );
+  }
+};
   // =========================================================
   // COPY CLASS LINK
   // =========================================================
@@ -462,6 +595,52 @@ const StudentDashboard = ({ student: propStudent }) => {
     );
   }
 
+  // =========================================================
+// DEACTIVATED STUDENT SCREEN
+// =========================================================
+
+if (
+  student?.approvalStatus === "Approved" &&
+  student?.isActive === false
+) {
+  return (
+    <div className="student-portal">
+
+      <div className="student-deactivated-card">
+
+        <div className="student-deactivated-icon">
+          🔒
+        </div>
+
+        <h1>
+          Your Account Has Been Deactivated
+        </h1>
+
+        <p>
+          Your student account is currently inactive.
+          You cannot access the other student features
+          until your account is activated by the administrator.
+        </p>
+
+        {!student.activationRequested ? (
+          <button
+            type="button"
+            className="student-request-activation-btn"
+            onClick={handleRequestActivation}
+          >
+            Request Activation
+          </button>
+        ) : (
+          <div className="student-activation-pending">
+            🔔 Activation Request Pending
+          </div>
+        )}
+
+      </div>
+
+    </div>
+  );
+}
 
   // =========================================================
   // LOADING
@@ -746,56 +925,174 @@ const StudentDashboard = ({ student: propStudent }) => {
       </div>
 
 
-      {/* =====================================================
-          STATUS BANNERS
-      ===================================================== */}
+     
 
-      <div className="student-header-info">
+      
 
-        {student &&
-          student.approvalStatus !==
-            'Approved' && (
+{/* =====================================================
+    STATUS BANNERS
+===================================================== */}
 
-          <div className="student-reminder-banner">
+<div className="student-header-info">
 
-            ⏳ Your registration is pending
-            admin approval.
+  {/* =====================================================
+      STUDENT ACCOUNT DEACTIVATED
+  ===================================================== */}
 
-          </div>
+  {student &&
+    student.approvalStatus === 'Approved' &&
+    student.isActive === false &&
+    student.activationRequested === false && (
 
-        )}
+    <div
+      className="student-reminder-banner"
+      style={{
+        background: '#fff7ed',
+        border: '1px solid #fed7aa',
+        color: '#c2410c',
+        padding: '16px 20px',
+        borderRadius: '10px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '15px',
+        flexWrap: 'wrap'
+      }}
+    >
 
+      <div>
 
-        {student &&
-          student.status !== 'Paid' &&
-          student.approvalStatus ===
-            'Approved' && (
+        <strong
+          style={{
+            display: 'block',
+            marginBottom: '4px'
+          }}
+        >
+          🔒 Your account has been deactivated
+        </strong>
 
-          <div className="student-reminder-banner">
-
-            ⚠️ You haven't completed the
-            payment yet. Please contact admin.
-
-          </div>
-
-        )}
-
-
-        {student &&
-          student.status === 'Paid' && (
-
-          <div className="student-reminder-banner student-success">
-
-            ✅ Your account is active and
-            payment is up to date!
-
-          </div>
-
-        )}
+        <span>
+          Your account is currently inactive.
+          You can request activation from the admin.
+        </span>
 
       </div>
 
 
+      <button
+        onClick={handleRequestActivation}
+        style={{
+          background: '#ea580c',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '8px',
+          padding: '10px 18px',
+          fontWeight: '700',
+          cursor: 'pointer'
+        }}
+      >
+        Request Activation
+      </button>
+
+    </div>
+
+  )}
+
+
+  {/* =====================================================
+      ACTIVATION REQUEST PENDING
+  ===================================================== */}
+
+  {student &&
+    student.approvalStatus === 'Approved' &&
+    student.isActive === false &&
+    student.activationRequested === true && (
+
+    <div
+      className="student-reminder-banner"
+      style={{
+        background: '#eff6ff',
+        border: '1px solid #bfdbfe',
+        color: '#1d4ed8',
+        padding: '16px 20px',
+        borderRadius: '10px'
+      }}
+    >
+
+      <strong
+        style={{
+          display: 'block',
+          marginBottom: '4px'
+        }}
+      >
+        🔔 Activation Request Pending
+      </strong>
+
+      <span>
+        Your activation request has been sent to the admin.
+        Please wait for approval.
+      </span>
+
+    </div>
+
+  )}
+
+
+  {/* =====================================================
+      REGISTRATION PENDING
+  ===================================================== */}
+
+  {student &&
+    student.approvalStatus !== 'Approved' && (
+
+    <div className="student-reminder-banner">
+
+      ⏳ Your registration is pending
+      admin approval.
+
+    </div>
+
+  )}
+
+
+  {/* =====================================================
+      PAYMENT PENDING
+  ===================================================== */}
+
+  {student &&
+    student.status !== 'Paid' &&
+    student.approvalStatus === 'Approved' &&
+    student.isActive === true && (
+
+    <div className="student-reminder-banner">
+
+      ⚠️ You haven't completed the
+      payment yet. Please contact admin.
+
+    </div>
+
+  )}
+
+
+  {/* =====================================================
+      ACTIVE ACCOUNT
+  ===================================================== */}
+
+  {student &&
+    student.status === 'Paid' &&
+    student.approvalStatus === 'Approved' &&
+    student.isActive === true && (
+
+    <div className="student-reminder-banner student-success">
+
+      ✅ Your account is active and
+      payment is up to date!
+
+    </div>
+
+  )}
+
+</div>
       {/* =====================================================
           LIVE CLASSES NOW
       ===================================================== */}

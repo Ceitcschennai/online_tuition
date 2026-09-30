@@ -551,7 +551,7 @@ const TeacherDashboard = () => {
    INACTIVE FACULTY VIEW
 ========================================================= */
 
-if (!teacherInfo.isActive) {
+if (teacherInfo.isApproved && !teacherInfo.isActive) {
   return (
     <div className="teacher-dashboard">
 

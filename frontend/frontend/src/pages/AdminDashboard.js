@@ -2341,6 +2341,8 @@ const AdminDashboard = () => {
     useState([]);
   const [activationRequests, setActivationRequests] =
   useState([]);
+const [studentActivationRequests, setStudentActivationRequests] =
+  useState([]);
 
 
 
@@ -2358,11 +2360,12 @@ const AdminDashboard = () => {
     useState(false);
 
 
- useEffect(() => {
+useEffect(() => {
 
   fetchPendingStudents();
   fetchPendingTeachers();
   fetchActivationRequests();
+  fetchStudentActivationRequests();
 
 }, []);
 
@@ -2509,7 +2512,40 @@ const AdminDashboard = () => {
       setActivationRequests([]);
     }
   };
+const fetchStudentActivationRequests =
+  async () => {
 
+    try {
+
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/student/admin/activation-requests`
+        );
+
+      if (!res.ok)
+        throw new Error(
+          "Failed to fetch student activation requests"
+        );
+
+      const data =
+        await res.json();
+
+      setStudentActivationRequests(
+        Array.isArray(data.students)
+          ? data.students
+          : []
+      );
+
+    } catch (err) {
+
+      console.error(
+        "Error fetching student activation requests:",
+        err.message
+      );
+
+      setStudentActivationRequests([]);
+    }
+  };
 
   // ─────────────────────────────────────────────
   // STUDENT APPROVAL
@@ -2745,7 +2781,74 @@ const handleTeacherStatus = async (
     setLoading(false);
   }
 };
+const handleStudentStatus = async (
+  studentId,
+  action
+) => {
 
+  try {
+
+    setLoading(true);
+
+    const res = await fetch(
+      `${API_BASE_URL}/api/student/admin/${studentId}/status`,
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          action,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+
+      throw new Error(
+        data.message ||
+        "Failed to update student status"
+      );
+
+    }
+
+    alert(
+      data.message ||
+      "Student status updated successfully"
+    );
+
+    setStudentActivationRequests(
+      (previousRequests) =>
+        previousRequests.filter(
+          (student) =>
+            student._id !== studentId
+        )
+    );
+
+    await fetchStudentActivationRequests();
+
+  } catch (err) {
+
+    console.error(
+      "Student status update error:",
+      err
+    );
+
+    alert(
+      err.message ||
+      "Failed to update student status"
+    );
+
+  } finally {
+
+    setLoading(false);
+
+  }
+};
   const resetState = () => {
 
     setSelectedStudent(null);
@@ -2780,6 +2883,40 @@ const handleTeacherStatus = async (
       className="activation-request-popup-btn"
       onClick={() => {
         window.location.href = "/manage-teachers";
+      }}
+    >
+      View Requests
+    </button>
+
+  </div>
+)}
+{studentActivationRequests.length > 0 && (
+  <div className="activation-request-popup">
+
+    <div className="activation-request-popup-icon">
+      🎓
+    </div>
+
+    <div className="activation-request-popup-content">
+
+      <h3>
+        Student Activation Request
+      </h3>
+
+      <p>
+        {studentActivationRequests.length} student
+        {studentActivationRequests.length > 1 ? "s" : ""} requested
+        account activation.
+      </p>
+
+    </div>
+
+    <button
+      type="button"
+      className="activation-request-popup-btn"
+      onClick={() => {
+        window.location.href =
+          "/manage-students";
       }}
     >
       View Requests

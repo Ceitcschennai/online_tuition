@@ -75,6 +75,8 @@ const ManageStudents = () => {
   const [actionLoading, setActionLoading] =
     useState(null);
 
+const [studentActivationRequests, setStudentActivationRequests] =
+  useState([]);
 
   /* =====================================================
      FETCH STUDENTS
@@ -162,6 +164,47 @@ const ManageStudents = () => {
     },
     []
   );
+
+  /* =====================================================
+   FETCH ACTIVATION REQUESTS
+===================================================== */
+
+const fetchStudentActivationRequests = useCallback(
+  async () => {
+
+    try {
+
+      const res = await fetch(
+        `${API_BASE_URL}/api/student/admin/activation-requests`
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(
+          data.message ||
+          "Failed to fetch activation requests"
+        );
+      }
+
+      setStudentActivationRequests(
+        Array.isArray(data.students)
+          ? data.students
+          : []
+      );
+
+    } catch (err) {
+
+      console.error(
+        "Failed to fetch student activation requests:",
+        err
+      );
+
+      setStudentActivationRequests([]);
+    }
+  },
+  []
+);
 
 
   /* =====================================================
@@ -275,6 +318,71 @@ const ManageStudents = () => {
 
   };
 
+  /* =====================================================
+   ACTIVATE / DEACTIVATE STUDENT
+===================================================== */
+
+const handleStudentStatus = async (
+  studentId,
+  action
+) => {
+
+  try {
+
+    setActionLoading(studentId);
+
+    const res = await fetch(
+      `${API_BASE_URL}/api/student/admin/${studentId}/status`,
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          action,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+
+      throw new Error(
+        data.message ||
+        "Failed to update student status"
+      );
+    }
+
+    alert(
+      data.message ||
+      "Student status updated successfully"
+    );
+
+    await fetchStudents();
+    await fetchStats();
+    await fetchStudentActivationRequests();
+
+  } catch (err) {
+
+    console.error(
+      "Student status update error:",
+      err
+    );
+
+    alert(
+      err.message ||
+      "Failed to update student status"
+    );
+
+  } finally {
+
+    setActionLoading(null);
+
+  }
+};
 
   /* =====================================================
      INITIAL FETCH
@@ -282,13 +390,15 @@ const ManageStudents = () => {
 
   useEffect(() => {
 
-    fetchStudents();
-    fetchStats();
+  fetchStudents();
+  fetchStats();
+  fetchStudentActivationRequests();
 
-  }, [
-    fetchStudents,
-    fetchStats,
-  ]);
+}, [
+  fetchStudents,
+  fetchStats,
+  fetchStudentActivationRequests,
+]);
 
 
   /* =====================================================
@@ -448,6 +558,12 @@ const ManageStudents = () => {
               Unpaid
             </option>
 
+           
+
+            <option value="activationRequested">
+  Activation Requested
+</option>
+
           </select>
 
         </div>
@@ -497,6 +613,101 @@ const ManageStudents = () => {
 
       </div>
 
+{/* =================================================
+    STUDENT ACTIVATION REQUESTS
+================================================= */}
+
+{studentActivationRequests.length > 0 && (
+  <div
+    style={{
+      marginBottom: "25px",
+      padding: "20px",
+      borderRadius: "12px",
+      background: "#eff6ff",
+      border: "1px solid #bfdbfe"
+    }}
+  >
+
+    <h3
+      style={{
+        marginTop: 0,
+        color: "#1d4ed8"
+      }}
+    >
+      🎓 Student Activation Requests
+    </h3>
+
+    <p>
+      {studentActivationRequests.length} student
+      {studentActivationRequests.length > 1 ? "s" : ""}
+      {" "}requested account activation.
+    </p>
+
+    <div className="students-list">
+
+      {studentActivationRequests.map(
+        (student) => (
+
+          <div
+            key={student._id}
+            className="student-card"
+          >
+
+            <h4>
+              {student.firstName}{" "}
+              {student.lastName}
+            </h4>
+
+            <p>
+              <strong>Email:</strong>{" "}
+              {student.email}
+            </p>
+
+            <p>
+              <strong>Class:</strong>{" "}
+              {student.class || "-"}
+            </p>
+
+            <p>
+              <strong>Status:</strong>{" "}
+              Approved
+            </p>
+
+            <p>
+              <strong>Account:</strong>{" "}
+              🔔 Activation Requested
+            </p>
+
+            <div className="student-actions">
+
+              <button
+                className="btn-approve"
+                disabled={
+                  actionLoading === student._id
+                }
+                onClick={() =>
+                  handleStudentStatus(
+                    student._id,
+                    "activate"
+                  )
+                }
+              >
+                {actionLoading === student._id
+                  ? "Processing..."
+                  : "✓ Activate Student"}
+              </button>
+
+            </div>
+
+          </div>
+
+        )
+      )}
+
+    </div>
+
+  </div>
+)}
 
       {/* =================================================
           STUDENT LIST
@@ -742,29 +953,121 @@ const ManageStudents = () => {
                         SHOW ONLY REJECT
                     ================================= */}
 
-                    {student.approvalStatus ===
-                      "Approved" ? (
+                    {/* =================================
+    APPROVED STUDENT
+================================= */}
 
-                      <button
-                        className="btn-reject"
-                        disabled={
-                          actionLoading ===
-                          student._id
-                        }
-                        onClick={() =>
-                          updateStatus(
-                            student._id,
-                            "Rejected"
-                          )
-                        }
-                      >
+{student.approvalStatus === "Approved" ? (
 
-                        {actionLoading ===
-                        student._id
-                          ? "Processing..."
-                          : "Reject"}
+  <>
+    {/* =================================
+        ACTIVE STUDENT
+        SHOW DEACTIVATE
+    ================================= */}
 
-                      </button>
+    {student.isActive === true && (
+      <button
+        className="btn-deactivate"
+        disabled={
+          actionLoading === student._id
+        }
+        onClick={() =>
+          handleStudentStatus(
+            student._id,
+            "deactivate"
+          )
+        }
+      >
+        {actionLoading === student._id
+          ? "Processing..."
+          : "⏸ Deactivate"}
+      </button>
+    )}
+
+    {/* =================================
+        DEACTIVATED + ACTIVATION REQUEST
+    ================================= */}
+
+    {student.isActive === false &&
+      student.activationRequested === true && (
+        <>
+          <div
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              borderRadius: "8px",
+              background: "#fff7ed",
+              border: "1px solid #fdba74",
+              color: "#ea580c",
+              fontWeight: "700",
+              textAlign: "center",
+              marginBottom: "10px"
+            }}
+          >
+            🔔 Activation Requested
+          </div>
+
+          <button
+            className="btn-approve"
+            disabled={
+              actionLoading === student._id
+            }
+            onClick={() =>
+              handleStudentStatus(
+                student._id,
+                "activate"
+              )
+            }
+          >
+            {actionLoading === student._id
+              ? "Activating..."
+              : "Activate Student"}
+          </button>
+
+          <button
+            className="btn-reject"
+            disabled={
+              actionLoading === student._id
+            }
+            onClick={() =>
+              updateStatus(
+                student._id,
+                "Rejected"
+              )
+            }
+          >
+            {actionLoading === student._id
+              ? "Processing..."
+              : "Reject"}
+          </button>
+        </>
+      )}
+
+    {/* =================================
+        DEACTIVATED
+        NO ACTIVATION REQUEST
+    ================================= */}
+
+    {student.isActive === false &&
+      student.activationRequested === false && (
+        <div
+          style={{
+            width: "100%",
+            padding: "10px 14px",
+            borderRadius: "8px",
+            background: "#f3f4f6",
+            border: "1px solid #d1d5db",
+            color: "#4b5563",
+            fontWeight: "600",
+            textAlign: "center"
+          }}
+        >
+          ⏸ Account Deactivated
+        </div>
+      )}
+  </>
+
+
 
                     ) : student.approvalStatus ===
   "Rejected" ? (
