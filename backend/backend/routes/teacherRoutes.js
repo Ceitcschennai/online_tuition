@@ -675,6 +675,170 @@ activationRequested: false,
         );
       }
 
+      // =================================================
+      // SEND NEW FACULTY REGISTRATION EMAIL TO COMPANY
+      // =================================================
+
+      try {
+        const COMPANY_EMAIL =
+          process.env.COMPANY_EMAIL;
+
+        if (COMPANY_EMAIL) {
+          console.log(
+            "📧 SENDING NEW FACULTY REGISTRATION EMAIL TO COMPANY:",
+            COMPANY_EMAIL
+          );
+
+          const registrationDate =
+            teacher.createdAt
+              ? new Date(
+                  teacher.createdAt
+                ).toLocaleString("en-IN")
+              : new Date().toLocaleString(
+                  "en-IN"
+                );
+
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+
+            to: COMPANY_EMAIL,
+
+            subject:
+              "CeiT Academy - New Faculty Registration",
+
+            html: `
+              <div style="
+                font-family: Arial, Helvetica, sans-serif;
+                background-color: #f4f6f8;
+                padding: 30px 15px;
+              ">
+
+                <div style="
+                  max-width: 650px;
+                  margin: 0 auto;
+                  background-color: #ffffff;
+                  border-radius: 10px;
+                  padding: 35px;
+                  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+                ">
+
+                  <h2 style="
+                    color: #2c3e50;
+                    margin-bottom: 5px;
+                  ">
+                    CeiT Academy - Online Tuition
+                  </h2>
+
+                  <p style="
+                    color: #777;
+                    margin-top: 0;
+                    font-size: 14px;
+                  ">
+                    New Faculty Registration
+                  </p>
+
+                  <hr style="
+                    border: none;
+                    border-top: 1px solid #e5e5e5;
+                    margin: 20px 0;
+                  ">
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                    line-height: 1.6;
+                  ">
+                    A new faculty registration has been
+                    submitted and is waiting for admin review.
+                  </p>
+
+                  <div style="
+                    background-color: #f8fafc;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin: 25px 0;
+                  ">
+
+                    <p style="margin: 8px 0;">
+                      <strong>Faculty Name:</strong>
+                      ${teacher.firstName} ${teacher.lastName}
+                    </p>
+
+                    <p style="margin: 8px 0;">
+                      <strong>Faculty Email:</strong>
+                      ${teacher.email}
+                    </p>
+
+                    <p style="margin: 8px 0;">
+                      <strong>Phone Number:</strong>
+                      ${teacher.mobile || "-"}
+                    </p>
+
+                    <p style="margin: 8px 0;">
+                      <strong>Registration Date:</strong>
+                      ${registrationDate}
+                    </p>
+
+                    <p style="margin: 8px 0;">
+                      <strong>Status:</strong>
+                      Pending Admin Approval
+                    </p>
+
+                  </div>
+
+                  <p style="
+                    font-size: 15px;
+                    color: #555;
+                    line-height: 1.6;
+                  ">
+                    Please review the faculty registration
+                    details and the submitted document, then
+                    approve or reject the registration.
+                  </p>
+
+                  <hr style="
+                    border: none;
+                    border-top: 1px solid #e5e5e5;
+                    margin: 30px 0 20px;
+                  ">
+
+                  <p style="
+                    font-size: 14px;
+                    color: #555;
+                    line-height: 1.6;
+                  ">
+                    Regards,<br>
+                    <strong>
+                      CeiT Academy - Online Tuition
+                    </strong>
+                  </p>
+
+                  <p style="
+                    font-size: 12px;
+                    color: #999;
+                    margin-top: 25px;
+                  ">
+                    This is an automated email from
+                    CeiT Academy - Online Tuition.
+                  </p>
+
+                </div>
+              </div>
+            `,
+          });
+
+          console.log(
+            "✅ NEW FACULTY REGISTRATION EMAIL SENT TO COMPANY:",
+            COMPANY_EMAIL
+          );
+        }
+      } catch (emailError) {
+        console.error(
+          "❌ NEW FACULTY REGISTRATION EMAIL TO COMPANY FAILED:",
+          emailError.message
+        );
+      }
+
       return res.status(201).json({
         success: true,
 
@@ -1609,6 +1773,222 @@ if (status === "Reject Document") {
         console.error(
           "❌ FACULTY EMAIL FAILED:",
           emailError
+        );
+      }
+
+      // =================================================
+      // SEND COMPANY NOTIFICATION EMAIL
+      // (APPROVED / REJECTED / REJECT DOCUMENT)
+      // =================================================
+
+      const isApproved =
+        status === "Approved";
+
+      const isRejectDocument =
+        status === "Reject Document";
+
+      const logPrefix =
+        isApproved
+          ? "FACULTY APPROVAL"
+          : isRejectDocument
+            ? "FACULTY DOCUMENT REJECTION"
+            : "FACULTY REJECTION";
+
+      try {
+        const COMPANY_EMAIL =
+          process.env.COMPANY_EMAIL;
+
+        if (COMPANY_EMAIL) {
+          const actionDate =
+            new Date().toLocaleString(
+              "en-IN"
+            );
+
+          const statusLabel =
+            isApproved
+              ? "Approved"
+              : isRejectDocument
+                ? "Document Re-upload Required"
+                : "Rejected";
+
+          const companySubject =
+            isApproved
+              ? "CeiT Academy - Faculty Registration Approved"
+              : isRejectDocument
+                ? "CeiT Academy - Faculty Document Re-upload Required"
+                : "CeiT Academy - Faculty Registration Rejected";
+
+          const companyIntro =
+            isApproved
+              ? `The faculty registration has been approved by the admin.`
+              : isRejectDocument
+                ? `The document submitted by the faculty was rejected and the faculty has been asked to upload a corrected document.`
+                : `The faculty registration has been rejected by the admin.`;
+
+          console.log(
+            `📧 SENDING ${logPrefix} EMAIL TO COMPANY:`,
+            COMPANY_EMAIL
+          );
+
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+
+            to: COMPANY_EMAIL,
+
+            subject: companySubject,
+
+            html: `
+              <div style="
+                font-family: Arial, Helvetica, sans-serif;
+                background-color: #f4f6f8;
+                padding: 30px 15px;
+              ">
+
+                <div style="
+                  max-width: 650px;
+                  margin: 0 auto;
+                  background-color: #ffffff;
+                  border-radius: 10px;
+                  padding: 35px;
+                  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+                ">
+
+                  <h2 style="
+                    color: #2c3e50;
+                    margin-bottom: 5px;
+                  ">
+                    CeiT Academy - Online Tuition
+                  </h2>
+
+                  <p style="
+                    color: #777;
+                    margin-top: 0;
+                    font-size: 14px;
+                  ">
+                    Faculty Status Update
+                  </p>
+
+                  <hr style="
+                    border: none;
+                    border-top: 1px solid #e5e5e5;
+                    margin: 20px 0;
+                  ">
+
+                  <p style="
+                    font-size: 16px;
+                    color: #333;
+                    line-height: 1.6;
+                  ">
+                    ${companyIntro}
+                  </p>
+
+                  <div style="
+                    background-color: #f8fafc;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin: 25px 0;
+                  ">
+
+                    <p style="margin: 8px 0;">
+                      <strong>Faculty Name:</strong>
+                      ${teacher.firstName} ${teacher.lastName}
+                    </p>
+
+                    <p style="margin: 8px 0;">
+                      <strong>Faculty Email:</strong>
+                      ${teacher.email}
+                    </p>
+
+                    <p style="margin: 8px 0;">
+                      <strong>Status:</strong>
+                      ${statusLabel}
+                    </p>
+
+                    <p style="margin: 8px 0;">
+                      <strong>
+                        ${
+                          isRejectDocument
+                            ? "Date/Time"
+                            : isApproved
+                              ? "Approval Date/Time"
+                              : "Rejection Date/Time"
+                        }:
+                      </strong>
+                      ${actionDate}
+                    </p>
+
+                    ${
+                      !isApproved
+                        ? `
+                    <p style="margin: 8px 0;">
+                      <strong>
+                        ${
+                          isRejectDocument
+                            ? "Re-upload Link:"
+                            : "Rejection Reason:"
+                        }
+                      </strong>
+                      ${
+                        isRejectDocument
+                          ? reuploadLink || "-"
+                          : reason || "-"
+                      }
+                    </p>
+                    `
+                        : ""
+                    }
+
+                  </div>
+
+                  <p style="
+                    font-size: 15px;
+                    color: #555;
+                    line-height: 1.6;
+                  ">
+                    This is an automated status
+                    notification for your records.
+                  </p>
+
+                  <hr style="
+                    border: none;
+                    border-top: 1px solid #e5e5e5;
+                    margin: 30px 0 20px;
+                  ">
+
+                  <p style="
+                    font-size: 14px;
+                    color: #555;
+                    line-height: 1.6;
+                  ">
+                    Regards,<br>
+                    <strong>
+                      CeiT Academy - Online Tuition
+                    </strong>
+                  </p>
+
+                  <p style="
+                    font-size: 12px;
+                    color: #999;
+                    margin-top: 25px;
+                  ">
+                    This is an automated email from
+                    CeiT Academy - Online Tuition.
+                  </p>
+
+                </div>
+              </div>
+            `,
+          });
+
+          console.log(
+            `✅ ${logPrefix} EMAIL SENT TO COMPANY:`,
+            COMPANY_EMAIL
+          );
+        }
+      } catch (companyEmailError) {
+        console.error(
+          `❌ ${logPrefix} EMAIL TO COMPANY FAILED:`,
+          companyEmailError.message
         );
       }
 
@@ -2948,14 +3328,16 @@ router.post(
 
       await teacher.save();
 
-      console.log("========================================");
+console.log("========================================");
 console.log("✅ RE-UPLOAD ROUTE EXECUTED");
 console.log("FACULTY:", teacher.email);
-console.log("FACULTY NAME:", teacher.firstName, teacher.lastName);
+console.log(
+  "FACULTY NAME:",
+  teacher.firstName,
+  teacher.lastName
+);
 console.log("DOCUMENT SAVED SUCCESSFULLY");
 console.log("========================================");
-
-
 
 // =================================================
 // SEND FACULTY RE-UPLOAD EMAIL TO COMPANY / CEO
@@ -2964,6 +3346,21 @@ console.log("========================================");
 try {
   const companyEmail = process.env.COMPANY_EMAIL;
   const senderEmail = process.env.EMAIL_USER;
+
+  console.log(
+    "EMAIL_USER configured:",
+    Boolean(senderEmail)
+  );
+
+  console.log(
+    "COMPANY_EMAIL configured:",
+    Boolean(companyEmail)
+  );
+
+  console.log(
+    "COMPANY_EMAIL:",
+    companyEmail || "(NOT SET)"
+  );
 
   console.log("========================================");
   console.log("📧 FACULTY RE-UPLOAD EMAIL");
@@ -3139,13 +3536,19 @@ CeiT Academy - Online Tuition
   console.log("SENT TO:", companyEmail);
   console.log("========================================");
 
+  companyEmailSent = true;
+
 } catch (emailError) {
 
   console.error("========================================");
   console.error("❌ COMPANY RE-UPLOAD EMAIL FAILED");
   console.error("ERROR:", emailError);
   console.error("MESSAGE:", emailError?.message);
+  console.error("CODE:", emailError?.code);
+  console.error("COMMAND:", emailError?.command);
+  console.error("RESPONSE:", emailError?.response);
   console.error("========================================");
+  companyEmailError = emailError?.message || "Company email failed";
 }
       // =================================================
       // ADMIN EMAIL
@@ -3227,6 +3630,9 @@ CeiT Academy - Online Tuition
 
         message:
           "Document re-uploaded successfully. Your registration is now waiting for admin approval.",
+
+        companyEmailSent,
+        companyEmailError,
 
         teacher: {
           id: teacher._id,
