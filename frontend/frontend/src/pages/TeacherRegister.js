@@ -84,7 +84,7 @@ const searchParams = new URLSearchParams(
 );
 
 const reuploadToken =
-  searchParams.get("reupload");
+  searchParams.get("reuploadToken");
 
 const isReuploadMode =
   Boolean(reuploadToken);
@@ -476,7 +476,14 @@ const TeacherRegister = () => {
     event
   ) => {
 
+    
+
     event.preventDefault();
+
+    console.log("🔥 TEACHER FORM SUBMITTED");
+console.log("🔥 isReuploadMode:", isReuploadMode);
+console.log("🔥 reuploadToken:", reuploadToken);
+console.log("🔥 degreeFile:", degreeFile);
 
 
     /* =======================================================

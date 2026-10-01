@@ -10,4 +10,13 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ EMAIL CONFIGURATION FAILED");
+    console.error(error);
+  } else {
+    console.log("✅ EMAIL SERVER READY");
+  }
+});
 module.exports = transporter;

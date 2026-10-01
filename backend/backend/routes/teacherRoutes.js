@@ -2948,6 +2948,15 @@ router.post(
 
       await teacher.save();
 
+      console.log("========================================");
+console.log("✅ RE-UPLOAD ROUTE EXECUTED");
+console.log("FACULTY:", teacher.email);
+console.log("FACULTY NAME:", teacher.firstName, teacher.lastName);
+console.log("DOCUMENT SAVED SUCCESSFULLY");
+console.log("========================================");
+
+
+
 // =================================================
 // SEND FACULTY RE-UPLOAD EMAIL TO COMPANY / CEO
 // =================================================
