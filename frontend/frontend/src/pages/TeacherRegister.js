@@ -84,7 +84,7 @@ const searchParams = new URLSearchParams(
 );
 
 const reuploadToken =
-  searchParams.get("reuploadToken");
+  searchParams.get("reupload");
 
 const isReuploadMode =
   Boolean(reuploadToken);
