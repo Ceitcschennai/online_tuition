@@ -701,7 +701,7 @@ if (teacherInfo.isApproved && !teacherInfo.isActive) {
             FACULTY ACCOUNT STATUS
         =================================================== */}
 
-        {!teacherInfo.isActive && (
+        {teacherInfo.isApproved && !teacherInfo.isActive && (
           <div className="teacher-activation-status-card">
 
             <div className="teacher-activation-status-icon">

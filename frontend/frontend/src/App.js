@@ -30,6 +30,7 @@ import TeacherDetails from "./pages/TeacherDetails";
 import AdminDashboard from "./pages/AdminDashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
+import StudentProfile from "./pages/StudentProfile";
 
 import Assignments from "./pages/Assignments";
 import TeacherAssignments from "./pages/TeacherAssignments";
@@ -629,6 +630,13 @@ const AppContent = () => {
             <StudentDocumentReupload />
           }
         />
+
+        <Route
+  path="/profile"
+  element={
+    <StudentProfile />
+  }
+/>
 
 
         <Route

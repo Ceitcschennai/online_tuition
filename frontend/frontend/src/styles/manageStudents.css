@@ -372,3 +372,521 @@
     padding: 16px;
   }
 }
+
+/* =====================================================
+   STUDENT PROFILE BUTTON
+===================================================== */
+
+.btn-view-profile {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  padding: 10px 14px;
+
+  border: 1px solid #bfdbfe;
+
+  border-radius: 8px;
+
+  background: #eff6ff;
+
+  color: #1d4ed8;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+
+  margin-bottom: 8px;
+}
+
+
+.btn-view-profile:hover {
+  background: #dbeafe;
+
+  border-color: #93c5fd;
+}
+
+
+/* =====================================================
+   PROFILE OVERLAY
+===================================================== */
+
+.student-profile-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 9999;
+
+  background: rgba(15, 23, 42, 0.55);
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 25px;
+
+  overflow-y: auto;
+}
+
+
+/* =====================================================
+   PROFILE MODAL
+===================================================== */
+
+.student-profile-modal {
+  width: min(900px, 100%);
+
+  max-height: 92vh;
+
+  overflow-y: auto;
+
+  background: #ffffff;
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 25px 70px rgba(15, 23, 42, 0.25);
+}
+
+
+/* =====================================================
+   PROFILE HEADER
+===================================================== */
+
+.student-profile-modal-header {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  padding: 25px 28px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #eff6ff,
+      #ffffff
+    );
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+
+.student-profile-label {
+  display: block;
+
+  color: #2563eb;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.2px;
+
+  margin-bottom: 5px;
+}
+
+
+.student-profile-modal-header h2 {
+  margin: 0;
+
+  color: #172033;
+
+  font-size: 23px;
+
+  font-weight: 800;
+}
+
+
+.student-profile-modal-header p {
+  margin: 5px 0 0;
+
+  color: #7b8798;
+
+  font-size: 12px;
+}
+
+
+.student-profile-close {
+  width: 36px;
+  height: 36px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  color: #64748b;
+
+  font-size: 24px;
+
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+
+.student-profile-close:hover {
+  background: #f1f5f9;
+
+  color: #172033;
+}
+
+
+/* =====================================================
+   PROFILE SECTION
+===================================================== */
+
+.student-profile-section {
+  padding: 22px 28px;
+
+  border-bottom: 1px solid #edf1f5;
+}
+
+
+.student-profile-section h3 {
+  margin: 0 0 15px;
+
+  color: #263449;
+
+  font-size: 15px;
+
+  font-weight: 800;
+}
+
+
+.student-profile-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+}
+
+
+.student-profile-field {
+  background: #f8fafc;
+
+  border: 1px solid #edf1f5;
+
+  border-radius: 9px;
+
+  padding: 12px 14px;
+
+  min-width: 0;
+}
+
+
+.student-profile-field span {
+  display: block;
+
+  color: #8a96a7;
+
+  font-size: 10px;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.5px;
+
+  margin-bottom: 5px;
+}
+
+
+.student-profile-field strong {
+  display: block;
+
+  color: #273449;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  word-break: break-word;
+}
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+.profile-status {
+  display: inline-block !important;
+
+  padding: 4px 9px;
+
+  border-radius: 999px;
+
+  font-size: 11px !important;
+}
+
+
+.profile-status.approved {
+  background: #dcfce7;
+
+  color: #15803d;
+}
+
+
+.profile-status.pending {
+  background: #fef3c7;
+
+  color: #b45309;
+}
+
+
+.profile-status.rejected {
+  background: #fee2e2;
+
+  color: #b91c1c;
+}
+
+
+/* =====================================================
+   ID PROOF
+===================================================== */
+
+.student-profile-proof {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 10px;
+
+  padding: 14px 16px;
+}
+
+
+.student-profile-proof > span {
+  color: #344054;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+
+.student-profile-proof > div {
+  display: flex;
+
+  gap: 8px;
+}
+
+
+.profile-proof-view,
+.profile-proof-download {
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 6px;
+
+  padding: 9px 12px;
+
+  border-radius: 7px;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  text-decoration: none;
+}
+
+
+.profile-proof-view {
+  border: none;
+
+  background: #1677e8;
+
+  color: #ffffff;
+}
+
+
+.profile-proof-view:hover {
+  background: #0965ce;
+}
+
+
+.profile-proof-download {
+  border: 1px solid #dbe3ed;
+
+  background: #ffffff;
+
+  color: #344054;
+}
+
+
+.profile-proof-download:hover {
+  background: #f1f5f9;
+}
+
+
+.student-profile-no-proof {
+  padding: 14px;
+
+  text-align: center;
+
+  border-radius: 9px;
+
+  background: #f8fafc;
+
+  color: #8995a6;
+
+  font-size: 12px;
+}
+
+
+/* =====================================================
+   MODAL FOOTER
+===================================================== */
+
+.student-profile-modal-footer {
+  padding: 16px 28px;
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  background: #fafbfc;
+}
+
+
+.student-profile-modal-footer button {
+  border: none;
+
+  border-radius: 8px;
+
+  padding: 10px 20px;
+
+  background: #334155;
+
+  color: #ffffff;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+.student-profile-modal-footer button:hover {
+  background: #1e293b;
+}
+
+
+/* =====================================================
+   PROFILE MOBILE
+===================================================== */
+
+@media (max-width: 650px) {
+
+  .student-profile-overlay {
+    padding: 10px;
+  }
+
+
+  .student-profile-modal {
+    max-height: 95vh;
+
+    border-radius: 14px;
+  }
+
+
+  .student-profile-modal-header {
+    padding: 20px;
+  }
+
+
+  .student-profile-modal-header h2 {
+    font-size: 19px;
+  }
+
+
+  .student-profile-section {
+    padding: 18px 20px;
+  }
+
+
+  .student-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .student-profile-proof {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .student-profile-proof > div {
+    width: 100%;
+  }
+
+
+  .profile-proof-view,
+  .profile-proof-download {
+    flex: 1;
+  }
+
+
+  .student-profile-modal-footer {
+    padding: 14px 20px;
+  }
+
+}
+
+/* =========================================================
+   STUDENT CARDS - EQUAL HEIGHT
+========================================================= */
+
+.students-list {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px !important;
+  align-items: stretch !important;
+}
+
+.student-card {
+  height: 100% !important;
+  min-height: 0 !important;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .students-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .students-list {
+    grid-template-columns: 1fr;
+  }
+}

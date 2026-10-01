@@ -18,27 +18,33 @@ import "../styles/sidebar.css";
 
 const menuConfig = {
   student: [
-    {
-      to: "/subjects",
-      icon: FaBookOpen,
-      label: "Subjects"
-    },
-    {
-      to: "/assignments",
-      icon: FaTasks,
-      label: "Tasks"
-    },
-    {
-      to: "/queries",
-      icon: FaQuestionCircle,
-      label: "Queries"
-    },
-    {
-      to: "/payments",
-      icon: FaCreditCard,
-      label: "Payments"
-    }
-  ],
+  {
+    to: "/subjects",
+    icon: FaBookOpen,
+    label: "Subjects"
+  },
+  
+  {
+    to: "/assignments",
+    icon: FaTasks,
+    label: "Tasks"
+  },
+  {
+    to: "/queries",
+    icon: FaQuestionCircle,
+    label: "Queries"
+  },
+  {
+    to: "/payments",
+    icon: FaCreditCard,
+    label: "Payments"
+  },
+  {
+    to: "/profile",
+    icon: FaUser,
+    label: "Profile"
+  }
+],
 
   teacher: [
     {
@@ -204,6 +210,14 @@ const isRestrictedTeacher =
     ? (menuConfig[role] || []).filter(
         (item) => item.to === "/teacher-profile"
       )
+
+    : role === "student" &&
+      storedUser?.approvalStatus === "Approved" &&
+storedUser?.isActive === false
+    ? (menuConfig[role] || []).filter(
+        (item) => item.to === "/profile"
+      )
+
     : (menuConfig[role] || [])
 ).map((item, index) => {
             const Icon = item.icon;

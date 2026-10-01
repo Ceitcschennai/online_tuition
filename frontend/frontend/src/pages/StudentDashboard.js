@@ -1,640 +1,626 @@
-import React, { useState, useEffect } from 'react';
-import API_BASE_URL from '../config/api';
-import '../styles/studentDashboard.css';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import API_BASE_URL from "../config/api";
+import "../styles/studentDashboard.css";
 
 import {
-  FaTasks,
-  FaCreditCard,
-  FaChartLine,
-  FaExternalLinkAlt,
-  FaCopy,
-  FaCheck,
+  FaBookOpen,
+  FaCalendarAlt,
+  FaCheckCircle,
+  FaChevronRight,
   FaClock,
-  FaCalendarAlt
-} from 'react-icons/fa';
+  FaCopy,
+  FaExternalLinkAlt,
+  FaGraduationCap,
+  FaTasks,
+  FaUserGraduate,
+  FaVideo,
+} from "react-icons/fa";
 
-import { useLiveClass } from '../contexts/LiveClassContext';
-import { markStudentJoin } from '../service/AttendanceService';
+import { useLiveClass } from "../contexts/LiveClassContext";
+import { markStudentJoin } from "../service/AttendanceService";
 
+const DEFAULT_STATS = {
+  enrolledSubjects: 0,
+  pendingAssignments: 0,
+  completedAssignments: 0,
+  attendance: 0,
+  lastPayment: "Pending",
+};
+
+const cleanClass = (value) =>
+  String(value || "")
+    .replace(/^Class\s*/i, "")
+    .trim();
+
+const getId = (item) => item?.id || item?._id;
+
+const getStudentFromStorage = () => {
+  try {
+    const raw = localStorage.getItem("user");
+
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+
+    return parsed?.student || parsed || null;
+  } catch (error) {
+    console.error(
+      "Unable to read student from localStorage:",
+      error
+    );
+
+    return null;
+  }
+};
+
+const getClassLink = (classItem) =>
+  classItem?.jitsiUrl ||
+  (classItem?.roomName
+    ? `https://meet.jit.si/${classItem.roomName}`
+    : null) ||
+  classItem?.manualLink ||
+  classItem?.meetingLink ||
+  classItem?.link ||
+  null;
+
+const formatDate = (value) => {
+  if (!value) {
+    return "Date not available";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
 
 const StudentDashboard = ({ student: propStudent }) => {
+  const [student, setStudent] = useState(
+    propStudent || getStudentFromStorage()
+  );
 
-  const [student, setStudent] = useState(propStudent || null);
+  const [stats, setStats] = useState(DEFAULT_STATS);
 
-  const [stats, setStats] = useState({
-    enrolledSubjects: 0,
-    pendingAssignments: 0,
-    completedAssignments: 0,
-    lastPayment: 'Pending',
-    attendance: 0
-  });
-
-  const [loading, setLoading] = useState(true);
-
-  const [enrolledSubjectsList, setEnrolledSubjectsList] =
-    useState([]);
-
-  const [copiedId, setCopiedId] = useState(null);
+  const [subjects, setSubjects] = useState([]);
 
   const [scheduledClasses, setScheduledClasses] =
     useState([]);
 
-  const { liveClasses } = useLiveClass();
+  const [loading, setLoading] = useState(true);
 
+  const [pageError, setPageError] = useState("");
+
+  const [activationLoading, setActivationLoading] =
+    useState(false);
+
+  const [copiedId, setCopiedId] = useState("");
+
+  const [assignmentLoading, setAssignmentLoading] =
+    useState(false);
+
+  const { liveClasses = [] } = useLiveClass();
+
+  const studentId = getId(student);
+
+  const studentClass = cleanClass(student?.class);
 
   // =========================================================
-  // GET STUDENT DATA
+  // SAVE STUDENT
   // =========================================================
 
-  const getStudentData = () => {
+  const saveStudent = useCallback((nextStudent) => {
+    setStudent(nextStudent);
 
     try {
+      localStorage.setItem(
+        "user",
+        JSON.stringify(nextStudent)
+      );
 
-      const userData = localStorage.getItem('user');
-
-      if (userData) {
-
-        const parsedData = JSON.parse(userData);
-
-        return parsedData.student || parsedData;
-      }
-
+      window.dispatchEvent(
+        new Event("userUpdated")
+      );
     } catch (error) {
-
       console.error(
-        'Error parsing user data:',
+        "Unable to save student locally:",
         error
       );
     }
-
-    return null;
-  };
-
-
-  // =========================================================
-  // LOAD STUDENT FROM LOCAL STORAGE
-  // =========================================================
-
-useEffect(() => {
-
-  const loadedStudent = getStudentData();
-
-  if (loadedStudent) {
-    setStudent(loadedStudent);
-  } else {
-    setLoading(false);
-  }
-
-}, []);
-
-  // =========================================================
-  // FETCH DASHBOARD DATA
-  // =========================================================
-
- useEffect(() => {
-
-  const studentId =
-    student?.id || student?._id;
-
-  if (studentId) {
-    fetchDashboardData();
-  }
-
-}, [student?.id, student?._id]);
-
-
-  // =========================================================
-  // FETCH SCHEDULED CLASSES
-  // ================================== =======================
-
-  useEffect(() => {
-
-    const fetchScheduled = async () => {
-
-      try {
-
-        const res = await fetch(
-          `${API_BASE_URL}/api/live-classes/scheduled`
-        );
-
-        const data = await res.json();
-
-        if (data.success) {
-
-          setScheduledClasses(
-            data.scheduledClasses || []
-          );
-        }
-
-      } catch (error) {
-
-        console.error(
-          'Error fetching scheduled classes:',
-          error
-        );
-      }
-    };
-
-    fetchScheduled();
-
   }, []);
 
-
   // =========================================================
-  // FETCH DASHBOARD DATA
+  // FETCH MAIN DASHBOARD
   // =========================================================
 
-  // =========================================================
-// FETCH DASHBOARD DATA
-// =========================================================
+  const fetchDashboard = useCallback(async () => {
+    if (!studentId) {
+      setLoading(false);
+      return;
+    }
 
-const fetchDashboardData = async () => {
+    setPageError("");
 
-  const studentId =
-    student?.id || student?._id;
-
-  if (!studentId) {
-    setLoading(false);
-    return;
-  }
-// Stop blocking the dashboard UI while APIs load
-setLoading(false);
-
-  // =======================================================
-  // 1. FETCH MAIN STUDENT DASHBOARD FIRST
-  // =======================================================
-
-  try {
-
-    const dashboardResponse =
-      await fetch(
+    try {
+      const response = await fetch(
         `${API_BASE_URL}/api/student/${studentId}/dashboard`
       );
 
+      const data = await response.json();
 
-    if (dashboardResponse.ok) {
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to load student dashboard."
+        );
+      }
 
-      const dashboardData =
-        await dashboardResponse.json();
+      if (data.student) {
+        saveStudent({
+          ...(student || {}),
+          ...data.student,
+        });
+      }
 
+      setStats((current) => ({
+        ...current,
+        ...DEFAULT_STATS,
+        ...(data.stats || {}),
+      }));
 
-      if (dashboardData.success) {
+      setSubjects(
+        Array.isArray(data.enrolledSubjectsList)
+          ? data.enrolledSubjectsList
+          : []
+      );
+    } catch (error) {
+      console.error(
+        "Student dashboard error:",
+        error
+      );
 
-        // -------------------------------------------------
-        // UPDATE STUDENT INFORMATION
-        // -------------------------------------------------
+      setPageError(
+        error.message ||
+          "Unable to load dashboard data."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    studentId,
+    saveStudent,
+    student,
+  ]);
 
-        if (dashboardData.student) {
+  // =========================================================
+  // FETCH ASSIGNMENTS
+  // =========================================================
 
-          const updatedStudent = {
-            ...student,
-            ...dashboardData.student
-          };
+  const fetchAssignments = useCallback(async () => {
+    if (!studentId) {
+      return;
+    }
 
-          setStudent(updatedStudent);
+    setAssignmentLoading(true);
 
-          localStorage.setItem(
-            "user",
-            JSON.stringify(updatedStudent)
-          );
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/assignments/student/${studentId}?class=${encodeURIComponent(
+          studentClass
+        )}`
+      );
 
-          window.dispatchEvent(
-            new Event("userUpdated")
-          );
-        }
+      if (!response.ok) {
+        throw new Error(
+          `Assignments request failed: ${response.status}`
+        );
+      }
 
+      const data = await response.json();
 
-        // -------------------------------------------------
-        // UPDATE MAIN DASHBOARD STATS
-        // -------------------------------------------------
+      const assignments = Array.isArray(
+        data.assignments
+      )
+        ? data.assignments
+        : [];
 
-        setStats(prev => ({
+      setStats((current) => ({
+        ...current,
 
-          ...prev,
+        pendingAssignments:
+          assignments.filter(
+            (assignment) =>
+              !assignment.hasSubmitted
+          ).length,
 
-          enrolledSubjects:
-            dashboardData.stats?.enrolledSubjects || 0,
+        completedAssignments:
+          assignments.filter(
+            (assignment) =>
+              assignment.hasSubmitted
+          ).length,
+      }));
+    } catch (error) {
+      console.error(
+        "Assignments error:",
+        error
+      );
+    } finally {
+      setAssignmentLoading(false);
+    }
+  }, [
+    studentId,
+    studentClass,
+  ]);
 
-          lastPayment:
-            dashboardData.stats?.lastPayment ||
-            "Pending",
+  // =========================================================
+  // FETCH SCHEDULED CLASSES
+  // =========================================================
 
-          attendance:
-            dashboardData.stats?.attendance || 0
-
-        }));
-
-
-        // -------------------------------------------------
-        // UPDATE SUBJECT LIST
-        // -------------------------------------------------
-
-        setEnrolledSubjectsList(
-          dashboardData.enrolledSubjectsList || []
+  const fetchScheduledClasses =
+    useCallback(async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/live-classes/scheduled`
         );
 
-      }
-
-    }
-
-  } catch (error) {
-
-    console.error(
-      "Error fetching student dashboard:",
-      error
-    );
-
-  } finally {
-
-    // IMPORTANT:
-    // Main dashboard is allowed to render
-    // even if assignments have a problem.
-
-    setLoading(false);
-
-  }
-
-
-  // =======================================================
-  // 2. FETCH ASSIGNMENTS SEPARATELY
-  // =======================================================
-
-  try {
-
-    const studentClass = (
-
-      student?.class ||
-
-      localStorage.getItem(
-        "studentClass"
-      ) ||
-
-      localStorage.getItem(
-        "userClass"
-      ) ||
-
-      "10"
-
-    )
-      .toString()
-      .replace(
-        /^Class\s*/i,
-        ""
-      );
-
-
-    const assignmentsResponse =
-      await fetch(
-        `${API_BASE_URL}/api/assignments/student/${studentId}?class=${studentClass}`
-      );
-
-
-    if (!assignmentsResponse.ok) {
-
-      console.warn(
-        "Assignments API returned:",
-        assignmentsResponse.status
-      );
-
-      return;
-    }
-
-
-    const assignmentsData =
-      await assignmentsResponse.json();
-
-
-    let pendingCount = 0;
-
-    let completedCount = 0;
-
-
-    if (
-      assignmentsData.success &&
-      Array.isArray(
-        assignmentsData.assignments
-      )
-    ) {
-
-      pendingCount =
-        assignmentsData.assignments.filter(
-          assignment =>
-            !assignment.hasSubmitted
-        ).length;
-
-
-      completedCount =
-        assignmentsData.assignments.filter(
-          assignment =>
-            assignment.hasSubmitted
-        ).length;
-
-    }
-
-
-    // -----------------------------------------------------
-    // UPDATE ONLY ASSIGNMENT COUNTS
-    // -----------------------------------------------------
-
-    setStats(prev => ({
-
-      ...prev,
-
-      pendingAssignments:
-        pendingCount,
-
-      completedAssignments:
-        completedCount
-
-    }));
-
-
-  } catch (error) {
-
-    console.error(
-      "Error fetching assignments:",
-      error
-    );
-
-    // Do NOT block the dashboard
-    // because assignments failed.
-
-  }
-
-};
-
-// =========================================================
-// REQUEST ACCOUNT ACTIVATION
-// =========================================================
-
-const handleRequestActivation = async () => {
-
-  try {
-
-    const studentId =
-      student?.id || student?._id;
-
-    if (!studentId) {
-      alert('Student information not found.');
-      return;
-    }
-
-    const response = await fetch(
-      `${API_BASE_URL}/api/student/request-activation/${studentId}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+        if (!response.ok) {
+          throw new Error(
+            `Scheduled classes request failed: ${response.status}`
+          );
         }
+
+        const data = await response.json();
+
+        setScheduledClasses(
+          Array.isArray(
+            data.scheduledClasses
+          )
+            ? data.scheduledClasses
+            : []
+        );
+      } catch (error) {
+        console.error(
+          "Scheduled classes error:",
+          error
+        );
+
+        setScheduledClasses([]);
+      }
+    }, []);
+
+  // =========================================================
+  // LOAD STUDENT
+  // =========================================================
+
+  useEffect(() => {
+    if (!student) {
+      const stored =
+        getStudentFromStorage();
+
+      if (stored) {
+        setStudent(stored);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [student]);
+
+  // =========================================================
+  // LOAD DASHBOARD
+  // =========================================================
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  // =========================================================
+  // LOAD ASSIGNMENTS + CLASSES
+  // =========================================================
+
+  useEffect(() => {
+    fetchAssignments();
+    fetchScheduledClasses();
+  }, [
+    fetchAssignments,
+    fetchScheduledClasses,
+  ]);
+
+  // =========================================================
+  // LIVE CLASSES
+  // =========================================================
+
+  const relevantLiveClasses = useMemo(() => {
+    return liveClasses.filter(
+      (classItem) => {
+        if (!classItem?.isLive) {
+          return false;
+        }
+
+        const classMatch =
+          studentClass &&
+          cleanClass(
+            classItem.class
+          ) === studentClass;
+
+        const subjectMatch =
+          classItem.subject &&
+          subjects.some(
+            (subject) =>
+              String(subject).toLowerCase() ===
+              String(
+                classItem.subject
+              ).toLowerCase()
+          );
+
+        return (
+          classMatch ||
+          subjectMatch
+        );
       }
     );
+  }, [
+    liveClasses,
+    studentClass,
+    subjects,
+  ]);
 
-    const data = await response.json();
+  // =========================================================
+  // UPCOMING CLASSES
+  // =========================================================
 
-    if (data.success) {
+  const relevantScheduledClasses =
+    useMemo(() => {
+      return scheduledClasses
+        .filter((classItem) => {
+          const classMatch =
+            studentClass &&
+            cleanClass(
+              classItem.class
+            ) === studentClass;
 
-      const updatedStudent = {
-  ...student,
-  isActive: false,
-  activationRequested: true
-};
+          const subjectMatch =
+            classItem.subject &&
+            subjects.some(
+              (subject) =>
+                String(
+                  subject
+                ).toLowerCase() ===
+                String(
+                  classItem.subject
+                ).toLowerCase()
+            );
 
-setStudent(updatedStudent);
-localStorage.setItem("user", JSON.stringify(updatedStudent));
-window.dispatchEvent(new Event("userUpdated"));
+          return (
+            classMatch ||
+            subjectMatch
+          );
+        })
+        .slice(0, 6);
+    }, [
+      scheduledClasses,
+      studentClass,
+      subjects,
+    ]);
 
-      alert(
-        'Activation request sent successfully. Please wait for admin approval.'
-      );
-
-    } else {
-
-      alert(
-        data.message ||
-        'Unable to send activation request.'
-      );
-
-    }
-
-  } catch (error) {
-
-    console.error(
-      'Error requesting student activation:',
-      error
-    );
-
-    alert(
-      'Something went wrong while sending the activation request.'
-    );
-  }
-};
   // =========================================================
   // COPY CLASS LINK
   // =========================================================
 
-  const handleCopyLink = cls => {
-
+  const handleCopy = async (
+    classItem
+  ) => {
     const link =
-      cls.jitsiUrl ||
-      (
-        cls.roomName
-          ? `https://meet.jit.si/${cls.roomName}`
-          : null
-      ) ||
-      cls.manualLink;
+      getClassLink(classItem);
 
+    const id = getId(classItem);
 
-    if (!link) return;
+    if (!link || !id) {
+      return;
+    }
 
-
-    navigator.clipboard.writeText(link);
-
-
-    setCopiedId(
-      cls._id || cls.id
-    );
-
-
-    setTimeout(
-      () => setCopiedId(null),
-      2000
-    );
-  };
-
-
-  // =========================================================
-  // JOIN LIVE CLASS
-  // =========================================================
-
-  const handleJoinClass = cls => {
-
-    const link =
-      cls.jitsiUrl ||
-      (
-        cls.roomName
-          ? `https://meet.jit.si/${cls.roomName}`
-          : null
-      ) ||
-      cls.manualLink;
-
-
-    if (link) {
-
-      markStudentJoin(
-        cls,
-        student
+    try {
+      await navigator.clipboard.writeText(
+        link
       );
 
+      setCopiedId(String(id));
 
-      window.open(
-        link,
-        '_blank'
+      window.setTimeout(() => {
+        setCopiedId("");
+      }, 1800);
+    } catch (error) {
+      console.error(
+        "Copy failed:",
+        error
       );
     }
   };
 
-
   // =========================================================
-  // STUDENT CLASS
-  // =========================================================
-
-  const studentClass =
-    student?.class
-      ?.toString()
-      .replace(/^Class\s*/i, '') ||
-    '';
-
-
-  // =========================================================
-  // FILTER LIVE CLASSES
+  // JOIN CLASS
   // =========================================================
 
-  const relevantLiveClasses =
-    liveClasses.filter(cls =>
+  const handleJoin = (classItem) => {
+    const link =
+      getClassLink(classItem);
 
-      cls.isLive &&
-      (
-        (
-          studentClass &&
-          cls.class
-            ?.toString()
-            .replace(/^Class\s*/i, '')
-            .trim() === studentClass
-        ) ||
+    if (!link) {
+      return;
+    }
 
-        enrolledSubjectsList.includes(
-          cls.subject
-        )
-      )
-    );
-
-
-  // =========================================================
-  // FILTER SCHEDULED CLASSES
-  // =========================================================
-
-  const relevantScheduled =
-    scheduledClasses.filter(cls => {
-
-      const clsClass =
-        cls.class
-          ?.toString()
-          .replace(/^Class\s*/i, '')
-          .trim();
-
-
-      return (
-        (
-          studentClass &&
-          clsClass === studentClass
-        ) ||
-
-        enrolledSubjectsList.includes(
-          cls.subject
-        )
+    try {
+      markStudentJoin(
+        classItem,
+        student
       );
-    });
+    } catch (error) {
+      console.error(
+        "Attendance join tracking failed:",
+        error
+      );
+    }
 
+    window.open(
+      link,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  // =========================================================
+  // REQUEST ACTIVATION
+  // =========================================================
+
+  const handleActivationRequest =
+    async () => {
+      if (
+        !studentId ||
+        activationLoading
+      ) {
+        return;
+      }
+
+      setActivationLoading(true);
+
+      try {
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/student/request-activation/${studentId}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+              "Unable to submit activation request."
+          );
+        }
+
+        saveStudent({
+          ...student,
+          isActive: false,
+          activationRequested: true,
+        });
+      } catch (error) {
+        console.error(
+          "Activation request error:",
+          error
+        );
+
+        window.alert(
+          error.message ||
+            "Unable to submit activation request."
+        );
+      } finally {
+        setActivationLoading(false);
+      }
+    };
 
   // =========================================================
   // NO STUDENT
   // =========================================================
 
   if (!student) {
-
     return (
+      <div className="student-dashboard-page">
+        <div className="student-empty-state">
+          <FaUserGraduate />
 
-      <div className="student-portal">
+          <h2>
+            Student information not found
+          </h2>
 
-        <div className="student-portal-header">
-
-          <div className="student-welcome-content">
-
-            <div className="student-welcome-text">
-
-              <span className="student-dashboard-label">
-                STUDENT DASHBOARD
-              </span>
-
-              <h1>
-                Welcome to Student Dashboard!
-              </h1>
-
-              <p>
-                Please log in to view your
-                student information
-              </p>
-
-            </div>
-
-          </div>
-
+          <p>
+            Please log in again to
+            continue.
+          </p>
         </div>
-
       </div>
     );
   }
 
   // =========================================================
-// DEACTIVATED STUDENT SCREEN
-// =========================================================
+  // ACCOUNT STATUS
+  // =========================================================
 
-if (
-  student?.approvalStatus === "Approved" &&
-  student?.isActive === false
-) {
+  const isApproved =
+    student.approvalStatus ===
+    "Approved";
+
+  const isActive =
+    student.isActive !== false;
+
+    /* =========================================================
+   WAITING FOR ADMIN APPROVAL
+========================================================= */
+
+if (!isApproved) {
   return (
-    <div className="student-portal">
+    <div className="student-dashboard-page">
 
       <div className="student-deactivated-card">
 
         <div className="student-deactivated-icon">
-          🔒
+          ⏳
         </div>
 
+        <span className="student-eyebrow">
+          ACCOUNT REVIEW
+        </span>
+
         <h1>
-          Your Account Has Been Deactivated
+          Waiting for Admin Approval
         </h1>
 
         <p>
-          Your student account is currently inactive.
-          You cannot access the other student features
-          until your account is activated by the administrator.
+          Your account has been registered successfully.
         </p>
 
-        {!student.activationRequested ? (
-          <button
-            type="button"
-            className="student-request-activation-btn"
-            onClick={handleRequestActivation}
-          >
-            Request Activation
-          </button>
-        ) : (
-          <div className="student-activation-pending">
-            🔔 Activation Request Pending
+        <p>
+          Please wait while the administrator reviews
+          and approves your account.
+        </p>
+
+        <div className="student-pending-box">
+
+          <FaClock />
+
+          <div>
+            <strong>
+              Approval Pending
+            </strong>
+
+            <span>
+              Your account is currently under review.
+            </span>
           </div>
-        )}
+
+        </div>
+
+        <div className="student-approval-note">
+          You can access your main dashboard only while
+          your account is waiting for approval.
+        </div>
 
       </div>
 
@@ -643,1517 +629,827 @@ if (
 }
 
   // =========================================================
-  // LOADING
+  // DEACTIVATED ACCOUNT
   // =========================================================
 
-  if (loading) {
-
+  if (
+    isApproved &&
+    !isActive
+  ) {
     return (
-
-      <div className="student-portal">
-
-        <div className="student-portal-header">
-
-          <div className="student-welcome-content">
-
-            <div className="student-welcome-text">
-
-              <span className="student-dashboard-label">
-                STUDENT DASHBOARD
-              </span>
-
-              <h1>
-                Loading Dashboard...
-              </h1>
-
-              <p>
-                Please wait while we fetch
-                your data
-              </p>
-
-            </div>
-
+      <div className="student-dashboard-page">
+        <div className="student-deactivated-card">
+          <div className="student-deactivated-icon">
+            🔒
           </div>
 
-        </div>
+          <span className="student-eyebrow">
+            ACCOUNT ACCESS
+          </span>
 
+          <h1>
+            Your account is currently
+            inactive
+          </h1>
+
+          <p>
+            Your profile is approved,
+            but your account has been
+            deactivated by the
+            administrator. Request
+            activation to restore
+            access.
+          </p>
+
+          {student.activationRequested ? (
+            <div className="student-pending-box">
+              <FaClock />
+
+              <div>
+                <strong>
+                  Activation request
+                  pending
+                </strong>
+
+                <span>
+                  Your request has been
+                  sent to the
+                  administrator.
+                </span>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="student-primary-btn"
+              type="button"
+              onClick={
+                handleActivationRequest
+              }
+              disabled={
+                activationLoading
+              }
+            >
+              {activationLoading
+                ? "Sending request..."
+                : "Request Activation"}
+            </button>
+          )}
+        </div>
       </div>
     );
   }
 
+  // =========================================================
+  // LOADING
+  // =========================================================
+
+  if (loading && !student) {
+    return (
+      <div className="student-dashboard-page">
+        <div className="student-loading-card">
+          Loading dashboard...
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // STUDENT DETAILS
+  // =========================================================
+
+  const fullName =
+    `${student.firstName || ""} ${
+      student.lastName || ""
+    }`.trim() || "Student";
+
+  const initials =
+    `${student.firstName?.[0] || ""}${
+      student.lastName?.[0] || ""
+    }`.toUpperCase() || "S";
+
+  const attendance = Number(
+    stats.attendance || 0
+  );
+
+  const paymentPaid =
+    String(
+      stats.lastPayment || ""
+    ).toLowerCase() === "paid" ||
+    String(
+      student.status || ""
+    ).toLowerCase() === "paid";
 
   // =========================================================
   // MAIN DASHBOARD
   // =========================================================
 
   return (
+    <div className="student-dashboard-page">
+      <div className="student-dashboard-container">
 
-    <div className="student-portal">
+        {/* =====================================================
+            HEADER
+        ===================================================== */}
 
-      <style>{`
+        <header className="student-dashboard-header">
+          <div className="student-header-main">
 
-        @import url(
-          'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap'
-        );
-
-
-        .live-card {
-
-          transition:
-            transform 0.2s,
-            box-shadow 0.2s;
-        }
-
-
-        .live-card:hover {
-
-          transform:
-            translateY(-3px);
-
-          box-shadow:
-            0 10px 28px
-            rgba(8,145,178,0.15) !important;
-        }
-
-
-        .join-btn:hover {
-
-          opacity: 0.88;
-
-          transform:
-            scale(1.02);
-        }
-
-
-        .sched-card:hover {
-
-          transform:
-            translateY(-2px);
-
-          box-shadow:
-            0 8px 24px
-            rgba(0,0,0,0.1) !important;
-        }
-
-
-        .clickable-stat-card {
-
-          cursor: pointer;
-
-          transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease;
-        }
-
-
-        .clickable-stat-card:hover {
-
-          transform:
-            translateY(-3px);
-
-          box-shadow:
-            0 8px 20px
-            rgba(0, 0, 0, 0.12);
-        }
-
-
-        .clickable-stat-card:active {
-
-          transform:
-            translateY(-1px);
-        }
-
-
-        @keyframes pulse {
-
-          0%, 100% {
-            opacity: 1;
-          }
-
-          50% {
-            opacity: 0.5;
-          }
-
-        }
-
-      `}</style>
-
-
-      {/* =====================================================
-          UNIQUE WELCOME HEADER
-      ===================================================== */}
-
-      <div className="student-portal-header">
-
-        <div className="student-welcome-content">
-
-          <div className="student-welcome-text">
-
-            <span className="student-dashboard-label">
-              STUDENT DASHBOARD
-            </span>
-
-
-            <h1>
-
-              Welcome back,{' '}
-
-              {student?.firstName
-                ? `${student.firstName}${
-                    student.lastName
-                      ? ` ${student.lastName}`
-                      : ''
-                  }`
-                : 'Student'}
-
-              !
-
-            </h1>
-
-
-            <p>
-              Here's what's happening with
-              your studies today
-            </p>
-
-          </div>
-
-
-          <div className="student-today-card">
-
-            <div className="student-today-icon">
-              📅
+            <div className="student-avatar">
+              {initials}
             </div>
-
-
-            <div className="student-today-content">
-
-              <span>
-                Today
-              </span>
-
-
-              <strong>
-
-                {new Date().toLocaleDateString(
-                  'en-GB',
-                  {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric'
-                  }
-                )}
-
-              </strong>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <div className="student-header-stats">
-
-          <div className="student-header-stat">
-
-            <div className="student-header-stat-icon">
-              📚
-            </div>
-
 
             <div>
+              <span className="student-eyebrow">
+                STUDENT DASHBOARD
+              </span>
+
+              <h1>
+                Welcome, {fullName} 👋
+              </h1>
+
+              <p>
+                Class{" "}
+                {student.class ||
+                  "N/A"}
+
+                {student.syllabus
+                  ? ` • ${student.syllabus}`
+                  : ""}
+              </p>
+            </div>
+
+          </div>
+
+          <div className="student-account-status">
+
+            <span className="student-status-dot" />
+
+            <div>
+              <small>
+                Account
+              </small>
 
               <strong>
-                {enrolledSubjectsList.length}
+                {isApproved
+                  ? "Active"
+                  : student.approvalStatus ||
+                    "Pending"}
               </strong>
+            </div>
 
+          </div>
+        </header>
+
+        {/* =====================================================
+            ERROR
+        ===================================================== */}
+
+        {pageError && (
+          <div className="student-alert student-alert-error">
+            {pageError}
+          </div>
+        )}
+
+        {/* =====================================================
+            STUDENT INFO
+        ===================================================== */}
+
+        <section className="student-info-strip">
+
+          <div>
+            <span>
+              Email
+            </span>
+
+            <strong>
+              {student.email ||
+                "Not available"}
+            </strong>
+          </div>
+
+          <div>
+            <span>
+              Class
+            </span>
+
+            <strong>
+              {student.class ||
+                "Not available"}
+            </strong>
+          </div>
+
+          <div>
+            <span>
+              Syllabus
+            </span>
+
+            <strong>
+              {student.syllabus ||
+                "Not available"}
+            </strong>
+          </div>
+
+          <div>
+            <span>
+              Payment
+            </span>
+
+            <strong
+              className={
+                paymentPaid
+                  ? "is-paid"
+                  : "is-pending"
+              }
+            >
+              {paymentPaid
+                ? "Paid"
+                : "Pending"}
+            </strong>
+          </div>
+
+        </section>
+
+        {/* =====================================================
+            STATISTICS
+        ===================================================== */}
+
+        <section className="student-stat-grid">
+
+          <article className="student-stat-card">
+
+            <div className="student-stat-icon blue">
+              <FaBookOpen />
+            </div>
+
+            <div>
               <span>
                 Subjects
               </span>
 
-            </div>
-
-          </div>
-
-
-          <div className="student-header-stat">
-
-            <div className="student-header-stat-icon">
-              📝
-            </div>
-
-
-            <div>
-
               <strong>
-                {stats.pendingAssignments}
+                {stats.enrolledSubjects}
               </strong>
 
+              <small>
+                Available for your
+                class
+              </small>
+            </div>
+
+          </article>
+
+          <article
+            className="student-stat-card clickable"
+            onClick={() =>
+              (window.location.href =
+                "/assignments")
+            }
+            role="button"
+            tabIndex={0}
+          >
+
+            <div className="student-stat-icon orange">
+              <FaTasks />
+            </div>
+
+            <div>
               <span>
                 Pending Assignments
               </span>
 
-            </div>
-
-          </div>
-
-
-          <div className="student-header-stat">
-
-            <div className="student-header-stat-icon">
-              📊
-            </div>
-
-
-            <div>
-
               <strong>
-                {stats.attendance}%
+                {assignmentLoading
+                  ? "..."
+                  : stats.pendingAssignments}
               </strong>
 
+              <small>
+                Need your attention
+              </small>
+            </div>
+
+            <FaChevronRight className="student-stat-arrow" />
+
+          </article>
+
+          <article className="student-stat-card">
+
+            <div className="student-stat-icon green">
+              <FaCheckCircle />
+            </div>
+
+            <div>
+              <span>
+                Completed
+              </span>
+
+              <strong>
+                {stats.completedAssignments}
+              </strong>
+
+              <small>
+                Submitted assignments
+              </small>
+            </div>
+
+          </article>
+
+          <article className="student-stat-card">
+
+            <div className="student-stat-icon purple">
+
+              <div className="student-attendance-mini">
+                {attendance}%
+              </div>
+
+            </div>
+
+            <div>
               <span>
                 Attendance
               </span>
 
+              <strong>
+                {attendance}%
+              </strong>
+
+              <small>
+                Overall attendance
+              </small>
             </div>
 
-          </div>
+          </article>
 
-        </div>
+        </section>
 
-      </div>
+        {/* =====================================================
+            CONTENT
+        ===================================================== */}
 
+        <section className="student-content-grid">
 
-     
+          {/* ===================================================
+              MAIN COLUMN
+          =================================================== */}
 
-      
+          <div className="student-main-column">
 
-{/* =====================================================
-    STATUS BANNERS
-===================================================== */}
+            {/* =================================================
+                LIVE CLASSES
+            ================================================= */}
 
-<div className="student-header-info">
+            <section className="student-panel">
 
-  {/* =====================================================
-      STUDENT ACCOUNT DEACTIVATED
-  ===================================================== */}
+              <div className="student-panel-header">
 
-  {student &&
-    student.approvalStatus === 'Approved' &&
-    student.isActive === false &&
-    student.activationRequested === false && (
+                <div>
+                  <span className="student-section-label">
+                    LIVE NOW
+                  </span>
 
-    <div
-      className="student-reminder-banner"
-      style={{
-        background: '#fff7ed',
-        border: '1px solid #fed7aa',
-        color: '#c2410c',
-        padding: '16px 20px',
-        borderRadius: '10px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '15px',
-        flexWrap: 'wrap'
-      }}
-    >
+                  <h2>
+                    <span className="student-live-dot" />
+                    Live Classes
+                  </h2>
+                </div>
 
-      <div>
+                <span className="student-count-badge">
+                  {relevantLiveClasses.length}
+                </span>
 
-        <strong
-          style={{
-            display: 'block',
-            marginBottom: '4px'
-          }}
-        >
-          🔒 Your account has been deactivated
-        </strong>
+              </div>
 
-        <span>
-          Your account is currently inactive.
-          You can request activation from the admin.
-        </span>
+              {relevantLiveClasses.length ===
+              0 ? (
+                <div className="student-empty-panel">
 
-      </div>
+                  <FaVideo />
 
+                  <strong>
+                    No live classes
+                    right now
+                  </strong>
 
-      <button
-        onClick={handleRequestActivation}
-        style={{
-          background: '#ea580c',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '8px',
-          padding: '10px 18px',
-          fontWeight: '700',
-          cursor: 'pointer'
-        }}
-      >
-        Request Activation
-      </button>
+                  <span>
+                    Your teacher's
+                    live class will
+                    appear here.
+                  </span>
 
-    </div>
+                </div>
+              ) : (
+                <div className="student-class-grid">
 
-  )}
+                  {relevantLiveClasses.map(
+                    (classItem) => {
+                      const id =
+                        getId(
+                          classItem
+                        );
 
+                      const link =
+                        getClassLink(
+                          classItem
+                        );
 
-  {/* =====================================================
-      ACTIVATION REQUEST PENDING
-  ===================================================== */}
-
-  {student &&
-    student.approvalStatus === 'Approved' &&
-    student.isActive === false &&
-    student.activationRequested === true && (
-
-    <div
-      className="student-reminder-banner"
-      style={{
-        background: '#eff6ff',
-        border: '1px solid #bfdbfe',
-        color: '#1d4ed8',
-        padding: '16px 20px',
-        borderRadius: '10px'
-      }}
-    >
-
-      <strong
-        style={{
-          display: 'block',
-          marginBottom: '4px'
-        }}
-      >
-        🔔 Activation Request Pending
-      </strong>
-
-      <span>
-        Your activation request has been sent to the admin.
-        Please wait for approval.
-      </span>
-
-    </div>
-
-  )}
-
-
-  {/* =====================================================
-      REGISTRATION PENDING
-  ===================================================== */}
-
-  {student &&
-    student.approvalStatus !== 'Approved' && (
-
-    <div className="student-reminder-banner">
-
-      ⏳ Your registration is pending
-      admin approval.
-
-    </div>
-
-  )}
-
-
-  {/* =====================================================
-      PAYMENT PENDING
-  ===================================================== */}
-
-  {student &&
-    student.status !== 'Paid' &&
-    student.approvalStatus === 'Approved' &&
-    student.isActive === true && (
-
-    <div className="student-reminder-banner">
-
-      ⚠️ You haven't completed the
-      payment yet. Please contact admin.
-
-    </div>
-
-  )}
-
-
-  {/* =====================================================
-      ACTIVE ACCOUNT
-  ===================================================== */}
-
-  {student &&
-    student.status === 'Paid' &&
-    student.approvalStatus === 'Approved' &&
-    student.isActive === true && (
-
-    <div className="student-reminder-banner student-success">
-
-      ✅ Your account is active and
-      payment is up to date!
-
-    </div>
-
-  )}
-
-</div>
-      {/* =====================================================
-          LIVE CLASSES NOW
-      ===================================================== */}
-
-      <div style={LS.section}>
-
-        <div style={LS.sectionHeader}>
-
-          <h3 style={LS.sectionTitle}>
-
-            <span style={LS.liveDot} />
-
-            Live Classes Now
-
-          </h3>
-
-
-          {relevantLiveClasses.length > 0 && (
-
-            <span style={LS.liveBadge}>
-
-              {relevantLiveClasses.length}
-              {' '}
-              Active
-
-            </span>
-
-          )}
-
-        </div>
-
-
-        {relevantLiveClasses.length === 0 ? (
-
-          <div style={LS.emptyBox}>
-
-            <FaClock
-              style={{
-                fontSize: 28,
-                color: '#cbd5e1',
-                marginBottom: 8
-              }}
-            />
-
-
-            <p
-              style={{
-                margin: 0,
-                color: '#94a3b8',
-                fontSize: 14,
-                fontWeight: 600
-              }}
-            >
-              No live classes right now
-            </p>
-
-
-            <p
-              style={{
-                margin: '4px 0 0',
-                color: '#cbd5e1',
-                fontSize: 13
-              }}
-            >
-              Your teacher will start a
-              class and you'll see it here
-            </p>
-
-          </div>
-
-        ) : (
-
-          <div style={LS.liveGrid}>
-
-            {relevantLiveClasses.map(
-              cls => {
-
-                const clsId =
-                  cls._id || cls.id;
-
-
-                return (
-
-                  <div
-                    key={clsId}
-                    style={LS.liveCard}
-                    className="live-card"
-                  >
-
-                    <div
-                      style={LS.liveCardTop}
-                    >
-
-                      <div
-                        style={LS.livePill}
-                      >
-                        🔴 LIVE
-                      </div>
-
-
-                      <span
-                        style={LS.classBadge}
-                      >
-                        {cls.class}
-                      </span>
-
-                    </div>
-
-
-                    <h4
-                      style={LS.liveSubject}
-                    >
-                      {cls.subject}
-                    </h4>
-
-
-                    <p
-                      style={LS.liveTeacher}
-                    >
-                      👨‍🏫 {cls.teacher}
-                    </p>
-
-
-                    <div
-                      style={LS.liveLink}
-                    >
-
-                      <span
-                        style={LS.liveLinkText}
-                      >
-
-                        {cls.jitsiUrl ||
-                          `https://meet.jit.si/${cls.roomName}`}
-
-                      </span>
-
-                    </div>
-
-
-                    <div
-                      style={LS.liveBtns}
-                    >
-
-                      <button
-                        style={LS.joinBtn}
-                        className="join-btn"
-                        onClick={() =>
-                          handleJoinClass(cls)
-                        }
-                      >
-
-                        <FaExternalLinkAlt
-                          style={{
-                            marginRight: 7
-                          }}
-                        />
-
-                        Join Class
-
-                      </button>
-
-
-                      <button
-                        style={{
-                          ...LS.copyLinkBtn,
-
-                          ...(copiedId === clsId
-                            ? LS.copyLinkBtnDone
-                            : {})
-                        }}
-
-                        onClick={() =>
-                          handleCopyLink(cls)
-                        }
-
-                        title="Copy link"
-                      >
-
-                        {copiedId === clsId
-                          ? <FaCheck />
-                          : <FaCopy />
-                        }
-
-                      </button>
-
-                    </div>
-
-                  </div>
-                );
-              }
-            )}
-
-          </div>
-
-        )}
-
-      </div>
-
-
-      {/* =====================================================
-          UPCOMING CLASSES
-      ===================================================== */}
-
-      <div style={LS.section}>
-
-        <div style={LS.sectionHeader}>
-
-          <h3
-            style={{
-              ...LS.sectionTitle,
-              color: '#1e293b'
-            }}
-          >
-
-            <FaCalendarAlt
-              style={{
-                marginRight: 10,
-                color: '#0891b2'
-              }}
-            />
-
-            Upcoming Classes
-
-          </h3>
-
-
-          {relevantScheduled.length > 0 && (
-
-            <span
-              style={{
-                ...LS.liveBadge,
-                background: '#e0f2fe',
-                color: '#0369a1'
-              }}
-            >
-
-              {relevantScheduled.length}
-              {' '}
-              Scheduled
-
-            </span>
-
-          )}
-
-        </div>
-
-
-        {relevantScheduled.length === 0 ? (
-
-          <div style={LS.emptyBox}>
-
-            <FaCalendarAlt
-              style={{
-                fontSize: 28,
-                color: '#cbd5e1',
-                marginBottom: 8
-              }}
-            />
-
-
-            <p
-              style={{
-                margin: 0,
-                color: '#94a3b8',
-                fontSize: 14,
-                fontWeight: 600
-              }}
-            >
-              No upcoming classes scheduled
-            </p>
-
-
-            <p
-              style={{
-                margin: '4px 0 0',
-                color: '#cbd5e1',
-                fontSize: 13
-              }}
-            >
-              Your teacher will schedule
-              classes and they'll appear here
-            </p>
-
-          </div>
-
-        ) : (
-
-          <div style={LS.liveGrid}>
-
-            {relevantScheduled.map(
-              cls => {
-
-                const clsId =
-                  cls._id || cls.id;
-
-
-                const link =
-                  cls.jitsiUrl ||
-                  (
-                    cls.roomName
-                      ? `https://meet.jit.si/${cls.roomName}`
-                      : null
-                  ) ||
-                  cls.manualLink;
-
-
-                return (
-
-                  <div
-                    key={clsId}
-                    style={LS.schedCard}
-                    className="sched-card"
-                  >
-
-                    <div
-                      style={LS.schedCardTop}
-                    >
-
-                      <span
-                        style={LS.schedBadge}
-                      >
-                        {cls.platform ||
-                          'Jitsi Meet'}
-                      </span>
-
-
-                      <span
-                        style={LS.classBadge}
-                      >
-                        {cls.class ||
-                          cls.studentClass}
-                      </span>
-
-                    </div>
-
-
-                    <h4
-                      style={LS.liveSubject}
-                    >
-                      {cls.className ||
-                        cls.subject}
-                    </h4>
-
-
-                    <div className="upcoming-class-details">
-
-                      <div className="upcoming-detail-item">
-
-                        <span className="upcoming-detail-label">
-                          Subject
-                        </span>
-
-                        <span className="upcoming-detail-value">
-                          {cls.subject ||
-                            'Not specified'}
-                        </span>
-
-                      </div>
-
-
-                      <div className="upcoming-detail-item">
-
-                        <span className="upcoming-detail-label">
-                          Faculty
-                        </span>
-
-                        <span className="upcoming-detail-value">
-                          {cls.teacher ||
-                            cls.teacherName ||
-                            'Not specified'}
-                        </span>
-
-                      </div>
-
-                    </div>
-
-
-                    <div
-                      style={{
-                        ...LS.liveLink,
-                        background: '#f8fafc',
-                        border:
-                          '1px solid #e2e8f0'
-                      }}
-                    >
-
-                      <span
-                        style={{
-                          ...LS.liveLinkText,
-                          color: '#475569'
-                        }}
-                      >
-
-                        📅{' '}
-                        {cls.date ||
-                          cls.scheduledDate}
-
-                        &nbsp;⏰{' '}
-
-                        {cls.time ||
-                          cls.scheduledTime}
-
-                      </span>
-
-                    </div>
-
-
-                    {cls.description && (
-
-                      <p
-                        style={{
-                          fontSize: 12,
-                          color: '#94a3b8',
-                          fontStyle: 'italic',
-                          margin: '8px 0'
-                        }}
-                      >
-                        "{cls.description}"
-                      </p>
-
-                    )}
-
-
-                    {link ? (
-
-                      <div
-                        style={LS.liveBtns}
-                      >
-
-                        <button
-                          style={{
-                            ...LS.joinBtn,
-                            background:
-                              'linear-gradient(135deg,#7c3aed,#6d28d9)'
-                          }}
-                          className="join-btn"
-                          onClick={() =>
-                            window.open(
-                              link,
-                              '_blank'
-                            )
-                          }
+                      return (
+                        <article
+                          className="student-live-card"
+                          key={id}
                         >
 
-                          <FaExternalLinkAlt
-                            style={{
-                              marginRight: 7
-                            }}
-                          />
-
-                          Open Link
-
-                        </button>
-
-
-                        <button
-                          style={{
-                            ...LS.copyLinkBtn,
-
-                            ...(copiedId === clsId
-                              ? LS.copyLinkBtnDone
-                              : {})
-                          }}
-
-                          onClick={() =>
-                            handleCopyLink(cls)
-                          }
-
-                          title="Copy link"
-                        >
-
-                          {copiedId === clsId
-                            ? <FaCheck />
-                            : <FaCopy />
-                          }
-
-                        </button>
-
-                      </div>
-
-                    ) : (
-
-                      <p
-                        style={{
-                          fontSize: 12,
-                          color: '#f59e0b',
-                          fontWeight: 600,
-                          marginTop: 10
-                        }}
-                      >
-                        ⏳ Link will be shared
-                        by teacher
-                      </p>
-
-                    )}
-
-                  </div>
-                );
-              }
-            )}
-
-          </div>
-
-        )}
-
-      </div>
-
-
-      {/* =====================================================
-          STATS CARDS
-      ===================================================== */}
-
-      <div className="student-cards-row">
-
-        <div className="student-vertical-cards">
-
-
-          {/* =================================================
-              PENDING ASSIGNMENTS
-          ================================================= */}
-
-          <div
-            className="
-              student-stat-card
-              student-primary-vertical
-              clickable-stat-card
-            "
-
-            onClick={() => {
-              window.location.href =
-                '/assignments';
-            }}
-
-            role="button"
-
-            tabIndex={0}
-
-            onKeyDown={(e) => {
-
-              if (
-                e.key === 'Enter' ||
-                e.key === ' '
-              ) {
-
-                window.location.href =
-                  '/assignments';
-              }
-
-            }}
-          >
-
-            <div className="student-stat-content">
-
-              <FaTasks
-                className="student-stat-icon"
-              />
-
-              <h4>
-                {stats.pendingAssignments}
-              </h4>
-
-              <h4>
-                Pending Assignments
-              </h4>
-
-            </div>
-
-          </div>
-
-
-          {/* =================================================
-              PAYMENT STATUS
-          ================================================= */}
-
-          <div
-            className="
-              student-stat-card
-              student-info-vertical
-              clickable-stat-card
-            "
-
-            onClick={() => {
-              window.location.href =
-                '/payments';
-            }}
-
-            role="button"
-
-            tabIndex={0}
-
-            onKeyDown={(e) => {
-
-              if (
-                e.key === 'Enter' ||
-                e.key === ' '
-              ) {
-
-                window.location.href =
-                  '/payments';
-              }
-
-            }}
-          >
-
-            <div className="student-stat-content">
-
-              <FaCreditCard
-                className="student-stat-icon"
-              />
-
-
-              <h4>
-                {stats.lastPayment}
-              </h4>
-
-
-              <h4>
-                Payment Status
-              </h4>
-
-            </div>
-
-          </div>
-
-
-        </div>
-
-
-        {/* ===================================================
-            PROGRESS OVERVIEW
-        =================================================== */}
-
-        <div className="student-progress-overview-card">
-
-          <h3 className="student-section-title">
-
-            <FaChartLine
-              className="student-section-icon"
-            />
-
-            Progress Overview
-
-          </h3>
-
-
-          <div className="student-progress-container">
-
-
-            {/* ATTENDANCE */}
-
-            <div className="student-progress-item">
-
-              <div className="student-progress-header">
-
-                <span>
-                  Overall Attendance
-                </span>
-
-
-                <span className="student-progress-value">
-                  {stats.attendance}%
-                </span>
-
-              </div>
-
-
-              <div className="student-progress-bar">
-
-                <div
-                  className="student-progress-fill"
-
-                  style={{
-                    width:
-                      `${stats.attendance}%`
-                  }}
-                />
-
-              </div>
-
-            </div>
-
-
-            {/* ASSIGNMENT COMPLETION */}
-
-            <div className="student-progress-item">
-
-              <div className="student-progress-header">
-
-                <span>
-                  Assignment Completion
-                </span>
-
-
-                <span className="student-progress-value">
-
-                  {
-                    stats.completedAssignments +
-                    stats.pendingAssignments > 0
-
-                      ? Math.round(
-                          (
-                            stats.completedAssignments /
-                            (
-                              stats.completedAssignments +
-                              stats.pendingAssignments
-                            )
-                          ) * 100
-                        )
-
-                      : 0
-                  }%
-
-                </span>
-
-              </div>
-
-
-              <div className="student-progress-bar">
-
-                <div
-                  className="student-progress-fill"
-
-                  style={{
-                    width:
-                      `${
-                        stats.completedAssignments +
-                        stats.pendingAssignments > 0
-
-                          ? Math.round(
-                              (
-                                stats.completedAssignments /
-                                (
-                                  stats.completedAssignments +
-                                  stats.pendingAssignments
+                          <div className="student-class-top">
+
+                            <span className="student-live-badge">
+                              ● LIVE
+                            </span>
+
+                            <span>
+                              {classItem.class ||
+                                `Class ${studentClass}`}
+                            </span>
+
+                          </div>
+
+                          <h3>
+                            {classItem.subject ||
+                              "Live Class"}
+                          </h3>
+
+                          <p className="student-teacher-name">
+                            {classItem.teacher ||
+                              classItem.teacherName ||
+                              "Faculty"}
+                          </p>
+
+                          <div className="student-class-link">
+                            {link ||
+                              "Meeting link not available"}
+                          </div>
+
+                          <div className="student-class-actions">
+
+                            <button
+                              type="button"
+                              className="student-join-btn"
+                              onClick={() =>
+                                handleJoin(
+                                  classItem
                                 )
-                              ) * 100
-                            )
+                              }
+                              disabled={!link}
+                            >
+                              <FaExternalLinkAlt />
+                              Join Class
+                            </button>
 
-                          : 0
-                      }%`
-                  }}
-                />
+                            <button
+                              type="button"
+                              className="student-copy-btn"
+                              onClick={() =>
+                                handleCopy(
+                                  classItem
+                                )
+                              }
+                              disabled={!link}
+                              title="Copy class link"
+                            >
+                              {copiedId ===
+                              String(id) ? (
+                                <FaCheckCircle />
+                              ) : (
+                                <FaCopy />
+                              )}
+                            </button>
+
+                          </div>
+
+                        </article>
+                      );
+                    }
+                  )}
+
+                </div>
+              )}
+
+            </section>
+
+            {/* =================================================
+                UPCOMING CLASSES
+            ================================================= */}
+
+            <section className="student-panel">
+
+              <div className="student-panel-header">
+
+                <div>
+                  <span className="student-section-label">
+                    SCHEDULE
+                  </span>
+
+                  <h2>
+                    <FaCalendarAlt />
+                    Upcoming Classes
+                  </h2>
+                </div>
 
               </div>
 
-            </div>
+              {relevantScheduledClasses.length ===
+              0 ? (
+                <div className="student-empty-panel">
 
+                  <FaCalendarAlt />
 
-            {/* COURSE PROGRESS */}
+                  <strong>
+                    No upcoming classes
+                  </strong>
 
-            <div className="student-progress-item">
+                  <span>
+                    Scheduled classes
+                    for your class
+                    will appear here.
+                  </span>
 
-              <div className="student-progress-header">
+                </div>
+              ) : (
+                <div className="student-upcoming-list">
 
-                <span>
-                  Course Progress
-                </span>
+                  {relevantScheduledClasses.map(
+                    (classItem) => {
+                      const id =
+                        getId(
+                          classItem
+                        );
 
+                      const link =
+                        getClassLink(
+                          classItem
+                        );
 
-                <span className="student-progress-value">
-                  0%
-                </span>
+                      return (
+                        <article
+                          className="student-upcoming-card"
+                          key={id}
+                        >
 
-              </div>
+                          <div className="student-date-box">
 
+                            <FaCalendarAlt />
 
-              <div className="student-progress-bar">
+                            <strong>
+                              {formatDate(
+                                classItem.date ||
+                                  classItem.scheduledDate ||
+                                  classItem.startTime
+                              )}
+                            </strong>
 
-                <div
-                  className="student-progress-fill"
+                          </div>
 
-                  style={{
-                    width: '0%'
-                  }}
-                />
+                          <div className="student-upcoming-info">
 
-              </div>
+                            <div className="student-upcoming-title-row">
 
-            </div>
+                              <h3>
+                                {classItem.subject ||
+                                  classItem.className ||
+                                  "Upcoming Class"}
+                              </h3>
 
+                              <span>
+                                {classItem.class ||
+                                  `Class ${studentClass}`}
+                              </span>
+
+                            </div>
+
+                            <p>
+                              <FaUserGraduate />
+
+                              {classItem.teacher ||
+                                classItem.teacherName ||
+                                "Faculty"}
+                            </p>
+
+                            <p>
+                              <FaClock />
+
+                              {classItem.time ||
+                                classItem.scheduledTime ||
+                                "Time not specified"}
+                            </p>
+
+                          </div>
+
+                          <div className="student-upcoming-actions">
+
+                            {link ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="student-outline-btn"
+                                  onClick={() =>
+                                    handleCopy(
+                                      classItem
+                                    )
+                                  }
+                                >
+                                  {copiedId ===
+                                  String(id) ? (
+                                    <FaCheckCircle />
+                                  ) : (
+                                    <FaCopy />
+                                  )}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="student-join-btn compact"
+                                  onClick={() =>
+                                    handleJoin(
+                                      classItem
+                                    )
+                                  }
+                                >
+                                  Open
+                                  <FaExternalLinkAlt />
+                                </button>
+                              </>
+                            ) : (
+                              <span className="student-link-pending">
+                                Link will be shared
+                              </span>
+                            )}
+
+                          </div>
+
+                        </article>
+                      );
+                    }
+                  )}
+
+                </div>
+              )}
+
+            </section>
 
           </div>
 
+          {/* ===================================================
+              SIDE COLUMN
+          =================================================== */}
 
-          {/* =================================================
-              SUBJECTS
-          ================================================= */}
+          <aside className="student-side-column">
 
-          {enrolledSubjectsList.length > 0 && (
+            {/* =================================================
+                ATTENDANCE
+            ================================================= */}
 
-            <div
-              className="student-subjects-section"
-              style={{
-                marginTop: '20px'
-              }}
-            >
+            <section className="student-panel">
 
-              <h4>
-                Subjects Available for Your Class:
-              </h4>
+              <div className="student-panel-header">
 
+                <div>
+                  <span className="student-section-label">
+                    PROGRESS
+                  </span>
 
-              <div className="student-subjects-list">
-
-                {enrolledSubjectsList.map(
-                  (subject, index) => (
-
-                    <span
-                      key={index}
-                      className="student-subject-tag"
-                    >
-                      {subject}
-                    </span>
-
-                  )
-                )}
+                  <h2>
+                    Attendance
+                  </h2>
+                </div>
 
               </div>
 
-            </div>
+              <div className="student-progress-wrap">
 
-          )}
+                <div
+                  className="student-progress-circle"
+                  style={{
+                    "--progress":
+                      `${attendance}%`,
+                  }}
+                >
 
-        </div>
+                  <div>
+                    <strong>
+                      {attendance}%
+                    </strong>
+
+                    <span>
+                      Attendance
+                    </span>
+                  </div>
+
+                </div>
+
+                <p>
+                  {attendance >= 75
+                    ? "Your attendance is on track."
+                    : "Try to attend more scheduled classes."}
+                </p>
+
+              </div>
+
+            </section>
+
+            {/* =================================================
+                SUBJECTS
+            ================================================= */}
+
+            <section className="student-panel">
+
+              <div className="student-panel-header">
+
+                <div>
+                  <span className="student-section-label">
+                    YOUR LEARNING
+                  </span>
+
+                  <h2>
+                    Subjects
+                  </h2>
+                </div>
+
+                <span className="student-count-badge">
+                  {subjects.length}
+                </span>
+
+              </div>
+
+              {subjects.length === 0 ? (
+                <div className="student-small-empty">
+                  No subjects assigned
+                  yet.
+                </div>
+              ) : (
+                <div className="student-subject-list">
+
+                  {subjects.map(
+                    (
+                      subject,
+                      index
+                    ) => (
+                      <div
+                        className="student-subject-item"
+                        key={`${subject}-${index}`}
+                      >
+
+                        <span className="student-subject-number">
+                          {String(
+                            index + 1
+                          ).padStart(
+                            2,
+                            "0"
+                          )}
+                        </span>
+
+                        <strong>
+                          {subject}
+                        </strong>
+
+                        <FaChevronRight />
+
+                      </div>
+                    )
+                  )}
+
+                </div>
+              )}
+
+            </section>
+
+            {/* =================================================
+                HELP CARD
+            ================================================= */}
+
+            <section className="student-quick-card">
+
+              <div className="student-quick-icon">
+                <FaGraduationCap />
+              </div>
+
+              <div>
+                <span>
+                  Need help?
+                </span>
+
+                <strong>
+                  Contact your faculty
+                  or administrator.
+                </strong>
+              </div>
+
+            </section>
+
+          </aside>
+
+        </section>
 
       </div>
-
     </div>
   );
 };
-
-
-// =============================================================
-// LIVE / SCHEDULED CLASS STYLES
-// =============================================================
-
-const LS = {
-
-  section: {
-    margin: '24px 0 8px',
-    fontFamily:
-      "'Nunito', sans-serif"
-  },
-
-
-  sectionHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-    paddingBottom: 10,
-    borderBottom:
-      '2px solid #e2e8f0'
-  },
-
-
-  sectionTitle: {
-    margin: 0,
-    fontSize: 17,
-    fontWeight: 800,
-    color: '#1e293b',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10
-  },
-
-
-  liveDot: {
-    display: 'inline-block',
-    width: 10,
-    height: 10,
-    borderRadius: '50%',
-    background: '#ef4444',
-    animation:
-      'pulse 1.5s ease-in-out infinite'
-  },
-
-
-  liveBadge: {
-    background: '#fee2e2',
-    color: '#dc2626',
-    fontSize: 12,
-    fontWeight: 700,
-    padding: '3px 12px',
-    borderRadius: 20
-  },
-
-
-  emptyBox: {
-    background: '#f8fafc',
-    border:
-      '2px dashed #e2e8f0',
-    borderRadius: 14,
-    padding: '32px 20px',
-    textAlign: 'center'
-  },
-
-
-  liveGrid: {
-    display: 'grid',
-    gridTemplateColumns:
-      'repeat(auto-fill, minmax(260px, 1fr))',
-    gap: 16
-  },
-
-
-  liveCard: {
-    background: '#fff',
-    borderRadius: 14,
-    padding: '18px',
-    boxShadow:
-      '0 2px 12px rgba(8,145,178,0.08)',
-    border:
-      '1.5px solid #e0f2fe'
-  },
-
-
-  schedCard: {
-    background: '#fff',
-    borderRadius: 14,
-    padding: '18px',
-    boxShadow:
-      '0 2px 12px rgba(0,0,0,0.06)',
-    border:
-      '1.5px solid #ede9fe',
-    transition:
-      'transform 0.2s, box-shadow 0.2s'
-  },
-
-
-  liveCardTop: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10
-  },
-
-
-  schedCardTop: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10
-  },
-
-
-  livePill: {
-    fontSize: 11,
-    fontWeight: 800,
-    color: '#dc2626',
-    background: '#fee2e2',
-    padding: '3px 10px',
-    borderRadius: 20
-  },
-
-
-  schedBadge: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: '#7c3aed',
-    background: '#ede9fe',
-    padding: '3px 10px',
-    borderRadius: 20
-  },
-
-
-  classBadge: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: '#0369a1',
-    background: '#e0f2fe',
-    padding: '3px 10px',
-    borderRadius: 20
-  },
-
-
-  liveSubject: {
-    margin: '0 0 4px',
-    fontSize: 16,
-    fontWeight: 800,
-    color: '#0f172a'
-  },
-
-
-  liveTeacher: {
-    margin: '0 0 4px',
-    fontSize: 13,
-    color: '#64748b'
-  },
-
-
-  liveLink: {
-    background: '#f0f9ff',
-    border:
-      '1px solid #bae6fd',
-    borderRadius: 7,
-    padding: '7px 10px',
-    marginBottom: 12,
-    overflow: 'hidden'
-  },
-
-
-  liveLinkText: {
-    fontSize: 11,
-    color: '#0369a1',
-    fontWeight: 600,
-    wordBreak: 'break-all'
-  },
-
-
-  liveBtns: {
-    display: 'flex',
-    gap: 8
-  },
-
-
-  joinBtn: {
-    flex: 1,
-    background:
-      'linear-gradient(135deg,#0891b2,#0e7490)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    padding: '9px 14px',
-    fontWeight: 700,
-    fontSize: 13,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontFamily:
-      "'Nunito', sans-serif",
-    transition:
-      'opacity 0.15s, transform 0.15s'
-  },
-
-
-  copyLinkBtn: {
-    background: '#f0f9ff',
-    border:
-      '1.5px solid #0891b2',
-    color: '#0891b2',
-    borderRadius: 8,
-    padding: '9px 13px',
-    cursor: 'pointer',
-    fontSize: 14,
-    display: 'flex',
-    alignItems: 'center',
-    transition:
-      'background 0.15s'
-  },
-
-
-  copyLinkBtnDone: {
-    background: '#16a34a',
-    color: '#fff',
-    border:
-      '1.5px solid #16a34a'
-  }
-
-};
-
 
 export default StudentDashboard;

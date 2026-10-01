@@ -2082,30 +2082,32 @@ router.get(
           enrolledSubjects,
 
         // =================================================
-        // STUDENT
-        // =================================================
+// STUDENT
+// =================================================
 student: {
+  id: student._id,
 
-  id:
-    student._id,
+  firstName: student.firstName,
 
-  firstName:
-    student.firstName,
+  lastName: student.lastName,
 
-  lastName:
-    student.lastName,
+  email: student.email,
 
-  class:
-    student.class,
+  mobile: student.mobile,
 
-  approvalStatus:
-    student.approvalStatus,
+  class: student.class,
 
-  isActive:
-    student.isActive,
+  group: student.group,
 
-  activationRequested:
-    student.activationRequested,
+  syllabus: student.syllabus,
+
+  status: student.status,
+
+  approvalStatus: student.approvalStatus,
+
+  isActive: student.isActive,
+
+  activationRequested: student.activationRequested,
 },
      
       });

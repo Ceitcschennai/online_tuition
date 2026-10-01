@@ -1,0 +1,142 @@
+.student-profile-page {
+  min-height: 100vh;
+  padding: 30px;
+  background: #f4f7fc;
+  color: #172554;
+}
+
+.student-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 25px;
+}
+
+.student-profile-header h1 {
+  margin: 0;
+  font-size: 30px;
+  color: #123a8c;
+}
+
+.student-profile-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+}
+
+.profile-avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+
+.profile-section {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 5px 20px rgba(15, 23, 42, 0.07);
+  border: 1px solid #e5e7eb;
+}
+
+.profile-section h2 {
+  margin: 0 0 20px;
+  font-size: 19px;
+  color: #1e40af;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.profile-item {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.profile-item span {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 7px;
+}
+
+.profile-item strong {
+  display: block;
+  color: #172554;
+  font-size: 15px;
+  word-break: break-word;
+}
+
+.status-badge {
+  color: #1d4ed8 !important;
+}
+
+.status-badge.active {
+  color: #15803d !important;
+}
+
+.status-badge.inactive {
+  color: #dc2626 !important;
+}
+
+.view-document-btn {
+  display: inline-block;
+  padding: 11px 18px;
+  background: #2563eb;
+  color: white;
+  text-decoration: none;
+  border-radius: 9px;
+  font-weight: 600;
+}
+
+.view-document-btn:hover {
+  background: #1d4ed8;
+}
+
+.profile-loading,
+.profile-error {
+  text-align: center;
+  padding: 80px 20px;
+  font-size: 18px;
+}
+
+.profile-error {
+  color: #dc2626;
+}
+
+@media (max-width: 768px) {
+
+  .student-profile-page {
+    padding: 20px 15px;
+  }
+
+  .student-profile-header h1 {
+    font-size: 23px;
+  }
+
+  .profile-avatar {
+    width: 55px;
+    height: 55px;
+    font-size: 24px;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-section {
+    padding: 18px;
+  }
+}

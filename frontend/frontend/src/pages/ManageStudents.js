@@ -75,6 +75,12 @@ const ManageStudents = () => {
   const [actionLoading, setActionLoading] =
     useState(null);
 
+    const [selectedStudent, setSelectedStudent] =
+  useState(null);
+
+const [profileLoading, setProfileLoading] =
+  useState(false);  
+
 const [studentActivationRequests, setStudentActivationRequests] =
   useState([]);
 
@@ -384,6 +390,50 @@ const handleStudentStatus = async (
   }
 };
 
+/* =====================================================
+   VIEW STUDENT PROFILE
+===================================================== */
+
+const handleViewProfile = async (studentId) => {
+
+  try {
+
+    setProfileLoading(true);
+
+    const res = await fetch(
+      `${API_BASE_URL}/api/student/${studentId}`
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        data?.message ||
+        "Failed to load student profile"
+      );
+    }
+
+    setSelectedStudent(data);
+
+  } catch (err) {
+
+    console.error(
+      "Failed to load student profile:",
+      err
+    );
+
+    alert(
+      err.message ||
+      "Failed to load student profile"
+    );
+
+  } finally {
+
+    setProfileLoading(false);
+
+  }
+};
+
   /* =====================================================
      INITIAL FETCH
   ===================================================== */
@@ -613,101 +663,7 @@ const handleStudentStatus = async (
 
       </div>
 
-{/* =================================================
-    STUDENT ACTIVATION REQUESTS
-================================================= */}
 
-{studentActivationRequests.length > 0 && (
-  <div
-    style={{
-      marginBottom: "25px",
-      padding: "20px",
-      borderRadius: "12px",
-      background: "#eff6ff",
-      border: "1px solid #bfdbfe"
-    }}
-  >
-
-    <h3
-      style={{
-        marginTop: 0,
-        color: "#1d4ed8"
-      }}
-    >
-      🎓 Student Activation Requests
-    </h3>
-
-    <p>
-      {studentActivationRequests.length} student
-      {studentActivationRequests.length > 1 ? "s" : ""}
-      {" "}requested account activation.
-    </p>
-
-    <div className="students-list">
-
-      {studentActivationRequests.map(
-        (student) => (
-
-          <div
-            key={student._id}
-            className="student-card"
-          >
-
-            <h4>
-              {student.firstName}{" "}
-              {student.lastName}
-            </h4>
-
-            <p>
-              <strong>Email:</strong>{" "}
-              {student.email}
-            </p>
-
-            <p>
-              <strong>Class:</strong>{" "}
-              {student.class || "-"}
-            </p>
-
-            <p>
-              <strong>Status:</strong>{" "}
-              Approved
-            </p>
-
-            <p>
-              <strong>Account:</strong>{" "}
-              🔔 Activation Requested
-            </p>
-
-            <div className="student-actions">
-
-              <button
-                className="btn-approve"
-                disabled={
-                  actionLoading === student._id
-                }
-                onClick={() =>
-                  handleStudentStatus(
-                    student._id,
-                    "activate"
-                  )
-                }
-              >
-                {actionLoading === student._id
-                  ? "Processing..."
-                  : "✓ Activate Student"}
-              </button>
-
-            </div>
-
-          </div>
-
-        )
-      )}
-
-    </div>
-
-  </div>
-)}
 
       {/* =================================================
           STUDENT LIST
@@ -947,6 +903,16 @@ const handleStudentStatus = async (
 
                   <div className="student-actions">
 
+<button
+  type="button"
+  className="btn-view-profile"
+  onClick={() =>
+    handleViewProfile(student._id)
+  }
+>
+  <FaEye />
+  View Profile
+</button>
 
                     {/* =================================
                         APPROVED STUDENT
@@ -1008,10 +974,11 @@ const handleStudentStatus = async (
           </div>
 
           <button
-            className="btn-approve"
-            disabled={
-              actionLoading === student._id
-            }
+  className="btn-approve"
+  style={{ width: "100%" }}
+  disabled={
+    actionLoading === student._id
+  }
             onClick={() =>
               handleStudentStatus(
                 student._id,
@@ -1024,22 +991,7 @@ const handleStudentStatus = async (
               : "Activate Student"}
           </button>
 
-          <button
-            className="btn-reject"
-            disabled={
-              actionLoading === student._id
-            }
-            onClick={() =>
-              updateStatus(
-                student._id,
-                "Rejected"
-              )
-            }
-          >
-            {actionLoading === student._id
-              ? "Processing..."
-              : "Reject"}
-          </button>
+          
         </>
       )}
 
@@ -1049,22 +1001,24 @@ const handleStudentStatus = async (
     ================================= */}
 
     {student.isActive === false &&
-      student.activationRequested === false && (
-        <div
-          style={{
-            width: "100%",
-            padding: "10px 14px",
-            borderRadius: "8px",
-            background: "#f3f4f6",
-            border: "1px solid #d1d5db",
-            color: "#4b5563",
-            fontWeight: "600",
-            textAlign: "center"
-          }}
-        >
-          ⏸ Account Deactivated
-        </div>
-      )}
+  student.activationRequested === false && (
+    <button
+      className="btn-approve"
+      disabled={
+        actionLoading === student._id
+      }
+      onClick={() =>
+        handleStudentStatus(
+          student._id,
+          "activate"
+        )
+      }
+    >
+      {actionLoading === student._id
+        ? "Activating..."
+        : "✓ Activate Student"}
+    </button>
+)}
   </>
 
 
@@ -1168,11 +1122,367 @@ const handleStudentStatus = async (
 
       )}
 
+          {/* =================================================
+          STUDENT PROFILE MODAL
+      ================================================= */}
+
+      {selectedStudent && (
+        <div
+          className="student-profile-overlay"
+          onClick={() =>
+            setSelectedStudent(null)
+          }
+        >
+
+          <div
+            className="student-profile-modal"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+
+            {/* PROFILE HEADER */}
+
+            <div className="student-profile-modal-header">
+
+              <div>
+
+                <span className="student-profile-label">
+                  STUDENT PROFILE
+                </span>
+
+                <h2>
+                  {selectedStudent.salutation || ""}
+                  {" "}
+                  {selectedStudent.firstName || ""}
+                  {" "}
+                  {selectedStudent.lastName || ""}
+                </h2>
+
+                <p>
+                  Complete registration details
+                </p>
+
+              </div>
+
+              <button
+                type="button"
+                className="student-profile-close"
+                onClick={() =>
+                  setSelectedStudent(null)
+                }
+              >
+                ×
+              </button>
+
+            </div>
+
+
+            {/* PERSONAL INFORMATION */}
+
+            <div className="student-profile-section">
+
+              <h3>
+                Personal Information
+              </h3>
+
+              <div className="student-profile-grid">
+
+                <div className="student-profile-field">
+                  <span>Salutation</span>
+                  <strong>
+                    {selectedStudent.salutation || "-"}
+                  </strong>
+                </div>
+
+                <div className="student-profile-field">
+                  <span>First Name</span>
+                  <strong>
+                    {selectedStudent.firstName || "-"}
+                  </strong>
+                </div>
+
+                <div className="student-profile-field">
+                  <span>Last Name</span>
+                  <strong>
+                    {selectedStudent.lastName || "-"}
+                  </strong>
+                </div>
+
+                <div className="student-profile-field">
+                  <span>Mobile</span>
+                  <strong>
+                    {selectedStudent.mobile || "-"}
+                  </strong>
+                </div>
+
+                <div className="student-profile-field">
+                  <span>Email</span>
+                  <strong>
+                    {selectedStudent.email || "-"}
+                  </strong>
+                </div>
+
+                <div className="student-profile-field">
+                  <span>Timezone</span>
+                  <strong>
+                    {selectedStudent.timezone || "-"}
+                  </strong>
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {/* ACADEMIC INFORMATION */}
+
+            <div className="student-profile-section">
+
+              <h3>
+                Academic Information
+              </h3>
+
+              <div className="student-profile-grid">
+
+                <div className="student-profile-field">
+                  <span>Class</span>
+                  <strong>
+                    {selectedStudent.class || "-"}
+                  </strong>
+                </div>
+
+                <div className="student-profile-field">
+                  <span>Group</span>
+                  <strong>
+                    {selectedStudent.group || "-"}
+                  </strong>
+                </div>
+
+                <div className="student-profile-field">
+                  <span>Syllabus</span>
+                  <strong>
+                    {selectedStudent.syllabus || "-"}
+                  </strong>
+                </div>
+
+                <div className="student-profile-field">
+                  <span>EMIS Number</span>
+                  <strong>
+                    {selectedStudent.emisNumber || "-"}
+                  </strong>
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {/* ACCOUNT INFORMATION */}
+
+            <div className="student-profile-section">
+
+              <h3>
+                Account Information
+              </h3>
+
+              <div className="student-profile-grid">
+
+                <div className="student-profile-field">
+                  <span>Approval Status</span>
+
+                  <strong
+                    className={
+                      selectedStudent.approvalStatus ===
+                      "Approved"
+                        ? "profile-status approved"
+                        : selectedStudent.approvalStatus ===
+                          "Rejected"
+                          ? "profile-status rejected"
+                          : "profile-status pending"
+                    }
+                  >
+                    {selectedStudent.approvalStatus || "-"}
+                  </strong>
+
+                </div>
+
+
+                <div className="student-profile-field">
+                  <span>Account Status</span>
+
+                  <strong
+                    className={
+                      selectedStudent.isActive
+                        ? "profile-status approved"
+                        : "profile-status rejected"
+                    }
+                  >
+                    {selectedStudent.isActive
+                      ? "Active"
+                      : "Deactivated"}
+                  </strong>
+
+                </div>
+
+
+                <div className="student-profile-field">
+                  <span>Payment Status</span>
+
+                  <strong
+                    className={
+                      selectedStudent.status ===
+                      "Paid"
+                        ? "profile-status approved"
+                        : "profile-status pending"
+                    }
+                  >
+                    {selectedStudent.status || "-"}
+                  </strong>
+
+                </div>
+
+
+                <div className="student-profile-field">
+                  <span>Activation Request</span>
+
+                  <strong>
+                    {selectedStudent.activationRequested
+                      ? "Requested"
+                      : "No Request"}
+                  </strong>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {/* REGISTRATION INFORMATION */}
+
+            <div className="student-profile-section">
+
+              <h3>
+                Registration Information
+              </h3>
+
+              <div className="student-profile-grid">
+
+                <div className="student-profile-field">
+                  <span>Student ID</span>
+                  <strong>
+                    {selectedStudent._id || "-"}
+                  </strong>
+                </div>
+
+                <div className="student-profile-field">
+                  <span>Registration Date</span>
+                  <strong>
+                    {selectedStudent.createdAt
+                      ? new Date(
+                          selectedStudent.createdAt
+                        ).toLocaleString("en-IN")
+                      : "-"}
+                  </strong>
+                </div>
+
+                <div className="student-profile-field">
+                  <span>Updated Date</span>
+                  <strong>
+                    {selectedStudent.updatedAt
+                      ? new Date(
+                          selectedStudent.updatedAt
+                        ).toLocaleString("en-IN")
+                      : "-"}
+                  </strong>
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {/* ID PROOF */}
+
+            <div className="student-profile-section">
+
+              <h3>
+                ID Proof
+              </h3>
+
+              {selectedStudent.proof ? (
+
+                <div className="student-profile-proof">
+
+                  <span>
+                    ID Proof Document
+                  </span>
+
+                  <div>
+
+                    <button
+                      type="button"
+                      className="profile-proof-view"
+                      onClick={() =>
+                        window.open(
+                          selectedStudent.proof,
+                          "_blank"
+                        )
+                      }
+                    >
+                      <FaEye />
+                      View ID Proof
+                    </button>
+
+                    <a
+                      href={selectedStudent.proof}
+                      download={`ID-Proof-${selectedStudent.firstName}-${selectedStudent.lastName}`}
+                      className="profile-proof-download"
+                    >
+                      <FaDownload />
+                      Download
+                    </a>
+
+                  </div>
+
+                </div>
+
+              ) : (
+
+                <div className="student-profile-no-proof">
+                  No ID proof uploaded.
+                </div>
+
+              )}
+
+            </div>
+
+
+            {/* FOOTER */}
+
+            <div className="student-profile-modal-footer">
+
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedStudent(null)
+                }
+              >
+                Close
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
     </div>
 
   );
 
 };
-
 
 export default ManageStudents;

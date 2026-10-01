@@ -2949,52 +2949,107 @@ router.post(
       await teacher.save();
 
 // =================================================
-// SEND EMAIL TO COMPANY
+// SEND FACULTY RE-UPLOAD EMAIL TO COMPANY / CEO
 // =================================================
 
 try {
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: process.env.COMPANY_EMAIL,
-    subject: "CeiT Academy - Faculty Document Re-uploaded",
+  const companyEmail = process.env.COMPANY_EMAIL;
+  const senderEmail = process.env.EMAIL_USER;
+
+  console.log("========================================");
+  console.log("📧 FACULTY RE-UPLOAD EMAIL");
+  console.log("FROM:", senderEmail);
+  console.log("TO:", companyEmail);
+  console.log("========================================");
+
+  if (!senderEmail) {
+    throw new Error("EMAIL_USER is not configured");
+  }
+
+  if (!process.env.EMAIL_PASS) {
+    throw new Error("EMAIL_PASS is not configured");
+  }
+
+  if (!companyEmail) {
+    throw new Error("COMPANY_EMAIL is not configured");
+  }
+
+  const mailInfo = await transporter.sendMail({
+    from: `"CeiT Academy - Online Tuition" <${senderEmail}>`,
+
+    to: companyEmail,
+
+    replyTo: teacher.email,
+
+    subject:
+      "CeiT Academy - Faculty Document Re-uploaded",
+
+    text: `
+Faculty Document Re-uploaded
+
+Faculty Name: ${teacher.firstName} ${teacher.lastName}
+
+Faculty Email: ${teacher.email}
+
+Document: Degree Certificate
+
+Status: Re-uploaded and waiting for admin approval.
+
+The corrected document has been successfully uploaded
+and is now available for administrative review.
+
+Regards,
+CeiT Academy - Online Tuition
+`,
+
     html: `
-      <div style="
-        background:#f4f6f8;
-        padding:40px 20px;
-        font-family:Arial,Helvetica,sans-serif;
-      ">
+      <div
+        style="
+          background:#f4f6f8;
+          padding:40px 20px;
+          font-family:Arial,Helvetica,sans-serif;
+        "
+      >
 
-        <div style="
-          max-width:600px;
-          margin:auto;
-          background:#ffffff;
-          border-radius:10px;
-          padding:35px;
-          box-shadow:0 4px 15px rgba(0,0,0,0.08);
-        ">
+        <div
+          style="
+            max-width:600px;
+            margin:auto;
+            background:#ffffff;
+            border-radius:10px;
+            padding:35px;
+            box-shadow:0 4px 15px rgba(0,0,0,0.08);
+          "
+        >
 
-          <h2 style="
-            color:#1e3a8a;
-            margin-bottom:20px;
-          ">
+          <h2
+            style="
+              color:#1e3a8a;
+              margin-bottom:20px;
+            "
+          >
             Faculty Document Re-uploaded
           </h2>
 
-          <p style="
-            font-size:16px;
-            color:#333;
-            line-height:1.6;
-          ">
-            A faculty member has successfully re-uploaded
-            the requested document.
+          <p
+            style="
+              font-size:16px;
+              color:#333;
+              line-height:1.6;
+            "
+          >
+            A faculty member has successfully
+            re-uploaded the requested document.
           </p>
 
-          <div style="
-            background:#f8fafc;
-            padding:20px;
-            border-radius:8px;
-            margin:25px 0;
-          ">
+          <div
+            style="
+              background:#f8fafc;
+              padding:20px;
+              border-radius:8px;
+              margin:25px 0;
+            "
+          >
 
             <p style="margin:8px 0;">
               <strong>Faculty Name:</strong>
@@ -3002,7 +3057,7 @@ try {
             </p>
 
             <p style="margin:8px 0;">
-              <strong>Email:</strong>
+              <strong>Faculty Email:</strong>
               ${teacher.email}
             </p>
 
@@ -3018,72 +3073,71 @@ try {
 
           </div>
 
-          <p style="
-            font-size:15px;
-            color:#555;
-            line-height:1.6;
-          ">
+          <p
+            style="
+              font-size:15px;
+              color:#555;
+              line-height:1.6;
+            "
+          >
             The corrected document has been successfully
             uploaded to the system and is now available
             for administrative review.
           </p>
 
-          <hr style="
-            border:none;
-            border-top:1px solid #e5e5e5;
-            margin:30px 0 20px;
-          ">
+          <hr
+            style="
+              border:none;
+              border-top:1px solid #e5e5e5;
+              margin:30px 0 20px;
+            "
+          >
 
-          <p style="
-            font-size:14px;
-            color:#555;
-            line-height:1.6;
-          ">
+          <p
+            style="
+              font-size:14px;
+              color:#555;
+              line-height:1.6;
+            "
+          >
             Regards,<br>
             <strong>CeiT Academy - Online Tuition</strong>
           </p>
 
-          <p style="
-            font-size:12px;
-            color:#999;
-            margin-top:25px;
-          ">
+          <p
+            style="
+              font-size:12px;
+              color:#999;
+              margin-top:25px;
+            "
+          >
             This is an automated email from
             CeiT Academy - Online Tuition.
           </p>
 
         </div>
+
       </div>
     `,
   });
 
-  console.log(
-    "✅ FACULTY RE-UPLOAD NOTIFICATION SENT TO COMPANY"
-  );
+  console.log("========================================");
+  console.log("✅ COMPANY EMAIL SENT SUCCESSFULLY");
+  console.log("MESSAGE ID:", mailInfo.messageId);
+  console.log("RESPONSE:", mailInfo.response);
+  console.log("ACCEPTED:", mailInfo.accepted);
+  console.log("REJECTED:", mailInfo.rejected);
+  console.log("SENT TO:", companyEmail);
+  console.log("========================================");
 
 } catch (emailError) {
-  console.error(
-    "❌ COMPANY RE-UPLOAD EMAIL FAILED:",
-    emailError.message
-  );
+
+  console.error("========================================");
+  console.error("❌ COMPANY RE-UPLOAD EMAIL FAILED");
+  console.error("ERROR:", emailError);
+  console.error("MESSAGE:", emailError?.message);
+  console.error("========================================");
 }
-
-try {
-  await Activity.create({
-          type: "teacher",  
-
-          message:
-            `Teacher ${teacher.firstName} ${teacher.lastName} re-uploaded the required document`,
-
-          time: new Date(),
-        });
-      } catch (activityError) {
-        console.error(
-          "Document re-upload activity error:",
-          activityError.message
-        );
-      }
-
       // =================================================
       // ADMIN EMAIL
       // =================================================
