@@ -83,6 +83,8 @@ if (
 // =========================================================
 
 const allowedOrigins = [
+  "https://www.ceitcscloudclassroom.com",
+  "https://ceitcscloudclassroom.com",
   "https://online-tuition-1wvb.vercel.app",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
@@ -97,10 +99,15 @@ app.use(
       ) {
         callback(null, true);
       } else {
-        callback(
-          new Error("Not allowed by CORS")
-        );
-      }
+  console.error(
+    "❌ CORS BLOCKED ORIGIN:",
+    origin
+  );
+
+  callback(
+    new Error("Not allowed by CORS")
+  );
+}
     },
 
     credentials: true,
@@ -126,9 +133,10 @@ app.use(
 // =========================================================
 
 app.use(
-  express.json({
-    limit: "10mb",
-  })
+  express.urlencoded({
+  extended: true,
+  limit: "10mb",
+});
 );
 
 app.use(
