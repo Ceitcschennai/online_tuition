@@ -3339,6 +3339,9 @@ console.log(
 console.log("DOCUMENT SAVED SUCCESSFULLY");
 console.log("========================================");
 
+let companyEmailSent = false;
+let companyEmailError = "";
+
 // =================================================
 // SEND FACULTY RE-UPLOAD EMAIL TO COMPANY / CEO
 // =================================================
@@ -3617,13 +3620,39 @@ CeiT Academy - Online Tuition
               </div>
             `,
           });
+
+          console.log(
+            "✅ ADMIN EMAIL SENT SUCCESSFULLY"
+          );
         }
       } catch (emailError) {
         console.error(
-          "Admin re-upload email failed:",
+          "========================================"
+        );
+        console.error(
+          "❌ ADMIN EMAIL FAILED"
+        );
+        console.error(
+          "ERROR:",
           emailError.message
         );
+        console.error(
+          "========================================"
+        );
       }
+
+      console.log("========================================");
+      console.log("FINAL RE-UPLOAD RESPONSE");
+      console.log("SUCCESS:", true);
+      console.log(
+        "COMPANY EMAIL SENT:",
+        companyEmailSent
+      );
+      console.log(
+        "COMPANY EMAIL ERROR:",
+        companyEmailError || "(none)"
+      );
+      console.log("========================================");
 
       return res.json({
         success: true,
