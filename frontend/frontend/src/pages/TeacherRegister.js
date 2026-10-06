@@ -640,7 +640,7 @@ console.log("🔥 degreeFile:", degreeFile);
       showPopup(
         "error",
         "Invalid Mobile Number",
-        "Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9."
+        "Please enter a valid 10-digit mobile number"
       );
 
       return;
