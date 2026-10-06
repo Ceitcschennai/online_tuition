@@ -636,15 +636,11 @@ console.log("🔥 degreeFile:", degreeFile);
        MOBILE NUMBER
     ======================================================= */
 
-    if (
-      form.mobile.trim().length < 7 ||
-      form.mobile.trim().length > 15
-    ) {
-
+    if (!/^[6-9]\d{9}$/.test(form.mobile.trim())) {
       showPopup(
         "error",
         "Invalid Mobile Number",
-        "Please enter a valid mobile number."
+        "Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9."
       );
 
       return;

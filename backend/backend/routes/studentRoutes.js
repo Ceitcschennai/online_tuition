@@ -122,9 +122,9 @@ function validateStudent(body, hasFile) {
     .toString()
     .trim();
 
-  if (!/^[1-9]\d{9}$/.test(mob)) {
+  if (!/^[6-9]\d{9}$/.test(mob)) {
     errors.mobile =
-      "Must be exactly 10 digits, not starting with 0";
+      "Mobile number must be a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.";
   } else {
     normalized.mobile = mob;
   }

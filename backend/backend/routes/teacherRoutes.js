@@ -227,10 +227,10 @@ function validateTeacher(body) {
 
   if (
     mobile &&
-    !/^[0-9]{7,15}$/.test(mobile)
+    !/^[6-9]\d{9}$/.test(mobile)
   ) {
     errors.mobile =
-      "Mobile number must contain 7 to 15 digits";
+      "Mobile number must be a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9";
   } else {
     normalized.mobile = mobile;
   }

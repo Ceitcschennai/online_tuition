@@ -330,8 +330,8 @@ const StudentRegister = () => {
       return "Please enter your mobile number.";
     }
 
-    if (!/^\d{10}$/.test(formData.mobile.trim())) {
-      return "Please enter a valid 10-digit mobile number.";
+    if (!/^[6-9]\d{9}$/.test(formData.mobile.trim())) {
+      return "Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.";
     }
 
     if (!formData.syllabus) {
