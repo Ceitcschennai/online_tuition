@@ -1,19 +1,77 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "";
+import Navbar from "../components/Navbar";
+import API_BASE_URL from "../config/api";
+
+import {
+  FaUserPlus,
+  FaEnvelope,
+  FaPhoneAlt,
+  FaIdCard,
+  FaUpload,
+  FaCheck,
+  FaTimes,
+} from "react-icons/fa";
+
+import "../styles/register.css";
+
+/* =========================================================
+   DROPDOWN OPTIONS
+======================================================== */
+
+const TITLE_OPTIONS = [
+  "Mr.",
+  "Mrs.",
+  "Ms.",
+  "Dr.",
+];
+
+const SYLLABUS_OPTIONS = [
+  "Matric",
+  "CBSE",
+  "ICSE",
+  "State Board",
+];
+
+const CLASS_OPTIONS = [
+  "Class 5",
+  "Class 6",
+  "Class 7",
+  "Class 8",
+  "Class 9",
+  "Class 10",
+  "Class 11",
+  "Class 12",
+  "Others",
+];
+
+const TIMEZONE_OPTIONS = [
+  "IST (GMT +5:30)",
+  "GMT (GMT +0:00)",
+  "EST (GMT -5:00)",
+  "PST (GMT -8:00)",
+  "CET (GMT +1:00)",
+  "GST (GMT +4:00)",
+];
+
+/* =========================================================
+   STUDENT DOCUMENT RE-UPLOAD COMPONENT
+======================================================== */
 
 const StudentDocumentReupload = () => {
-
   const [student, setStudent] = useState(null);
   const [proof, setProof] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [popup, setPopup] = useState({
+    show: false,
+    type: "",
+    title: "",
+    message: "",
+  });
 
   const searchParams = new URLSearchParams(
     window.location.search
@@ -22,19 +80,36 @@ const StudentDocumentReupload = () => {
   const reuploadToken =
     searchParams.get("reuploadToken");
 
-  /* =====================================================
-     LOAD STUDENT DETAILS
-  ===================================================== */
+  /* =======================================================
+      BODY CLASS
+   ======================================================= */
 
   useEffect(() => {
+    document.body.classList.add(
+      "register-active"
+    );
 
+    return () => {
+      document.body.classList.remove(
+        "register-active"
+      );
+    };
+  }, []);
+
+  /* =======================================================
+      LOAD STUDENT DETAILS
+   ======================================================= */
+
+  useEffect(() => {
     const loadStudent = async () => {
-
       if (!reuploadToken) {
-
-        setError(
-          "Invalid document re-upload link."
-        );
+        setPopup({
+          show: true,
+          type: "error",
+          title: "Invalid Link",
+          message:
+            "This document re-upload link is invalid or expired.",
+        });
 
         setLoading(false);
 
@@ -42,7 +117,6 @@ const StudentDocumentReupload = () => {
       }
 
       try {
-
         const response = await axios.get(
           `${API_BASE_URL}/api/student/document-reupload/${reuploadToken}`
         );
@@ -51,78 +125,89 @@ const StudentDocumentReupload = () => {
           response.data?.success &&
           response.data?.student
         ) {
-
           setStudent(
             response.data.student
           );
-
         } else {
-
-          setError(
-            "Unable to load your student details."
-          );
-
+          setPopup({
+            show: true,
+            type: "error",
+            title: "Unable to Load",
+            message:
+              "Unable to load your student details.",
+          });
         }
-
       } catch (err) {
-
         console.error(
           "Load re-upload details error:",
           err
         );
 
-        setError(
-          err.response?.data?.message ||
-          "Invalid or expired document re-upload link."
-        );
-
+        setPopup({
+          show: true,
+          type: "error",
+          title: "Unable to Load",
+          message:
+            err.response?.data?.message ||
+            "Invalid or expired document re-upload link.",
+        });
       } finally {
-
         setLoading(false);
-
       }
-
     };
 
     loadStudent();
-
   }, [reuploadToken]);
 
+  /* =======================================================
+      SHOW POPUP
+   ======================================================= */
 
-  /* =====================================================
-     FILE CHANGE
-  ===================================================== */
+  const showPopup = (type, title, message) => {
+    setPopup({
+      show: true,
+      type,
+      title,
+      message,
+    });
+  };
+
+  const closePopup = () => {
+    setPopup({
+      show: false,
+      type: "",
+      title: "",
+      message: "",
+    });
+  };
+
+  /* =======================================================
+      FILE CHANGE
+   ======================================================= */
 
   const handleFileChange = (event) => {
-
-    const file =
-      event.target.files?.[0];
+    const file = event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
     setProof(file);
-    setError("");
-    setSuccess("");
-
   };
 
-
-  /* =====================================================
-     SUBMIT DOCUMENT
-  ===================================================== */
+  /* =======================================================
+      SUBMIT DOCUMENT
+   ======================================================= */
 
   const handleSubmit = async (event) => {
-
     event.preventDefault();
 
-    setError("");
-    setSuccess("");
+    closePopup();
 
     if (!proof) {
-
-      setError(
+      showPopup(
+        "error",
+        "Upload Required",
         "Please upload your new ID proof."
       );
 
@@ -130,16 +215,11 @@ const StudentDocumentReupload = () => {
     }
 
     try {
-
       setSubmitting(true);
 
-      const formData =
-        new FormData();
+      const formData = new FormData();
 
-      formData.append(
-        "proof",
-        proof
-      );
+      formData.append("proof", proof);
 
       const response =
         await axios.post(
@@ -148,14 +228,16 @@ const StudentDocumentReupload = () => {
           {
             headers: {
               "Content-Type":
-                "multipart/form-data"
-            }
+                "multipart/form-data",
+            },
           }
         );
 
-      setSuccess(
+      showPopup(
+        "success",
+        "Document Re-uploaded",
         response.data?.message ||
-        "Document uploaded successfully."
+          "Your document has been re-uploaded successfully. Please wait for admin review."
       );
 
       setProof(null);
@@ -168,417 +250,512 @@ const StudentDocumentReupload = () => {
       if (fileInput) {
         fileInput.value = "";
       }
-
     } catch (err) {
-
       console.error(
         "Document re-upload error:",
         err
       );
 
-      setError(
+      showPopup(
+        "error",
+        "Upload Failed",
         err.response?.data?.message ||
-        "Failed to upload the document. Please try again."
+          "Failed to upload the document. Please try again."
       );
-
     } finally {
-
       setSubmitting(false);
-
     }
-
   };
 
-
-  /* =====================================================
-     LOADING
-  ===================================================== */
+  /* =======================================================
+      LOADING
+   ======================================================= */
 
   if (loading) {
-
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#f4f8ff",
-          padding: "20px"
-        }}
-      >
+      <div className="register-page">
+        <Navbar />
 
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "35px",
-            borderRadius: "14px",
-            boxShadow:
-              "0 8px 30px rgba(0,0,0,0.08)",
-            textAlign: "center"
-          }}
-        >
-
-          <h2>
-            Loading...
-          </h2>
-
-          <p>
-            Please wait while we load your
-            student details.
-          </p>
-
-        </div>
-
-      </div>
-    );
-
-  }
-
-
-  /* =====================================================
-     MAIN PAGE
-  ===================================================== */
-
-  return (
-
-    <div
-      style={{
-        minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #eef6ff, #ffffff)",
-        padding: "40px 20px"
-      }}
-    >
-
-      <div
-        style={{
-          maxWidth: "700px",
-          margin: "0 auto",
-          background: "#ffffff",
-          borderRadius: "18px",
-          padding: "35px",
-          boxShadow:
-            "0 10px 35px rgba(0,0,0,0.10)"
-        }}
-      >
-
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: "30px"
-          }}
-        >
-
+        <main className="register-main">
           <div
+            className="register-card"
             style={{
-              fontSize: "45px",
-              marginBottom: "10px"
+              textAlign: "center",
+              padding: "50px",
             }}
           >
-            📄
-          </div>
-
-          <h1
-            style={{
-              margin: 0,
-              color: "#1f3c88",
-              fontSize: "28px"
-            }}
-          >
-            Document Re-upload
-          </h1>
-
-          <p
-            style={{
-              color: "#666",
-              marginTop: "10px",
-              lineHeight: "1.6"
-            }}
-          >
-            Please upload a new valid ID proof
-            for verification.
-          </p>
-
-        </div>
-
-
-        {/* =================================================
-            ERROR
-        ================================================= */}
-
-        {error && (
-
-          <div
-            style={{
-              background: "#fff1f1",
-              border: "1px solid #ffcccc",
-              color: "#c62828",
-              padding: "14px 16px",
-              borderRadius: "8px",
-              marginBottom: "20px"
-            }}
-          >
-            {error}
-          </div>
-
-        )}
-
-
-        {/* =================================================
-            SUCCESS
-        ================================================= */}
-
-        {success && (
-
-          <div
-            style={{
-              background: "#effaf0",
-              border: "1px solid #b7dfb9",
-              color: "#237a2a",
-              padding: "16px",
-              borderRadius: "8px",
-              marginBottom: "20px",
-              lineHeight: "1.6"
-            }}
-          >
-
-            <strong>
-              ✓ Document submitted successfully
-            </strong>
-
-            <br />
-
-            {success}
-
-            <br />
-            <br />
-
-            Your account is now waiting for
-            administrator verification.
-
-          </div>
-
-        )}
-
-
-        {student && !success && (
-
-          <form
-            onSubmit={handleSubmit}
-          >
-
-            {/* =============================================
-                STUDENT DETAILS
-            ============================================= */}
-
             <div
+              className="button-spinner"
               style={{
-                background: "#f7faff",
-                border:
-                  "1px solid #dce8ff",
-                borderRadius: "12px",
-                padding: "20px",
-                marginBottom: "25px"
+                margin: "0 auto 20px",
+              }}
+            ></div>
+
+            <h2
+              style={{
+                margin: 0,
+                color: "#17233f",
               }}
             >
+              Loading...
+            </h2>
 
-              <h3
-                style={{
-                  marginTop: 0,
-                  color: "#1f3c88"
-                }}
-              >
-                Student Details
-              </h3>
+            <p
+              style={{
+                color: "#7b879d",
+                marginTop: "10px",
+              }}
+            >
+              Please wait while we load your
+              student details.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
+  /* =======================================================
+      NO STUDENT DATA
+   ======================================================= */
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns:
-                    "repeat(auto-fit, minmax(220px, 1fr))",
-                  gap: "15px"
-                }}
-              >
+  if (!student) {
+    return (
+      <div className="register-page">
+        <Navbar />
 
-                <div>
-                  <strong>
-                    Name
-                  </strong>
+        <main className="register-main">
+          <div
+            className="register-card"
+            style={{
+              textAlign: "center",
+              padding: "50px",
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                color: "#17233f",
+              }}
+            >
+              Student Not Found
+            </h2>
 
-                  <p>
-                    {student.title || ""}
-                    {" "}
-                    {student.firstName || ""}
-                    {" "}
-                    {student.lastName || ""}
-                  </p>
-                </div>
+            <p
+              style={{
+                color: "#7b879d",
+                marginTop: "10px",
+              }}
+            >
+              Unable to load your student
+              details. Please try again later.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
+  /* =======================================================
+      MAIN PAGE
+   ======================================================= */
 
-                <div>
-                  <strong>
-                    Email
-                  </strong>
+  return (
+    <div className="register-page">
+      <Navbar />
 
-                  <p>
-                    {student.email || "-"}
-                  </p>
-                </div>
+      <main className="register-main">
+        <div className="register-card">
+          {/* ===============================================
+               HEADER
+            =============================================== */}
 
+          <div className="register-card-header">
+            <div className="register-title-icon">
+              <FaUserPlus />
+            </div>
 
-                <div>
-                  <strong>
-                    Mobile
-                  </strong>
+            <h1>
+              Document Re-upload
+            </h1>
 
-                  <p>
-                    {student.mobile || "-"}
-                  </p>
-                </div>
+            <p>
+              Please upload a new valid ID proof
+              for verification.
+            </p>
+          </div>
 
+          {/* ===============================================
+               FORM
+            =============================================== */}
 
-                <div>
-                  <strong>
-                    Class
-                  </strong>
+          <form
+            className="register-form"
+            onSubmit={handleSubmit}
+          >
+            {/* =============================================
+                 TITLE + FIRST NAME + LAST NAME
+            ============================================= */}
 
-                  <p>
-                    {student.studentClass || "-"}
-                  </p>
-                </div>
+            <div className="form-row three-columns">
 
+              <div className="input-group">
+                <label>Title</label>
 
-                <div>
-                  <strong>
-                    Syllabus
-                  </strong>
+                <select
+                  value={
+                    student.title || ""
+                  }
+                  disabled
+                >
+                  {TITLE_OPTIONS.map(
+                    (title) => (
+                      <option
+                        key={title}
+                        value={title}
+                      >
+                        {title}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
 
-                  <p>
-                    {student.syllabus || "-"}
-                  </p>
-                </div>
+              <div className="input-group">
+                <label>First Name</label>
 
+                <input
+                  type="text"
+                  value={
+                    student.firstName ||
+                    ""
+                  }
+                  disabled
+                />
+              </div>
 
-                <div>
-                  <strong>
-                    EMIS Number
-                  </strong>
+              <div className="input-group">
+                <label>Last Name</label>
 
-                  <p>
-                    {student.emisNumber || "-"}
-                  </p>
-                </div>
-
+                <input
+                  type="text"
+                  value={
+                    student.lastName ||
+                    ""
+                  }
+                  disabled
+                />
               </div>
 
             </div>
 
-
             {/* =============================================
-                DOCUMENT UPLOAD
+                 EMAIL
             ============================================= */}
 
-            <div
-              style={{
-                marginBottom: "25px"
-              }}
-            >
+            <div className="input-group">
+              <label>Email Address</label>
 
-              <label
-                htmlFor="student-reupload-proof"
-                style={{
-                  display: "block",
-                  fontWeight: "600",
-                  marginBottom: "10px",
-                  color: "#333"
-                }}
+              <div className="input-wrapper">
+                <FaEnvelope
+                  className="input-icon"
+                />
+
+                <input
+                  type="email"
+                  value={
+                    student.email || ""
+                  }
+                  disabled
+                />
+              </div>
+            </div>
+
+            {/* =============================================
+                 MOBILE NUMBER
+            ============================================= */}
+
+            <div className="input-group">
+              <label>Mobile Number</label>
+
+              <div className="input-wrapper">
+                <FaPhoneAlt
+                  className="input-icon"
+                />
+
+                <input
+                  type="tel"
+                  value={
+                    student.mobile ||
+                    ""
+                  }
+                  disabled
+                />
+              </div>
+            </div>
+
+            {/* =============================================
+                 SYLLABUS + CLASS
+            ============================================= */}
+
+            <div className="form-row">
+
+              <div className="input-group">
+                <label>Syllabus</label>
+
+                <select
+                  value={
+                    student.syllabus ||
+                    ""
+                  }
+                  disabled
+                >
+                  <option value="">
+                    Select syllabus
+                  </option>
+
+                  {SYLLABUS_OPTIONS.map(
+                    (syllabus) => (
+                      <option
+                        key={
+                          syllabus
+                        }
+                        value={
+                          syllabus
+                        }
+                      >
+                        {syllabus}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+              <div className="input-group">
+                <label>Class</label>
+
+                <select
+                  value={
+                    student.studentClass ||
+                    ""
+                  }
+                  disabled
+                >
+                  <option value="">
+                    Select class
+                  </option>
+
+                  {CLASS_OPTIONS.map(
+                    (className) => (
+                      <option
+                        key={
+                          className
+                        }
+                        value={
+                          className
+                        }
+                      >
+                        {className}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
+            </div>
+
+            {/* =============================================
+                 TIMEZONE
+            ============================================= */}
+
+            <div className="input-group">
+              <label>Timezone</label>
+
+              <select
+                value={
+                  student.timezone ||
+                  ""
+                }
+                disabled
               >
+                <option value="">
+                  Select timezone
+                </option>
+
+                {TIMEZONE_OPTIONS.map(
+                  (timezone) => (
+                    <option
+                      key={timezone}
+                      value={timezone}
+                    >
+                      {timezone}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+
+            {/* =============================================
+                 EMIS NUMBER
+            ============================================= */}
+
+            <div className="input-group">
+              <label>
+                EMIS Number{" "}
+                <span className="optional-text">
+                  (Optional)
+                </span>
+              </label>
+
+              <div className="input-wrapper">
+                <FaIdCard
+                  className="input-icon"
+                />
+
+                <input
+                  type="text"
+                  value={
+                    student.emisNumber ||
+                    ""
+                  }
+                  disabled
+                />
+              </div>
+            </div>
+
+            {/* =============================================
+                 DOCUMENT UPLOAD
+            ============================================= */}
+
+            <div className="input-group">
+              <label className="upload-label">
                 Upload New ID Proof
               </label>
 
+              <label
+                className="upload-box"
+                htmlFor="student-reupload-proof"
+              >
+                <FaUpload
+                  className="upload-icon"
+                />
+
+                <span className="upload-choose-btn">
+                  Choose File
+                </span>
+
+                <span className="upload-filename">
+                  {proof
+                    ? proof.name
+                    : "No file chosen"}
+                </span>
+              </label>
 
               <input
                 id="student-reupload-proof"
                 type="file"
-                accept=".jpg,.jpeg,.png,.pdf"
-                onChange={
-                  handleFileChange
-                }
+                className="upload-input"
+                onChange={handleFileChange}
+                accept=".pdf,.jpg,.jpeg,.png"
                 disabled={submitting}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border:
-                    "1px solid #ccd6e5",
-                  borderRadius: "8px",
-                  background: "#ffffff",
-                  boxSizing: "border-box"
-                }}
               />
-
 
               <small
                 style={{
                   display: "block",
                   marginTop: "8px",
-                  color: "#777"
+                  color: "#777",
                 }}
               >
                 Please upload a clear and
                 readable document.
               </small>
-
             </div>
 
-
             {/* =============================================
-                SUBMIT BUTTON
+                 SUBMIT BUTTON
             ============================================= */}
 
             <button
               type="submit"
+              className="register-button"
               disabled={submitting}
-              style={{
-                width: "100%",
-                border: "none",
-                borderRadius: "9px",
-                padding: "14px",
-                background:
-                  submitting
-                    ? "#9bb8dc"
-                    : "#1683f7",
-                color: "#ffffff",
-                fontSize: "16px",
-                fontWeight: "600",
-                cursor:
-                  submitting
-                    ? "not-allowed"
-                    : "pointer"
-              }}
             >
-
-              {submitting
-                ? "Uploading..."
-                : "Submit New Document"}
-
+              {submitting ? (
+                <>
+                  <span className="button-spinner"></span>
+                  Uploading...
+                </>
+              ) : (
+                "Submit New Document"
+              )}
             </button>
 
+            <div className="register-divider"></div>
+
+            <p className="already-user">
+              Already a User{" "}
+
+              <a href="/login">
+                Continue Here
+              </a>
+            </p>
+
           </form>
+        </div>
+      </main>
 
-        )}
+      {/* ===================================================
+          POPUP
+      =================================================== */}
 
-      </div>
+      {popup.show && (
+        <div
+          className="register-popup-overlay"
+          onClick={closePopup}
+        >
+          <div
+            className="register-popup"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <button
+              type="button"
+              className="register-popup-close"
+              onClick={closePopup}
+              aria-label="Close popup"
+            >
+              <FaTimes />
+            </button>
 
+            <div
+              className={`register-popup-icon ${popup.type}`}
+            >
+              {popup.type ===
+                "success" ? (
+                <FaCheck />
+              ) : (
+                <FaTimes />
+              )}
+            </div>
+
+            <h2>{popup.title}</h2>
+
+            <p>{popup.message}</p>
+
+            <button
+              type="button"
+              className={`register-popup-button ${popup.type}`}
+              onClick={closePopup}
+            >
+              Okay
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-
   );
-
 };
 
 export default StudentDocumentReupload;

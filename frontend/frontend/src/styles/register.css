@@ -1083,3 +1083,17 @@ input[type="password"] {
   }
 
 }
+/* =========================================================
+   READ-ONLY / DISABLED FIELDS
+======================================================== */
+
+.register-card input:disabled,
+.register-card select:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+
+  background: #f0f2f5;
+
+  color: #46546c;
+}
