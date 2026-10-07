@@ -216,7 +216,7 @@ const Navbar = ({
                       to="/register/teacher"
                       onClick={handleNavLinkClick}
                     >
-                      Faculty
+                      Teacher
                     </NavLink>
                   </li>
 
@@ -225,7 +225,7 @@ const Navbar = ({
                       to="/register/student"
                       onClick={handleNavLinkClick}
                     >
-                      Participant
+                      Student
                     </NavLink>
                   </li>
 
