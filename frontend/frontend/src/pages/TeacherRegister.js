@@ -1066,7 +1066,7 @@ console.log("🔥 degreeFile:", degreeFile);
               <div className="teacher-form-group">
 
                 <label>
-                  Title
+                  Title <span className="required-star">*</span>
                 </label>
 
                 <select
@@ -1102,7 +1102,7 @@ console.log("🔥 degreeFile:", degreeFile);
               <div className="teacher-form-group">
 
                 <label>
-                  First Name
+                  First Name <span className="required-star">*</span>
                 </label>
 
                 <input
@@ -1122,7 +1122,7 @@ console.log("🔥 degreeFile:", degreeFile);
               <div className="teacher-form-group">
 
                 <label>
-                  Last Name
+                  Last Name <span className="required-star">*</span>
                 </label>
 
                 <input
@@ -1146,7 +1146,7 @@ console.log("🔥 degreeFile:", degreeFile);
             <div className="teacher-form-group">
 
               <label>
-                Mobile Number
+                Mobile Number <span className="required-star">*</span>
               </label>
 
               <input
@@ -1173,7 +1173,7 @@ console.log("🔥 degreeFile:", degreeFile);
               <div className="teacher-form-group">
 
                 <label>
-                  Timezone
+                  Timezone <span className="required-star">*</span>
                 </label>
 
                 <select
@@ -1210,7 +1210,7 @@ console.log("🔥 degreeFile:", degreeFile);
               <div className="teacher-form-group">
 
                 <label>
-                  Qualification
+                  Qualification <span className="required-star">*</span>
                 </label>
 
                 <select
@@ -1251,7 +1251,7 @@ console.log("🔥 degreeFile:", degreeFile);
             <div className="teacher-form-group">
 
               <label>
-                Email ID
+                Email ID <span className="required-star">*</span>
               </label>
 
               <input
@@ -1279,9 +1279,9 @@ console.log("🔥 degreeFile:", degreeFile);
 
                 <div className="teacher-form-group">
 
-                  <label>
-                    Password
-                  </label>
+<label>
+                  Password <span className="required-star">*</span>
+                </label>
 
 
                   <div className="teacher-password-wrapper">
@@ -1417,9 +1417,9 @@ console.log("🔥 degreeFile:", degreeFile);
 
                 <div className="teacher-form-group">
 
-                  <label>
-                    Confirm Password
-                  </label>
+<label>
+                  Confirm Password <span className="required-star">*</span>
+                </label>
 
 
                   <div className="teacher-password-wrapper">
@@ -1508,7 +1508,7 @@ console.log("🔥 degreeFile:", degreeFile);
             <div className="teacher-form-group">
 
               <label>
-                Preferred Subject
+                Preferred Subject <span className="required-star">*</span>
               </label>
 
               <input
@@ -1530,7 +1530,7 @@ console.log("🔥 degreeFile:", degreeFile);
             <div className="teacher-form-group">
 
               <label>
-                Classes You Can Teach
+                Classes You Can Teach <span className="required-star">*</span>
               </label>
 
 
@@ -1629,8 +1629,8 @@ console.log("🔥 degreeFile:", degreeFile);
               <label>
 
                 {isReuploadMode
-                  ? "Upload Corrected Degree Certificate"
-                  : "Degree Certificate"
+                  ? "Upload Corrected Degree Certificate <span className=\"required-star\">*</span>"
+                  : "Degree Certificate <span className=\"required-star\">*</span>"
                 }
 
               </label>

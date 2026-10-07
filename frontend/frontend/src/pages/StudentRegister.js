@@ -746,7 +746,7 @@ if (reuploadToken) {
               <div className="input-group">
 
                 <label>
-                  Title
+                  Title <span className="required-star">*</span>
                 </label>
 
                 <select
@@ -773,7 +773,7 @@ if (reuploadToken) {
               <div className="input-group">
 
                 <label>
-                  First Name
+                  First Name <span className="required-star">*</span>
                 </label>
 
                 <input
@@ -791,7 +791,7 @@ if (reuploadToken) {
               <div className="input-group">
 
                 <label>
-                  Last Name
+                  Last Name <span className="required-star">*</span>
                 </label>
 
                 <input
@@ -813,7 +813,7 @@ if (reuploadToken) {
             <div className="input-group">
 
               <label>
-                Mobile Number
+                Mobile Number <span className="required-star">*</span>
               </label>
 
               <div className="input-wrapper">
@@ -845,9 +845,9 @@ if (reuploadToken) {
 
               <div className="input-group">
 
-                <label>
-                  Syllabus
-                </label>
+<label>
+                Syllabus <span className="required-star">*</span>
+              </label>
 
                 <select
                   name="syllabus"
@@ -878,9 +878,9 @@ if (reuploadToken) {
 
               <div className="input-group">
 
-                <label>
-                  Class
-                </label>
+<label>
+                Class <span className="required-star">*</span>
+              </label>
 
                 <select
                   name="studentClass"
@@ -917,9 +917,9 @@ if (reuploadToken) {
 
               <div className="input-group">
 
-                <label>
-                  Enter Class
-                </label>
+<label>
+                Enter Class <span className="required-star">*</span>
+              </label>
 
                 <input
                   type="text"
@@ -940,7 +940,7 @@ if (reuploadToken) {
             <div className="input-group">
 
               <label>
-                Timezone
+                Timezone <span className="required-star">*</span>
               </label>
 
               <select
@@ -975,7 +975,7 @@ if (reuploadToken) {
             <div className="input-group">
 
               <label>
-                Email Address
+                Email Address <span className="required-star">*</span>
               </label>
 
               <div className="input-wrapper">
@@ -1003,7 +1003,7 @@ if (reuploadToken) {
             <div className="input-group">
 
               <label>
-                Password
+                Password <span className="required-star">*</span>
               </label>
 
               <div className="input-wrapper">
@@ -1174,7 +1174,7 @@ if (reuploadToken) {
             <div className="input-group">
 
               <label>
-                Confirm Password
+                Confirm Password <span className="required-star">*</span>
               </label>
 
               <div className="input-wrapper">
@@ -1286,10 +1286,11 @@ if (reuploadToken) {
 
             <div className="input-group">
 
-              <label className="upload-label">
+<label className="upload-label">
   {reuploadToken
-    ? "Upload Replacement Student ID"
-    : "Upload Student ID"}
+    ? "Upload Replacement Student ID <span className=\"required-star\">*</span>"
+    : "Upload Student ID <span className=\"required-star\">*</span>"
+  }
 </label>
 
               <label
