@@ -715,7 +715,7 @@ if (reuploadToken) {
             <h1>
   {reuploadToken
     ? "Re-upload Student Document"
-    : "Participant Registration"}
+    : "Student Registration"}
 </h1>
 
             <p>

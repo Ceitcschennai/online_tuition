@@ -1023,7 +1023,7 @@ console.log("🔥 degreeFile:", degreeFile);
 
               {isReuploadMode
                 ? "Document Re-upload"
-                : "Faculty Registration"
+                : "Teacher Registration"
               }
 
             </h1>
