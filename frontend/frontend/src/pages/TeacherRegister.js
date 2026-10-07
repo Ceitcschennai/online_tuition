@@ -1256,6 +1256,10 @@ console.log("🔥 degreeFile:", degreeFile);
 
                 </select>
 
+                <div className="qualification-note">
+  <strong>Note:</strong> UG/PG with B.Ed or M.Ed is an Added Advantage.
+</div>
+
               </div>
 
             </div>
@@ -1288,15 +1292,7 @@ console.log("🔥 degreeFile:", degreeFile);
             )}
 
 
-            {/* ===============================================
-                QUALIFICATION NOTE
-            =============================================== */}
-
-            <div className="qualification-note">
-
-              <strong>Note:</strong> UG/PG with B.Ed or M.Ed is an Added Advantage.
-
-            </div>
+            
 
 
             {/* ===============================================
