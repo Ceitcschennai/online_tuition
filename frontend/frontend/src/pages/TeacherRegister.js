@@ -107,6 +107,7 @@ const TeacherRegister = () => {
     mobile: "",
     timezone: "",
     qualification: "",
+    otherQualification: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -311,10 +312,22 @@ const TeacherRegister = () => {
       value,
     } = event.target;
 
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
+    setForm((previous) => {
+
+      const updated = {
+        ...previous,
+        [name]: value,
+      };
+
+      if (
+        name === "qualification" &&
+        value !== "Other"
+      ) {
+        updated.otherQualification = "";
+      }
+
+      return updated;
+    });
 
   };
 
@@ -616,6 +629,8 @@ console.log("🔥 degreeFile:", degreeFile);
       !form.mobile.trim() ||
       !form.timezone ||
       !form.qualification ||
+      (form.qualification === "Other" &&
+        !form.otherQualification.trim()) ||
       !form.email.trim() ||
       !form.password ||
       !form.confirmPassword ||
@@ -761,7 +776,9 @@ console.log("🔥 degreeFile:", degreeFile);
 
     formData.append(
       "qualification",
-      form.qualification
+      form.qualification === "Other"
+        ? form.otherQualification.trim()
+        : form.qualification
     );
 
     formData.append(
@@ -1240,6 +1257,44 @@ console.log("🔥 degreeFile:", degreeFile);
                 </select>
 
               </div>
+
+            </div>
+
+
+            {/* ===============================================
+                OTHER QUALIFICATION
+                (ONLY WHEN "Other" IS SELECTED)
+            =============================================== */}
+
+            {form.qualification === "Other" && (
+
+              <div className="teacher-form-group">
+
+                <label>
+                  Enter Your Qualification <span className="required-star">*</span>
+                </label>
+
+                <input
+                  type="text"
+                  name="otherQualification"
+                  value={form.otherQualification}
+                  onChange={handleChange}
+                  placeholder="Enter your qualification"
+                  readOnly={isReuploadMode}
+                />
+
+              </div>
+
+            )}
+
+
+            {/* ===============================================
+                QUALIFICATION NOTE
+            =============================================== */}
+
+            <div className="qualification-note">
+
+              <strong>Important:</strong> UG/PG with B.Ed or M.Ed is an Added Advantage.
 
             </div>
 

@@ -1,14 +1,35 @@
-/* =========================================================
-   PAGE
-======================================================== */
+.qualification-note {
+  margin: 18px 0 8px;
 
-.required-star {
-  color: #e53935;
-  margin-left: 3px;
-  font-weight: 700;
+  padding: 12px 16px;
+
+  background: #eef4ff;
+
+  border: 1px solid #d4e3ff;
+
+  border-radius: 10px;
+
+  color: #1f4ea8;
+
+  font-size: 13px;
+
+  line-height: 1.55;
+
+  box-shadow: 0 2px 8px rgba(31, 78, 168, 0.06);
 }
 
-.teacher-register-page {
+.qualification-note strong {
+  color: #1740a0;
+}
+
+@media (max-width: 480px) {
+
+  .qualification-note {
+    padding: 10px 12px;
+
+    font-size: 12px;
+  }
+}
   width: 100%;
   min-height: 100vh;
 
@@ -914,6 +935,12 @@ body,
   min-height: 100%;
   height: auto;
   overflow-y: auto;
+}
+
+.required-star {
+  color: #e53935;
+  margin-left: 3px;
+  font-weight: 700;
 }
 
 .teacher-register-page {
