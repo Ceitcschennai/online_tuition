@@ -1294,7 +1294,7 @@ console.log("🔥 degreeFile:", degreeFile);
 
             <div className="qualification-note">
 
-              <strong>Important:</strong> UG/PG with B.Ed or M.Ed is an Added Advantage.
+              <strong>Note:</strong> UG/PG with B.Ed or M.Ed is an Added Advantage.
 
             </div>
 
@@ -1684,8 +1684,12 @@ console.log("🔥 degreeFile:", degreeFile);
               <label>
 
                 {isReuploadMode
-                  ? "Upload Corrected Degree Certificate <span className=\"required-star\">*</span>"
-                  : "Degree Certificate <span className=\"required-star\">*</span>"
+                  ? <label>
+                Upload Corrected Degree Certificate <span className="required-star">*</span>
+              </label>
+                  : <label>
+                Degree Certificate <span className="required-star">*</span>
+              </label>
                 }
 
               </label>

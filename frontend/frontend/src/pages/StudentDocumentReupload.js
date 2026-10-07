@@ -629,7 +629,8 @@ const StudentDocumentReupload = () => {
 
             <div className="input-group">
               <label className="upload-label">
-                Upload New ID Proof
+                Upload Replacement Student ID{" "}
+                <span className="required-star">*</span>
               </label>
 
               <label

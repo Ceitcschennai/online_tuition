@@ -1287,10 +1287,17 @@ if (reuploadToken) {
             <div className="input-group">
 
 <label className="upload-label">
-  {reuploadToken
-    ? "Upload Replacement Student ID <span className=\"required-star\">*</span>"
-    : "Upload Student ID <span className=\"required-star\">*</span>"
-  }
+  {reuploadToken ? (
+    <>
+      Upload Replacement Student ID{" "}
+      <span className="required-star">*</span>
+    </>
+  ) : (
+    <>
+      Upload Student ID{" "}
+      <span className="required-star">*</span>
+    </>
+  )}
 </label>
 
               <label
