@@ -172,6 +172,10 @@
    QR CODE
 ========================================================= */
 
+/* =========================================================
+   QR VIEWER OVERLAY
+======================================================== */
+
 .qr-code-container {
   width: 230px;
   height: 230px;
@@ -196,6 +200,24 @@
 
   box-shadow:
     0 4px 15px rgba(15, 23, 42, 0.08);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.qr-code-container:hover {
+  transform: scale(1.02);
+
+  box-shadow:
+    0 6px 20px rgba(15, 23, 42, 0.12);
+}
+
+.qr-code-container:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
 
 .qr-code-image {
@@ -205,6 +227,163 @@
   object-fit: contain;
 
   display: block;
+}
+
+
+.qr-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(15, 23, 42, 0.85);
+
+  backdrop-filter: blur(2px);
+
+  padding: 20px;
+
+  box-sizing: border-box;
+
+  animation: qr-viewer-fade-in 0.2s ease;
+}
+
+@keyframes qr-viewer-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.qr-viewer-content {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  max-width: min(90vw, 540px);
+  max-height: calc(100dvh - 100px);
+
+  background: #ffffff;
+
+  border-radius: 16px;
+
+  padding: 24px;
+
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.35);
+
+  overflow: auto;
+
+  animation: qr-viewer-slide-up 0.25s ease;
+}
+
+@keyframes qr-viewer-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.qr-viewer-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #1e293b;
+  color: #ffffff;
+
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.25);
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.qr-viewer-close:hover {
+  background: #0f172a;
+  transform: scale(1.1);
+}
+
+.qr-viewer-close:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.qr-viewer-image {
+  max-width: 100%;
+  max-height: calc(100dvh - 180px);
+
+  width: auto;
+  height: auto;
+
+  object-fit: contain;
+
+  display: block;
+
+  border-radius: 8px;
+
+  box-shadow:
+    0 4px 20px rgba(15, 23, 42, 0.15);
+}
+
+@media (max-width: 480px) {
+  .qr-viewer-overlay {
+    padding: 12px;
+  }
+
+  .qr-viewer-content {
+    padding: 16px;
+    border-radius: 12px;
+    max-width: min(95vw, 540px);
+    max-height: calc(100dvh - 80px);
+  }
+
+  .qr-viewer-close {
+    top: -10px;
+    right: -10px;
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
+  }
+
+  .qr-viewer-image {
+    max-height: calc(100dvh - 160px);
+  }
+}
+
+@media (max-width: 768px) {
+  .qr-viewer-content {
+    max-width: min(95vw, 540px);
+    max-height: calc(100dvh - 100px);
+    padding: 20px;
+  }
 }
 
 

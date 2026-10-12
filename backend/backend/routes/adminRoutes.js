@@ -11,6 +11,11 @@ const transporter = require("../config/email");
 const TeacherPayment = require("../models/TeacherPayment");
 const StudentPayment = require("../models/StudentPayment");
 const FeeStructure = require("../models/FeeStructure");
+const { protect, requireAdmin } = require("../middleware/authMiddleware");
+const {
+  generateReceiptPdf,
+  generateReceiptBillNumber,
+} = require("../utils/receiptPdf");
 
 /* =====================================================
    CLASS NORMALIZER
@@ -1436,7 +1441,7 @@ router.put("/teachers/:id/subject", async (req, res) => {
    ADMIN — GET STUDENT PAYMENTS
 ===================================================== */
 
-router.get("/payments/students", async (req, res) => {
+router.get("/payments/students", protect, requireAdmin, async (req, res) => {
   try {
     const payments = await StudentPayment.find()
       .populate(
@@ -1471,7 +1476,7 @@ router.get("/payments/students", async (req, res) => {
    ADMIN — GET TEACHER PAYMENTS
 ===================================================== */
 
-router.get("/payments/teachers", async (req, res) => {
+router.get("/payments/teachers", protect, requireAdmin, async (req, res) => {
   try {
     const payments = await TeacherPayment.find()
       .populate(
@@ -1506,7 +1511,7 @@ router.get("/payments/teachers", async (req, res) => {
    ADMIN — GET FEE STRUCTURE
 ===================================================== */
 
-router.get("/payments/fees", async (req, res) => {
+router.get("/payments/fees", protect, requireAdmin, async (req, res) => {
   try {
     const feeStructures = await FeeStructure.find()
       .sort({
@@ -1537,7 +1542,7 @@ router.get("/payments/fees", async (req, res) => {
 // ADMIN — ADD CLASS 5 FEE STRUCTURE
 // =====================================================
 
-router.post("/payments/fees/add-class-5", async (req, res) => {
+router.post("/payments/fees/add-class-5", protect, requireAdmin, async (req, res) => {
   try {
     const existingFee = await FeeStructure.findOne({
       academicYear: "2026-2027",
@@ -1587,7 +1592,7 @@ router.post("/payments/fees/add-class-5", async (req, res) => {
    ADMIN — UPDATE FEE STRUCTURE
 ===================================================== */
 
-router.put("/payments/fees/:feeId", async (req, res) => {
+router.put("/payments/fees/:feeId", protect, requireAdmin, async (req, res) => {
   try {
     const { feeId } = req.params;
     const { academicYear, monthlyFee, isActive } = req.body;
@@ -1664,10 +1669,13 @@ router.put("/payments/fees/:feeId", async (req, res) => {
 
 /* =====================================================
    ADMIN — MARK STUDENT PAYMENT AS PAID
+   (Legacy endpoint - kept for compatibility)
 ===================================================== */
 
 router.put(
   "/payments/students/:paymentId/mark-paid",
+  protect,
+  requireAdmin,
   async (req, res) => {
     try {
       const { paymentId } = req.params;
@@ -1724,6 +1732,762 @@ router.put(
 );
 
 /* =====================================================
+   ADMIN — APPROVE STUDENT PAYMENT
+   Verifies a submitted payment proof and marks as Paid
+===================================================== */
+
+router.put(
+  "/payments/students/:paymentId/approve",
+  protect,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+
+      const payment =
+        await StudentPayment.findById(paymentId).populate(
+          "student",
+          "firstName lastName email class"
+        );
+
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment record not found"
+        });
+      }
+
+      if (payment.status !== "Submitted") {
+        return res.status(400).json({
+          success: false,
+          message: `Payment cannot be approved. Current status: ${payment.status}`
+        });
+      }
+
+      // Record admin who approved and verification timestamp
+      payment.verifiedBy = req.user._id;
+      payment.verifiedAt = new Date();
+      payment.status = "Paid";
+      payment.amountPaid = payment.monthlyFee;
+      payment.paidAt = new Date();
+
+      await payment.save();
+
+      // Generate or retrieve the official receipt for this exact payment.
+      // Reuse the existing bill number if one was already assigned so that
+      // retries never change it.
+      let billNumber = payment.billNumber;
+      if (!billNumber) {
+        billNumber = generateReceiptBillNumber();
+        payment.billNumber = billNumber;
+      }
+
+      if (!payment.receiptGeneratedAt) {
+        payment.receiptGeneratedAt = new Date();
+      }
+
+      await payment.save();
+
+      // Build the receipt PDF attachment. If receipt generation or attachment
+      // preparation fails, receiptAttachment stays null so the approval email is
+      // never sent claiming a receipt is attached. The already-approved payment
+      // above is preserved either way.
+      let receiptAttachment = null;
+      try {
+        const pdfBuffer = await generateReceiptPdf(payment, billNumber);
+        receiptAttachment = {
+          filename: `CEITCS-Receipt-${billNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        };
+      } catch (receiptError) {
+        console.error(
+          "Failed to generate receipt PDF for approval email:",
+          receiptError
+        );
+        receiptAttachment = null;
+      }
+
+      // Send approval email to the student's registered email from the database
+      const studentName =
+        `${payment.student?.firstName || ""} ${
+          payment.student?.lastName || ""
+        }`.trim();
+
+      const verificationDate = payment.verifiedAt.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+      });
+
+      const receiptParagraph = receiptAttachment
+        ? `Your official receipt <strong>${billNumber}</strong> is attached to this email as a PDF. Please keep it for your records.`
+        : `Your formal receipt will be available in your payment history.`;
+
+      try {
+        await transporter.sendMail({
+          from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
+          to: payment.student.email,
+          subject: "CEITCS Course Fee Payment - Approved",
+          html: `
+            <div style="
+              font-family: Arial, sans-serif;
+              background-color: #ffffff;
+              color: #333333;
+              max-width: 650px;
+              margin: 0 auto;
+              padding: 20px;
+              line-height: 1.7;
+            ">
+              <h2 style="color: #2f4b8f; margin-bottom: 5px;">
+                CeiT Academy - Online Tuition
+              </h2>
+
+              <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
+                CEITCS Course Fee Payment - Approved
+              </p>
+
+              <p>Dear ${studentName},</p>
+
+              <p>
+                Your course fee payment has been <strong>verified and approved</strong> by our admin team.
+              </p>
+
+              <div style="
+                background-color: #e8f5e9;
+                border-left: 4px solid #4caf50;
+                padding: 15px 18px;
+                margin: 20px 0;
+              ">
+                <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
+                <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${payment.className}</p>
+                <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${payment.transactionReference}</p>
+                <p style="margin: 5px 0;"><strong>Amount Paid:</strong> ₹${payment.amountPaid}</p>
+                <p style="margin: 5px 0;"><strong>Bill Number:</strong> ${billNumber}</p>
+                <p style="margin: 5px 0;"><strong>Verification Date:</strong> ${verificationDate}</p>
+                <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #4caf50;">Paid</span></p>
+              </div>
+
+              <p>
+                Your payment is now confirmed. ${receiptParagraph}
+              </p>
+
+              <p>
+                Thank you for your timely payment.
+              </p>
+
+              <hr
+                style="
+                  border: none;
+                  border-top: 1px solid #dddddd;
+                  margin: 30px 0;
+                "
+              />
+
+              <p>
+                Regards,<br />
+                <strong>Admin</strong><br />
+                <strong>CeiT Academy - Online Tuition</strong>
+              </p>
+
+              <p
+                style="
+                  color: #888888;
+                  font-size: 13px;
+                  margin-top: 30px;
+                "
+              >
+                This is an automated email from CeiT Academy - Online Tuition.
+                Please do not reply directly to this email.
+              </p>
+            </div>
+          `,
+          ...(receiptAttachment ? { attachments: [receiptAttachment] } : {}),
+        });
+
+        console.log(
+          "📧 Student payment approval email sent to:",
+          payment.student.email,
+          receiptAttachment ? `receipt ${billNumber} attached` : "no receipt attached"
+        );
+      } catch (emailError) {
+        // Email delivery failed. The approved payment is already saved and must
+        // NOT be rolled back, and the bill number must not be regenerated.
+        console.error(
+          "Failed to send student payment approval email:",
+          emailError
+        );
+      }
+
+      return res.json({
+        success: true,
+        message: "Payment approved successfully",
+        payment
+      });
+
+    } catch (error) {
+      console.error(
+        "Approve student payment error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to approve payment",
+        error: error.message
+      });
+    }
+  }
+);
+
+/* =====================================================
+   ADMIN — REJECT STUDENT PAYMENT
+   Rejects a submitted payment with a reason
+===================================================== */
+
+router.put(
+  "/payments/students/:paymentId/reject",
+  protect,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+      const { rejectionReason } = req.body;
+
+      if (!rejectionReason || !rejectionReason.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Rejection reason is required"
+        });
+      }
+
+      const payment =
+        await StudentPayment.findById(paymentId).populate(
+          "student",
+          "firstName lastName email class"
+        );
+
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment record not found"
+        });
+      }
+
+      if (payment.status !== "Submitted") {
+        return res.status(400).json({
+          success: false,
+          message: `Payment cannot be rejected. Current status: ${payment.status}`
+        });
+      }
+
+      // Record rejection details
+      payment.verifiedBy = req.user._id;
+      payment.verifiedAt = new Date();
+      payment.status = "Rejected";
+      payment.rejectionReason = rejectionReason.trim();
+      payment.amountPaid = 0;
+
+      await payment.save();
+
+      // Send rejection email to student
+      const studentName =
+        `${payment.student?.firstName || ""} ${
+          payment.student?.lastName || ""
+        }`.trim();
+
+      const rejectionDate = payment.verifiedAt.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+      });
+
+      try {
+        await transporter.sendMail({
+          from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
+          to: payment.student.email,
+          subject: "CEITCS Course Fee Payment - Rejected",
+          html: `
+            <div style="
+              font-family: Arial, sans-serif;
+              background-color: #ffffff;
+              color: #333333;
+              max-width: 650px;
+              margin: 0 auto;
+              padding: 20px;
+              line-height: 1.7;
+            ">
+              <h2 style="color: #2f4b8f; margin-bottom: 5px;">
+                CeiT Academy - Online Tuition
+              </h2>
+
+              <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
+                CEITCS Course Fee Payment - Rejected
+              </p>
+
+              <p>Dear ${studentName},</p>
+
+              <p>
+                We regret to inform you that your course fee payment submission has been <strong>rejected</strong> by our admin team.
+              </p>
+
+              <div style="
+                background-color: #fff1f1;
+                border-left: 4px solid #d9534f;
+                padding: 15px 18px;
+                margin: 20px 0;
+              ">
+                <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
+                <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${payment.className}</p>
+                <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${payment.transactionReference}</p>
+                <p style="margin: 5px 0;"><strong>Submitted Amount:</strong> ₹${payment.monthlyFee}</p>
+                <p style="margin: 5px 0;"><strong>Rejection Date:</strong> ${rejectionDate}</p>
+                <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #d9534f;">Rejected</span></p>
+              </div>
+
+              <p>
+                <strong>Reason for rejection:</strong>
+              </p>
+
+              <div style="
+                background-color: #f5f5f5;
+                padding: 15px 18px;
+                border-left: 4px solid #d9534f;
+                margin: 10px 0 20px 0;
+              ">
+                ${rejectionReason.trim()}
+              </div>
+
+              <p>
+                Please review the reason mentioned above. You may contact the institute administration for clarification or resubmit your payment proof with the correct details through the student payment portal.
+              </p>
+
+              <p>
+                If you believe this was an error, please contact the administration directly.
+              </p>
+
+              <hr
+                style="
+                  border: none;
+                  border-top: 1px solid #dddddd;
+                  margin: 30px 0;
+                "
+              />
+
+              <p>
+                Regards,<br />
+                <strong>Admin</strong><br />
+                <strong>CeiT Academy - Online Tuition</strong>
+              </p>
+
+              <p
+                style="
+                  color: #888888;
+                  font-size: 13px;
+                  margin-top: 30px;
+                "
+              >
+                This is an automated email from CeiT Academy - Online Tuition.
+                Please do not reply directly to this email.
+              </p>
+            </div>
+          `,
+        });
+
+        console.log(
+          "📧 Student payment rejection email sent to:",
+          payment.student.email
+        );
+      } catch (emailError) {
+        console.error(
+          "Failed to send student payment rejection email:",
+          emailError
+        );
+      }
+
+      return res.json({
+        success: true,
+        message: "Payment rejected successfully",
+        payment
+      });
+
+    } catch (error) {
+      console.error(
+        "Reject student payment error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to reject payment",
+        error: error.message
+      });
+    }
+  }
+);
+
+/* =====================================================
+   ADMIN — GENERATE RECEIPT FOR PAID PAYMENT
+   Generates a PDF receipt for approved payments only.
+   Idempotent: reuses existing bill number if already generated.
+===================================================== */
+
+router.post(
+  "/payments/students/:paymentId/generate-receipt",
+  protect,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+
+      const payment =
+        await StudentPayment.findById(paymentId).populate(
+          "student",
+          "firstName lastName email class"
+        );
+
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment record not found"
+        });
+      }
+
+      if (payment.status !== "Paid") {
+        return res.status(400).json({
+          success: false,
+          message: `Receipt can only be generated for paid payments. Current status: ${payment.status}`
+        });
+      }
+
+      // Generate bill number if not already generated
+      let billNumber = payment.billNumber;
+      if (!billNumber) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const random = Math.floor(Math.random() * 10000)
+          .toString()
+          .padStart(4, "0");
+        billNumber = `CEITCS-${year}${month}-${random}`;
+        payment.billNumber = billNumber;
+      }
+
+      // Set receipt generation timestamp if not already set
+      if (!payment.receiptGeneratedAt) {
+        payment.receiptGeneratedAt = new Date();
+      }
+
+      await payment.save();
+
+      // Generate PDF receipt using the shared official receipt format
+      const pdfBuffer = await generateReceiptPdf(payment, billNumber);
+
+      // Send PDF as response
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="receipt-${billNumber}.pdf"`,
+        "Content-Length": pdfBuffer.length,
+      });
+      res.send(pdfBuffer);
+
+    } catch (error) {
+      console.error("Generate receipt error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate receipt",
+        error: error.message
+      });
+    }
+  }
+);
+
+/* =====================================================
+   ADMIN — EMAIL RECEIPT TO STUDENT AND ADMIN
+   Sends the generated receipt as PDF attachment.
+===================================================== */
+
+router.post(
+  "/payments/students/:paymentId/email-receipt",
+  protect,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+
+      const payment =
+        await StudentPayment.findById(paymentId).populate(
+          "student",
+          "firstName lastName email class"
+        );
+
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment record not found"
+        });
+      }
+
+      if (payment.status !== "Paid") {
+        return res.status(400).json({
+          success: false,
+          message: `Receipt can only be emailed for paid payments. Current status: ${payment.status}`
+        });
+      }
+
+      // Generate bill number if not already generated
+      let billNumber = payment.billNumber;
+      if (!billNumber) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const random = Math.floor(Math.random() * 10000)
+          .toString()
+          .padStart(4, "0");
+        billNumber = `CEITCS-${year}${month}-${random}`;
+        payment.billNumber = billNumber;
+      }
+
+      if (!payment.receiptGeneratedAt) {
+        payment.receiptGeneratedAt = new Date();
+      }
+
+      await payment.save();
+
+      // Generate PDF receipt buffer using the shared official receipt format
+      const pdfBuffer = await generateReceiptPdf(payment, billNumber);
+
+      // Details used in the receipt emails
+      const studentName =
+        `${payment.student?.firstName || ""} ${
+          payment.student?.lastName || ""
+        }`.trim();
+
+      const studentEmail = payment.student?.email || "";
+      const studentClass = payment.student?.class || payment.className || "-";
+      const amountPaid = payment.amountPaid || payment.monthlyFee || 0;
+      const transactionRef = payment.transactionReference || "-";
+      const verificationDate = payment.verifiedAt
+        ? payment.verifiedAt.toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+          })
+        : payment.paidAt
+        ? payment.paidAt.toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+          })
+        : new Date().toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+          });
+      const receiptDate = payment.receiptGeneratedAt
+        ? payment.receiptGeneratedAt.toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+          })
+        : new Date().toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+          });
+
+      // Send email to student
+      const adminEmail = process.env.ADMIN_EMAIL;
+      const emailResults = { student: false, admin: false };
+
+      try {
+        await transporter.sendMail({
+          from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
+          to: studentEmail,
+          subject: `CEITCS Course Fee Receipt - ${billNumber}`,
+          html: `
+            <div style="
+              font-family: Arial, sans-serif;
+              background-color: #ffffff;
+              color: #333333;
+              max-width: 650px;
+              margin: 0 auto;
+              padding: 20px;
+              line-height: 1.7;
+            ">
+              <h2 style="color: #2f4b8f; margin-bottom: 5px;">
+                CeiT Academy - Online Tuition
+              </h2>
+
+              <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
+                CEITCS Course Fee Receipt
+              </p>
+
+              <p>Dear ${studentName},</p>
+
+              <p>
+                Your course fee payment has been verified and approved. Please find your official receipt attached as a PDF.
+              </p>
+
+              <div style="
+                background-color: #e8f5e9;
+                border-left: 4px solid #4caf50;
+                padding: 15px 18px;
+                margin: 20px 0;
+              ">
+                <p style="margin: 5px 0;"><strong>Bill Number:</strong> ${billNumber}</p>
+                <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
+                <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${studentClass}</p>
+                <p style="margin: 5px 0;"><strong>Amount Paid:</strong> ₹${amountPaid.toLocaleString("en-IN")}</p>
+                <p style="margin: 5px 0;"><strong>Transaction Reference:</strong> ${transactionRef}</p>
+                <p style="margin: 5px 0;"><strong>Verification Date:</strong> ${verificationDate}</p>
+                <p style="margin: 5px 0;"><strong>Receipt Date:</strong> ${receiptDate}</p>
+                <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #4caf50;">Paid</span></p>
+              </div>
+
+              <p>
+                This receipt serves as proof of payment for your records. Please keep it for future reference.
+              </p>
+
+              <hr
+                style="
+                  border: none;
+                  border-top: 1px solid #dddddd;
+                  margin: 30px 0;
+                "
+              />
+
+              <p>
+                Regards,<br />
+                <strong>Admin</strong><br />
+                <strong>CeiT Academy - Online Tuition</strong>
+              </p>
+
+              <p
+                style="
+                  color: #888888;
+                  font-size: 13px;
+                  margin-top: 30px;
+                "
+              >
+                This is an automated email from CeiT Academy - Online Tuition.
+                Please do not reply directly to this email.
+              </p>
+            </div>
+          `,
+          attachments: [
+            {
+              filename: `receipt-${billNumber}.pdf`,
+              content: pdfBuffer,
+              contentType: "application/pdf",
+            },
+          ],
+        });
+
+        emailResults.student = true;
+        console.log("📧 Receipt email sent to student:", studentEmail);
+      } catch (emailError) {
+        console.error("Failed to send receipt email to student:", emailError);
+      }
+
+      // Send email to admin if configured
+      if (adminEmail) {
+        try {
+          await transporter.sendMail({
+            from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
+            to: adminEmail,
+            subject: `CEITCS Course Fee Receipt Generated - ${billNumber}`,
+            html: `
+              <div style="
+                font-family: Arial, sans-serif;
+                background-color: #ffffff;
+                color: #333333;
+                max-width: 650px;
+                margin: 0 auto;
+                padding: 20px;
+                line-height: 1.7;
+              ">
+                <h2 style="color: #2f4b8f; margin-bottom: 5px;">
+                  CeiT Academy - Online Tuition
+                </h2>
+
+                <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
+                  CEITCS Course Fee Receipt Generated
+                </p>
+
+                <p>
+                  An official receipt has been generated for a student payment.
+                </p>
+
+                <div style="
+                  background-color: #f0f4ff;
+                  border-left: 4px solid #2f4b8f;
+                  padding: 15px 18px;
+                  margin: 20px 0;
+                ">
+                  <p style="margin: 5px 0;"><strong>Bill Number:</strong> ${billNumber}</p>
+                  <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
+                  <p style="margin: 5px 0;"><strong>Student Email:</strong> ${studentEmail}</p>
+                  <p style="margin: 5px 0;"><strong>Student ID:</strong> ${payment.student?._id?.toString() || "-"}</p>
+                  <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${studentClass}</p>
+                  <p style="margin: 5px 0;"><strong>Amount Paid:</strong> ₹${amountPaid.toLocaleString("en-IN")}</p>
+                  <p style="margin: 5px 0;"><strong>Transaction Reference:</strong> ${transactionRef}</p>
+                  <p style="margin: 5px 0;"><strong>Verification Date:</strong> ${verificationDate}</p>
+                  <p style="margin: 5px 0;"><strong>Receipt Date:</strong> ${receiptDate}</p>
+                  <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #4caf50;">Paid</span></p>
+                </div>
+
+                <p>
+                  The receipt PDF is attached for your records.
+                </p>
+
+                <hr
+                  style="
+                    border: none;
+                    border-top: 1px solid #dddddd;
+                    margin: 30px 0;
+                  "
+                />
+
+                <p>
+                  Regards,<br />
+                  <strong>System</strong><br />
+                  <strong>CeiT Academy - Online Tuition</strong>
+                </p>
+
+                <p
+                  style="
+                    color: #888888;
+                    font-size: 13px;
+                    margin-top: 30px;
+                  "
+                >
+                  This is an automated email from CeiT Academy - Online Tuition.
+                  Please do not reply directly to this email.
+                </p>
+              </div>
+            `,
+            attachments: [
+              {
+                filename: `receipt-${billNumber}.pdf`,
+                content: pdfBuffer,
+                contentType: "application/pdf",
+              },
+            ],
+          });
+
+          emailResults.admin = true;
+          console.log("📧 Receipt email sent to admin:", adminEmail);
+        } catch (emailError) {
+          console.error("Failed to send receipt email to admin:", emailError);
+        }
+      }
+
+      return res.json({
+        success: true,
+        message: "Receipt emailed successfully",
+        billNumber,
+        emailResults
+      });
+
+    } catch (error) {
+      console.error("Email receipt error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to email receipt",
+        error: error.message
+      });
+    }
+  }
+);
+
+/* =====================================================
    DELETE TEACHER
 ===================================================== */
 router.delete("/teachers/:id", async (req, res) => {
@@ -1745,7 +2509,7 @@ router.delete("/teachers/:id", async (req, res) => {
    ADMIN — GENERATE CURRENT MONTH STUDENT PAYMENTS
 ===================================================== */
 
-router.post("/payments/students/generate", async (req, res) => {
+router.post("/payments/students/generate", protect, requireAdmin, async (req, res) => {
   try {
     const now = new Date();
 
@@ -1836,7 +2600,7 @@ router.post("/payments/students/generate", async (req, res) => {
    ADMIN — CREATE CURRENT MONTH TEACHER PAYMENT
 ===================================================== */
 
-router.post("/teacher-payments/generate-all", async (req, res) => {
+router.post("/teacher-payments/generate-all", protect, requireAdmin, async (req, res) => {
   try {
     const now = new Date();
 

@@ -44,7 +44,8 @@ const studentPaymentSchema = new mongoose.Schema(
         "Created",
         "Paid",
         "Failed",
-        "Refunded"
+        "Refunded",
+        "Rejected"
       ],
       default: "Pending"
     },
@@ -65,24 +66,50 @@ const studentPaymentSchema = new mongoose.Schema(
     },
 
     paidAt: {
-  type: Date,
-  default: null
-},
+      type: Date,
+      default: null
+    },
 
-paymentScreenshot: {
-  type: String,
-  default: ""
-},
+    paymentScreenshot: {
+      type: String,
+      default: ""
+    },
 
-transactionReference: {
-  type: String,
-  default: ""
-},
+    transactionReference: {
+      type: String,
+      default: ""
+    },
 
-submittedAt: {
-  type: Date,
-  default: null
-}
+    submittedAt: {
+      type: Date,
+      default: null
+    },
+
+    billNumber: {
+      type: String,
+      default: ""
+    },
+
+    verifiedAt: {
+      type: Date,
+      default: null
+    },
+
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      default: null
+    },
+
+    rejectionReason: {
+      type: String,
+      default: ""
+    },
+
+    receiptGeneratedAt: {
+      type: Date,
+      default: null
+    }
   },
   {
     timestamps: true

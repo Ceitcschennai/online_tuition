@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API_BASE_URL from "../config/api";
 import "../styles/payments.css";
 
 const Payments = () => {
@@ -40,11 +41,18 @@ const Payments = () => {
           return;
         }
 
-        const API_BASE_URL =
-          process.env.REACT_APP_API_URL;
+        const token =
+          localStorage.getItem("token");
 
         const response = await fetch(
-          `${API_BASE_URL}/api/payments/student/${studentId}/current`
+          `${API_BASE_URL}/api/payments/student/${studentId}/current`,
+          {
+            headers: {
+              ...(token
+                ? { Authorization: `Bearer ${token}` }
+                : {}),
+            },
+          }
         );
 
         const data = await response.json();
@@ -130,11 +138,18 @@ const Payments = () => {
           return;
         }
 
-        const API_BASE_URL =
-          process.env.REACT_APP_API_URL;
+        const token =
+          localStorage.getItem("token");
 
         const response = await fetch(
-          `${API_BASE_URL}/api/payments/student/${studentId}/history`
+          `${API_BASE_URL}/api/payments/student/${studentId}/history`,
+          {
+            headers: {
+              ...(token
+                ? { Authorization: `Bearer ${token}` }
+                : {}),
+            },
+          }
         );
 
         const data = await response.json();

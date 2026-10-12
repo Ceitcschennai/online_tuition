@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
+import API_BASE_URL from "../config/api";
 import "../styles/managePayments.css";
 
 const ManagePayments = () => {
-  const API_BASE_URL = process.env.REACT_APP_API_URL;
 
   // =====================================================
   // STATE
@@ -26,6 +26,15 @@ const ManagePayments = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // =====================================================
+  // PAYMENT REVIEW STATE
+  // =====================================================
+
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [showScreenshot, setShowScreenshot] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [processingPaymentId, setProcessingPaymentId] = useState(null);
+
+  // =====================================================
   // FETCH STUDENT PAYMENTS
   // =====================================================
 
@@ -34,7 +43,12 @@ const ManagePayments = () => {
       setLoading(true);
 
       const response = await fetch(
-        `${API_BASE_URL}/api/admin/payments/students`
+        `${API_BASE_URL}/api/admin/payments/students`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
 
       const data = await response.json();
@@ -62,7 +76,12 @@ const ManagePayments = () => {
       setTeacherLoading(true);
 
       const response = await fetch(
-        `${API_BASE_URL}/api/admin/payments/teachers`
+        `${API_BASE_URL}/api/admin/payments/teachers`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
 
       const data = await response.json();
@@ -90,7 +109,12 @@ const ManagePayments = () => {
       setFeeLoading(true);
 
       const response = await fetch(
-        `${API_BASE_URL}/api/admin/payments/fees`
+        `${API_BASE_URL}/api/admin/payments/fees`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
 
       const data = await response.json();
@@ -151,7 +175,8 @@ const ManagePayments = () => {
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify({
             academicYear,
@@ -368,6 +393,115 @@ const ManagePayments = () => {
   };
 
   // =====================================================
+  // APPROVE STUDENT PAYMENT
+  // =====================================================
+
+  const approvePayment = async (paymentId) => {
+    if (!window.confirm("Approve this payment? This will mark it as Paid.")) {
+      return;
+    }
+
+    try {
+      setProcessingPaymentId(paymentId);
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/admin/payments/students/${paymentId}/approve`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.success) {
+        alert(data.message || "Failed to approve payment");
+        return;
+      }
+
+      await fetchPayments();
+      setSelectedPayment(null);
+
+      alert("Payment approved successfully!");
+    } catch (error) {
+      console.error("Approve payment error:", error);
+      alert("Failed to approve payment");
+    } finally {
+      setProcessingPaymentId(null);
+    }
+  };
+
+  // =====================================================
+  // REJECT STUDENT PAYMENT
+  // =====================================================
+
+  const rejectPayment = async (paymentId) => {
+    const reason = rejectReason.trim();
+    if (!reason) {
+      alert("Please enter a rejection reason");
+      return;
+    }
+
+    try {
+      setProcessingPaymentId(paymentId);
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/admin/payments/students/${paymentId}/reject`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ rejectionReason: reason })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.success) {
+        alert(data.message || "Failed to reject payment");
+        return;
+      }
+
+      await fetchPayments();
+      setSelectedPayment(null);
+      setRejectReason("");
+
+      alert("Payment rejected successfully");
+    } catch (error) {
+      console.error("Reject payment error:", error);
+      alert("Failed to reject payment");
+    } finally {
+      setProcessingPaymentId(null);
+    }
+  };
+
+  // =====================================================
+  // OPEN PAYMENT DETAIL / SCREENSHOT
+  // =====================================================
+
+  const openPaymentDetail = (payment) => {
+    setSelectedPayment(payment);
+  };
+
+  const closePaymentDetail = () => {
+    setSelectedPayment(null);
+    setRejectReason("");
+  };
+
+  const openScreenshot = () => {
+    setShowScreenshot(true);
+  };
+
+  const closeScreenshot = () => {
+    setShowScreenshot(false);
+  };
+
+  // =====================================================
   // MARK STUDENT PAYMENT AS PAID
   // =====================================================
 
@@ -378,7 +512,8 @@ const ManagePayments = () => {
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           }
         }
       );
@@ -421,7 +556,8 @@ const ManagePayments = () => {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           }
         }
       );
@@ -465,6 +601,7 @@ const generateTeacherPayments = async () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       }
     );
@@ -499,76 +636,87 @@ const generateTeacherPayments = async () => {
   }
 };
 
+// =====================================================
+  // DOWNLOAD RECEIPT PDF (via backend API)
   // =====================================================
-  // DOWNLOAD STUDENT RECEIPT
-  // =====================================================
 
-  const downloadReceipt = (payment) => {
-    const studentName =
-      `${payment.student?.firstName || ""} ${
-        payment.student?.lastName || ""
-      }`.trim();
+  const downloadReceipt = async (payment) => {
+    setProcessingPaymentId(payment._id);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/admin/payments/students/${payment._id}/generate-receipt`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-    const className =
-      payment.student?.class ||
-      payment.className ||
-      "-";
-
-    const receiptContent = `
-PAYMENT RECEIPT
-===============
-
-Student: ${studentName}
-Class: ${className}
-Payment Month: ${payment.paymentMonth || "-"}
-Academic Year: ${payment.academicYear || "-"}
-
-Amount: ₹${
-      payment.amountPaid ||
-      payment.monthlyFee ||
-      0
-    }
-
-Status: ${payment.status || "-"}
-
-Date Paid: ${
-      payment.paidAt
-        ? formatDate(payment.paidAt)
-        : "-"
-    }
-
-Transaction Reference:
-${payment.transactionReference || "-"}
-
-Payment ID:
-${payment._id || "-"}
-`;
-
-    const blob = new Blob(
-      [receiptContent],
-      {
-        type: "text/plain"
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to generate receipt");
       }
-    );
 
-    const url =
-      window.URL.createObjectURL(blob);
+      // Get the PDF blob
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = `receipt-${payment._id}.pdf`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) filename = match[1];
+      }
 
-    const link =
-      document.createElement("a");
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download receipt error:", error);
+      alert(error.message || "Failed to download receipt");
+    } finally {
+      setProcessingPaymentId(null);
+    }
+  };
 
-    link.href = url;
+  // =====================================================
+  // EMAIL RECEIPT (via backend API)
+  // =====================================================
 
-    link.download =
-      `receipt-${payment._id}.txt`;
+  const emailReceipt = async (payment) => {
+    setProcessingPaymentId(payment._id);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/admin/payments/students/${payment._id}/email-receipt`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    document.body.appendChild(link);
+      const data = await response.json();
 
-    link.click();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to email receipt");
+      }
 
-    document.body.removeChild(link);
-
-    window.URL.revokeObjectURL(url);
+      alert(
+        `Receipt emailed successfully!\nBill Number: ${data.billNumber}\nStudent email: ${data.emailResults.student ? "Sent" : "Failed"}\nAdmin email: ${data.emailResults.admin ? "Sent" : "Failed/Not configured"}`
+      );
+    } catch (error) {
+      console.error("Email receipt error:", error);
+      alert(error.message || "Failed to email receipt");
+    } finally {
+      setProcessingPaymentId(null);
+    }
   };
 
   // =====================================================
@@ -801,7 +949,7 @@ ${payment._id || "-"}
                     <th>Status</th>
                     <th>Payment Date</th>
                     <th>Payment ID</th>
-                    <th>Action</th>
+                    <th className="payment-action-column">Action</th>
                   </tr>
                 </thead>
 
@@ -819,6 +967,9 @@ ${payment._id || "-"}
                         payment.student?.class ||
                         payment.className ||
                         "-";
+
+                      const isSubmitted = payment.status === "Submitted";
+                      const isProcessing = processingPaymentId === payment._id;
 
                       return (
                         <tr
@@ -870,45 +1021,71 @@ ${payment._id || "-"}
                               ? formatDate(
                                   payment.paidAt
                                 )
+                              : payment.submittedAt
+                              ? formatDate(payment.submittedAt)
                               : "-"}
                           </td>
 
                           <td className="payment-id">
-                            {payment.razorpayPaymentId ||
-                              payment.transactionReference ||
-                              "-"}
+                            {payment.razorpayPaymentId || payment.transactionReference || "-"}
                           </td>
 
                           <td>
 
-                            {payment.status !==
-                            "Paid" ? (
+                            {isSubmitted && (
+                                <>
+                                  <button
+                                    className="table-action primary"
+                                    onClick={() => openPaymentDetail(payment)}
+                                    disabled={isProcessing}
+                                    title="Review payment proof"
+                                  >
+                                    Review
+                                  </button>
+                                </>
+                              )}
 
-                              <button
-                                className="table-action primary"
-                                onClick={() =>
-                                  markAsPaid(
-                                    payment._id
-                                  )
-                                }
-                              >
-                                Mark Paid
-                              </button>
+                              {!isSubmitted && payment.status !== "Paid" && (
+                                <button
+                                  className="table-action primary"
+                                  onClick={() => markAsPaid(payment._id)}
+                                  disabled={isProcessing}
+                                >
+                                  Mark Paid
+                                </button>
+                              )}
 
-                            ) : (
+                              {payment.status === "Paid" && (
+                                <>
+                                  <button
+                                    className="table-action secondary"
+                                    onClick={() => downloadReceipt(payment)}
+                                    disabled={isProcessing}
+                                  >
+                                    Download Receipt
+                                  </button>
+                                  <button
+                                    className="table-action secondary"
+                                    onClick={() => emailReceipt(payment)}
+                                    disabled={isProcessing}
+                                    title="Email receipt to student and admin"
+                                  >
+                                    Email Receipt
+                                  </button>
+                                </>
+                              )}
 
-                              <button
-                                className="table-action secondary"
-                                onClick={() =>
-                                  downloadReceipt(
-                                    payment
-                                  )
-                                }
-                              >
-                                Receipt
-                              </button>
-
-                            )}
+                              {(payment.status === "Rejected" || payment.status === "Paid") &&
+                                payment.paymentScreenshot && (
+                                  <button
+                                    className="table-action secondary"
+                                    onClick={() => openPaymentDetail(payment)}
+                                    disabled={isProcessing}
+                                    title="View payment proof"
+                                  >
+                                    View Proof
+                                  </button>
+                                )}
 
                           </td>
 
@@ -1722,6 +1899,141 @@ ${payment._id || "-"}
           renderFeeStructure()}
 
       </div>
+
+      {/* PAYMENT DETAIL MODAL */}
+      {selectedPayment && (
+        <div className="modal-overlay" onClick={closePaymentDetail}>
+          <div className="modal-content payment-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Payment Details</h3>
+              <button className="modal-close" onClick={closePaymentDetail}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-grid">
+                <div className="detail-item">
+                  <span className="detail-label">Student</span>
+                  <strong>{selectedPayment.student?.firstName || ""} {selectedPayment.student?.lastName || ""}</strong>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Email</span>
+                  <strong>{selectedPayment.student?.email || "-"}</strong>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Class</span>
+                  <strong>{selectedPayment.student?.class || selectedPayment.className || "-"}</strong>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Month</span>
+                  <strong>{formatMonth(selectedPayment.paymentMonth)}</strong>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Academic Year</span>
+                  <strong>{selectedPayment.academicYear || "-"}</strong>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Monthly Fee</span>
+                  <strong>₹{(selectedPayment.monthlyFee || 0).toLocaleString("en-IN")}</strong>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Transaction Reference</span>
+                  <strong>{selectedPayment.transactionReference || "-"}</strong>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Submitted At</span>
+                  <strong>{selectedPayment.submittedAt ? formatDate(selectedPayment.submittedAt) : "-"}</strong>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Status</span>
+                  <strong><span className={"status-badge " + (selectedPayment.status?.toLowerCase() || "")}>{selectedPayment.status || "-"}</span></strong>
+                </div>
+                {selectedPayment.rejectionReason && (
+                  <div className="detail-item full-width">
+                    <span className="detail-label">Rejection Reason</span>
+                    <div className="rejection-reason">{selectedPayment.rejectionReason}</div>
+                  </div>
+                )}
+              </div>
+
+              {selectedPayment.paymentScreenshot && (
+                <div className="screenshot-section">
+                  <h4>Payment Proof</h4>
+                  <button
+                    className="view-screenshot-btn"
+                    onClick={openScreenshot}
+                  >
+                    👁 View Screenshot
+                  </button>
+                </div>
+              )}
+
+              {selectedPayment.status === "Submitted" && (
+                <div className="modal-actions">
+                  <button
+                    className="approve-btn"
+                    onClick={() => approvePayment(selectedPayment._id)}
+                    disabled={processingPaymentId === selectedPayment._id}
+                  >
+                    {processingPaymentId === selectedPayment._id ? "Processing..." : "✓ Approve Payment"}
+                  </button>
+                  <button
+                    className="reject-btn"
+                    onClick={() => {}}
+                    disabled={processingPaymentId === selectedPayment._id}
+                  >
+                    ✕ Reject Payment
+                  </button>
+                </div>
+              )}
+
+              {selectedPayment.status === "Submitted" && (
+                <div className="reject-form">
+                  <label>Rejection Reason (required)</label>
+                  <textarea
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="Enter rejection reason..."
+                    rows="3"
+                  />
+                  <button
+                    className="reject-confirm-btn"
+                    onClick={() => rejectPayment(selectedPayment._id)}
+                    disabled={processingPaymentId === selectedPayment._id || !rejectReason.trim()}
+                  >
+                    Confirm Rejection
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SCREENSHOT MODAL */}
+      {showScreenshot && selectedPayment?.paymentScreenshot && (
+        <div className="modal-overlay" onClick={closeScreenshot}>
+          <div className="modal-content screenshot-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Payment Screenshot</h3>
+              <button className="modal-close" onClick={closeScreenshot}>✕</button>
+            </div>
+            <div className="modal-body">
+              {selectedPayment.paymentScreenshot.startsWith("data:application/pdf") ? (
+                <iframe
+                  src={selectedPayment.paymentScreenshot}
+                  title="Payment Screenshot"
+                  className="screenshot-frame"
+                />
+              ) : (
+                <img
+                  src={selectedPayment.paymentScreenshot}
+                  alt="Payment Screenshot"
+                  className="screenshot-image"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

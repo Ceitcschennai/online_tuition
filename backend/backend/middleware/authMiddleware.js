@@ -22,6 +22,24 @@ const protect = async (req, res, next) => {
         process.env.JWT_SECRET
       );
 
+      /*
+        Admin tokens are issued as { role: "admin", email } (and the
+        super-admin variant as { id: "super-admin", role: "admin" }).
+        They do not reference a Student/Teacher/Admin document, so a
+        document lookup by decoded.id would always fail. The JWT itself
+        is signed with JWT_SECRET, so the decoded role is authoritative.
+        Trust it instead of attempting a user-document lookup.
+      */
+      if (decoded.role === "admin") {
+        req.user = {
+          _id: decoded.id || null,
+          id: decoded.id || null,
+          role: "admin",
+          email: decoded.email || null,
+        };
+        return next();
+      }
+
       let user = null;
 
       // Student check
@@ -84,4 +102,14 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+const requireAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Admin access required",
+    });
+  }
+  next();
+};
+
+module.exports = { protect, requireAdmin };

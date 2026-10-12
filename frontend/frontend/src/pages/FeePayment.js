@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import API_BASE_URL from "../config/api";
+import instituteQR from "../assets/tuition-qr.jpg";
 import "../styles/feePayment.css";
 
 const FeePayment = () => {
@@ -26,6 +28,8 @@ const FeePayment = () => {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  const [showQRViewer, setShowQRViewer] = useState(false);
 
   /* =========================================================
      LOAD CURRENT PAYMENT
@@ -55,11 +59,18 @@ const FeePayment = () => {
           return;
         }
 
-        const API_BASE_URL =
-          process.env.REACT_APP_API_URL;
+        const token =
+          localStorage.getItem("token");
 
         const response = await fetch(
-          `${API_BASE_URL}/api/payments/student/${studentId}/current`
+          `${API_BASE_URL}/api/payments/student/${studentId}/current`,
+          {
+            headers: {
+              ...(token
+                ? { Authorization: `Bearer ${token}` }
+                : {}),
+            },
+          }
         );
 
         const data = await response.json();
@@ -131,6 +142,101 @@ const FeePayment = () => {
       year: "numeric"
     }
   );
+
+  /* =========================================================
+     QR VIEWER OVERLAY
+  ========================================================= */
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setShowQRViewer(false);
+      }
+    };
+
+    if (showQRViewer) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showQRViewer]);
+
+  const openQRViewer = () => {
+    setShowQRViewer(true);
+  };
+
+  const closeQRViewer = () => {
+    setShowQRViewer(false);
+  };
+
+  /* =========================================================
+     DOWNLOAD RECEIPT (Student)
+  ========================================================= */
+
+  const downloadReceipt = async () => {
+    if (!payment?._id) {
+      alert("Payment ID not available");
+      return;
+    }
+
+    const storedStudent = localStorage.getItem("user");
+    if (!storedStudent) {
+      alert("Student data not found");
+      return;
+    }
+
+    const student = JSON.parse(storedStudent);
+    const studentId = student._id || student.id || student.studentId;
+
+    if (!studentId) {
+      alert("Student ID not found");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/payments/student/${studentId}/payment/${payment._id}/receipt`,
+        {
+          headers: {
+            ...(token
+              ? { Authorization: `Bearer ${token}` }
+              : {}),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to generate receipt");
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = `receipt-${payment._id}.pdf`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) filename = match[1];
+      }
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download receipt error:", error);
+      alert(error.message || "Failed to download receipt");
+    }
+  };
 
   /* =========================================================
      SCREENSHOT SELECT
@@ -219,12 +325,12 @@ const FeePayment = () => {
         return;
       }
 
-      const API_BASE_URL =
-        process.env.REACT_APP_API_URL;
+      const token =
+        localStorage.getItem("token");
 
       /* -----------------------------------------------------
          Convert Screenshot to Base64
-      ----------------------------------------------------- */
+       ----------------------------------------------------- */
 
       const reader = new FileReader();
 
@@ -235,7 +341,7 @@ const FeePayment = () => {
 
           /* -------------------------------------------------
              Send Payment Submission
-          ------------------------------------------------- */
+           ------------------------------------------------- */
 
           const response = await fetch(
             `${API_BASE_URL}/api/payments/student/${studentId}/submit`,
@@ -243,7 +349,11 @@ const FeePayment = () => {
               method: "POST",
 
               headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+
+                ...(token
+                  ? { Authorization: `Bearer ${token}` }
+                  : {}),
               },
 
               body: JSON.stringify({
@@ -453,6 +563,15 @@ const FeePayment = () => {
             <button
               type="button"
               className="back-payment-btn"
+              onClick={downloadReceipt}
+              style={{ marginBottom: "10px", backgroundColor: "#2f4b8f" }}
+            >
+              Download Receipt
+            </button>
+
+            <button
+              type="button"
+              className="back-payment-btn"
               onClick={() =>
                 navigate("/payments")
               }
@@ -528,10 +647,10 @@ const FeePayment = () => {
               any UPI payment app.
             </p>
 
-            <div className="qr-code-container">
+            <div className="qr-code-container" onClick={openQRViewer} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openQRViewer(); } }}>
 
               <img
-                src="/images/institute-qr.png"
+                src={instituteQR}
                 alt="Institute UPI QR Code"
                 className="qr-code-image"
               />
@@ -546,7 +665,7 @@ const FeePayment = () => {
                 ₹{monthlyFee.toLocaleString("en-IN")}
               </strong>
 
-              {" "}to the institute account.
+              {" "}to the institute account and Admin will verify and confirm your payment. You will receive a mail with receipt once the payment is verified.
 
             </p>
 
@@ -662,10 +781,35 @@ const FeePayment = () => {
           >
             Back to Payments
           </button>
-
-        </div>
+</div>
 
       </div>
+
+      {showQRViewer && (
+        <div
+          className="qr-viewer-overlay"
+          onClick={closeQRViewer}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Enlarged QR Code"
+        >
+          <div className="qr-viewer-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="qr-viewer-close"
+              onClick={closeQRViewer}
+              aria-label="Close QR Code Viewer"
+            >
+              &times;
+            </button>
+            <img
+              src={instituteQR}
+              alt="Institute UPI QR Code - Enlarged"
+              className="qr-viewer-image"
+            />
+          </div>
+        </div>
+      )}
 
     </div>
   );
