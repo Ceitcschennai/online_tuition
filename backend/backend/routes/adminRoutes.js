@@ -1823,7 +1823,7 @@ router.put(
         : `Your formal receipt will be available in your payment history.`;
 
       try {
-        await transporter.sendMail({
+        const studentInfo = await transporter.sendMail({
           from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
           to: payment.student.email,
           subject: "CEITCS Course Fee Payment - Approved",
@@ -1904,17 +1904,118 @@ router.put(
         });
 
         console.log(
-          "📧 Student payment approval email sent to:",
-          payment.student.email,
-          receiptAttachment ? `receipt ${billNumber} attached` : "no receipt attached"
+          "📧 Student payment approval email sent:",
+          {
+            to: payment.student.email,
+            messageId: studentInfo.messageId,
+            accepted: studentInfo.accepted,
+            rejected: studentInfo.rejected,
+            receiptAttached: !!receiptAttachment,
+          }
         );
       } catch (emailError) {
         // Email delivery failed. The approved payment is already saved and must
         // NOT be rolled back, and the bill number must not be regenerated.
         console.error(
           "Failed to send student payment approval email:",
-          emailError
+          emailError?.message || emailError
         );
+      }
+
+      // Send copy to company email if configured
+      const companyEmail = process.env.COMPANY_EMAIL;
+      if (companyEmail) {
+        try {
+          const info = await transporter.sendMail({
+            from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
+            to: companyEmail,
+            subject: `CEITCS Course Fee Payment Approved - ${billNumber}`,
+            html: `
+              <div style="
+                font-family: Arial, sans-serif;
+                background-color: #ffffff;
+                color: #333333;
+                max-width: 650px;
+                margin: 0 auto;
+                padding: 20px;
+                line-height: 1.7;
+              ">
+                <h2 style="color: #2f4b8f; margin-bottom: 5px;">
+                  CeiT Academy - Online Tuition
+                </h2>
+
+                <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
+                  CEITCS Course Fee Payment - Approved (Company Copy)
+                </p>
+
+                <p>
+                  A student's course fee payment has been verified and approved.
+                </p>
+
+                <div style="
+                  background-color: #f0f4ff;
+                  border-left: 4px solid #2f4b8f;
+                  padding: 15px 18px;
+                  margin: 20px 0;
+                ">
+                  <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
+                  <p style="margin: 5px 0;"><strong>Student Email:</strong> ${payment.student?.email || "-"}</p>
+                  <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${payment.className}</p>
+                  <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${payment.transactionReference}</p>
+                  <p style="margin: 5px 0;"><strong>Amount Paid:</strong> ₹${payment.amountPaid}</p>
+                  <p style="margin: 5px 0;"><strong>Bill Number:</strong> ${billNumber}</p>
+                  <p style="margin: 5px 0;"><strong>Verification Date:</strong> ${verificationDate}</p>
+                  <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #4caf50;">Paid</span></p>
+                </div>
+
+                <p>
+                  The official receipt PDF is attached for your records.
+                </p>
+
+                <hr
+                  style="
+                    border: none;
+                    border-top: 1px solid #dddddd;
+                    margin: 30px 0;
+                  "
+                />
+
+                <p>
+                  Regards,<br />
+                  <strong>System</strong><br />
+                  <strong>CeiT Academy - Online Tuition</strong>
+                </p>
+
+                <p
+                  style="
+                    color: #888888;
+                    font-size: 13px;
+                    margin-top: 30px;
+                  "
+                >
+                  This is an automated email from CeiT Academy - Online Tuition.
+                  Please do not reply directly to this email.
+                </p>
+              </div>
+            `,
+            ...(receiptAttachment ? { attachments: [receiptAttachment] } : {}),
+          });
+
+          console.log(
+            "📧 Company payment approval email sent:",
+            {
+              to: companyEmail,
+              messageId: info.messageId,
+              accepted: info.accepted,
+              rejected: info.rejected,
+            }
+          );
+        } catch (companyEmailError) {
+          console.error(
+            "Failed to send company payment approval email:",
+            companyEmailError?.message || companyEmailError
+          );
+        }
       }
 
       return res.json({
@@ -2284,10 +2385,10 @@ router.post(
 
       // Send email to student
       const adminEmail = process.env.ADMIN_EMAIL;
-      const emailResults = { student: false, admin: false };
+      const emailResults = { student: false, admin: false, company: false };
 
       try {
-        await transporter.sendMail({
+        const info = await transporter.sendMail({
           from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
           to: studentEmail,
           subject: `CEITCS Course Fee Receipt - ${billNumber}`,
@@ -2371,15 +2472,26 @@ router.post(
         });
 
         emailResults.student = true;
-        console.log("📧 Receipt email sent to student:", studentEmail);
+        console.log(
+          "📧 Receipt email sent to student:",
+          {
+            to: studentEmail,
+            messageId: info.messageId,
+            accepted: info.accepted,
+            rejected: info.rejected,
+          }
+        );
       } catch (emailError) {
-        console.error("Failed to send receipt email to student:", emailError);
+        console.error(
+          "Failed to send receipt email to student:",
+          emailError?.message || emailError
+        );
       }
 
       // Send email to admin if configured
       if (adminEmail) {
         try {
-          await transporter.sendMail({
+          const info = await transporter.sendMail({
             from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
             to: adminEmail,
             subject: `CEITCS Course Fee Receipt Generated - ${billNumber}`,
@@ -2463,9 +2575,125 @@ router.post(
           });
 
           emailResults.admin = true;
-          console.log("📧 Receipt email sent to admin:", adminEmail);
+          console.log(
+            "📧 Receipt email sent to admin:",
+            {
+              to: adminEmail,
+              messageId: info.messageId,
+              accepted: info.accepted,
+              rejected: info.rejected,
+            }
+          );
         } catch (emailError) {
-          console.error("Failed to send receipt email to admin:", emailError);
+          console.error(
+            "Failed to send receipt email to admin:",
+            emailError?.message || emailError
+          );
+        }
+      }
+
+      // Send email to company if configured
+      const companyEmail = process.env.COMPANY_EMAIL;
+      if (companyEmail) {
+        try {
+          const info = await transporter.sendMail({
+            from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
+            to: companyEmail,
+            subject: `CEITCS Course Fee Receipt Generated - ${billNumber}`,
+            html: `
+              <div style="
+                font-family: Arial, sans-serif;
+                background-color: #ffffff;
+                color: #333333;
+                max-width: 650px;
+                margin: 0 auto;
+                padding: 20px;
+                line-height: 1.7;
+              ">
+                <h2 style="color: #2f4b8f; margin-bottom: 5px;">
+                  CeiT Academy - Online Tuition
+                </h2>
+
+                <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
+                  CEITCS Course Fee Receipt Generated (Company Copy)
+                </p>
+
+                <p>
+                  An official receipt has been generated for a student payment.
+                </p>
+
+                <div style="
+                  background-color: #f0f4ff;
+                  border-left: 4px solid #2f4b8f;
+                  padding: 15px 18px;
+                  margin: 20px 0;
+                ">
+                  <p style="margin: 5px 0;"><strong>Bill Number:</strong> ${billNumber}</p>
+                  <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
+                  <p style="margin: 5px 0;"><strong>Student Email:</strong> ${studentEmail}</p>
+                  <p style="margin: 5px 0;"><strong>Student ID:</strong> ${payment.student?._id?.toString() || "-"}</p>
+                  <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${studentClass}</p>
+                  <p style="margin: 5px 0;"><strong>Amount Paid:</strong> ₹${amountPaid.toLocaleString("en-IN")}</p>
+                  <p style="margin: 5px 0;"><strong>Transaction Reference:</strong> ${transactionRef}</p>
+                  <p style="margin: 5px 0;"><strong>Verification Date:</strong> ${verificationDate}</p>
+                  <p style="margin: 5px 0;"><strong>Receipt Date:</strong> ${receiptDate}</p>
+                  <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #4caf50;">Paid</span></p>
+                </div>
+
+                <p>
+                  The receipt PDF is attached for your records.
+                </p>
+
+                <hr
+                  style="
+                    border: none;
+                    border-top: 1px solid #dddddd;
+                    margin: 30px 0;
+                  "
+                />
+
+                <p>
+                  Regards,<br />
+                  <strong>System</strong><br />
+                  <strong>CeiT Academy - Online Tuition</strong>
+                </p>
+
+                <p
+                  style="
+                    color: #888888;
+                    font-size: 13px;
+                    margin-top: 30px;
+                  "
+                >
+                  This is an automated email from CeiT Academy - Online Tuition.
+                  Please do not reply directly to this email.
+                </p>
+              </div>
+            `,
+            attachments: [
+              {
+                filename: `receipt-${billNumber}.pdf`,
+                content: pdfBuffer,
+                contentType: "application/pdf",
+              },
+            ],
+          });
+
+          emailResults.company = true;
+          console.log(
+            "📧 Receipt email sent to company:",
+            {
+              to: companyEmail,
+              messageId: info.messageId,
+              accepted: info.accepted,
+              rejected: info.rejected,
+            }
+          );
+        } catch (emailError) {
+          console.error(
+            "Failed to send receipt email to company:",
+            emailError?.message || emailError
+          );
         }
       }
 
