@@ -384,8 +384,8 @@ router.get(
          READ UPI CONFIGURATION FROM ENV
        ----------------------------------------------------- */
 
-      const upiId = process.env.UPI_ID;
-      const upiPayeeName = process.env.UPI_PAYEE_NAME || "CeiT Academy";
+      const upiId = process.env.PAYEE_UPI_ID;
+      const upiPayeeName = process.env.PAYEE_NAME || "CeiT Academy";
 
       if (!upiId) {
         return res.status(500).json({
