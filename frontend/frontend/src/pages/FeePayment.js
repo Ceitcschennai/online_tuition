@@ -23,13 +23,29 @@ const FeePayment = () => {
   const [transactionReference, setTransactionReference] =
     useState("");
 
-  const [paymentScreenshot, setPaymentScreenshot] =
-    useState(null);
+  const [amount, setAmount] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const [showQRViewer, setShowQRViewer] = useState(false);
+
+  const gstAmount = 0; // GST is ₹0 for now
+
+  const handleConfirmPayment = () => {
+    navigate("/payment-details", {
+      state: {
+        className,
+        monthlyFee,
+        gstAmount,
+        totalAmount: monthlyFee + gstAmount,
+        paymentMonth: new Date().toLocaleString("en-US", {
+          month: "long",
+          year: "numeric",
+        }),
+      },
+    });
+  };
 
   /* =========================================================
      LOAD CURRENT PAYMENT
@@ -116,6 +132,11 @@ const FeePayment = () => {
 
         if (data.payment) {
           setPayment(data.payment);
+        }
+
+        // Pre-fill amount with outstanding balance if available
+        if (data.payment?.outstandingBalance !== undefined) {
+          setAmount(String(data.payment.outstandingBalance));
         }
 
       } catch (error) {
@@ -239,29 +260,6 @@ const FeePayment = () => {
   };
 
   /* =========================================================
-     SCREENSHOT SELECT
-  ========================================================= */
-
-  const handleScreenshotChange = (event) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      setPaymentScreenshot(null);
-      return;
-    }
-
-    /* Only allow image files */
-    if (!file.type.startsWith("image/")) {
-      alert("Please select a valid image file.");
-      event.target.value = "";
-      setPaymentScreenshot(null);
-      return;
-    }
-
-    setPaymentScreenshot(file);
-  };
-
-  /* =========================================================
      SUBMIT PAYMENT
   ========================================================= */
 
@@ -278,17 +276,6 @@ const FeePayment = () => {
     }
 
     /* -------------------------------------------------------
-       Validate Screenshot
-    ------------------------------------------------------- */
-
-    if (!paymentScreenshot) {
-      alert(
-        "Please upload the payment screenshot."
-      );
-      return;
-    }
-
-    /* -------------------------------------------------------
        Validate Fee
     ------------------------------------------------------- */
 
@@ -299,7 +286,6 @@ const FeePayment = () => {
       return;
     }
 
-    try {
       setSubmitting(true);
 
       const storedStudent =
@@ -325,117 +311,74 @@ const FeePayment = () => {
         return;
       }
 
-      const token =
+const token =
         localStorage.getItem("token");
 
-      /* -----------------------------------------------------
-         Convert Screenshot to Base64
-       ----------------------------------------------------- */
+      /* -------------------------------------------------
+         Send Payment Submission
+       ------------------------------------------------- */
 
-      const reader = new FileReader();
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/payments/student/${studentId}/submit`,
+          {
+            method: "POST",
 
-      reader.onload = async () => {
-        try {
-          const screenshotBase64 =
-            reader.result;
+            headers: {
+              "Content-Type": "application/json",
 
-          /* -------------------------------------------------
-             Send Payment Submission
-           ------------------------------------------------- */
+              ...(token
+                ? { Authorization: `Bearer ${token}` }
+                : {}),
+            },
 
-          const response = await fetch(
-            `${API_BASE_URL}/api/payments/student/${studentId}/submit`,
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type": "application/json",
-
-                ...(token
-                  ? { Authorization: `Bearer ${token}` }
-                  : {}),
-              },
-
-              body: JSON.stringify({
-                transactionReference:
-                  transactionReference.trim(),
-
-                paymentScreenshot:
-                  screenshotBase64
-              })
-            }
-          );
-
-          const data =
-            await response.json();
-
-          console.log(
-            "PAYMENT SUBMISSION RESPONSE:",
-            data
-          );
-
-          if (!response.ok || !data.success) {
-            alert(
-              data.message ||
-                "Payment submission failed."
-            );
-
-            return;
+            body: JSON.stringify({
+              transactionReference:
+                transactionReference.trim(),
+            })
           }
-
-          /* -------------------------------------------------
-             Success
-          ------------------------------------------------- */
-
-          alert(
-            "Payment submitted successfully! Admin will verify your payment."
-          );
-
-          navigate("/payments");
-
-        } catch (error) {
-          console.error(
-            "Payment submission error:",
-            error
-          );
-
-          alert(
-            "Something went wrong while submitting the payment."
-          );
-
-        } finally {
-          setSubmitting(false);
-        }
-      };
-
-      /* -------------------------------------------------------
-         File Reader Error
-      ------------------------------------------------------- */
-
-      reader.onerror = () => {
-        alert(
-          "Unable to read the payment screenshot."
         );
 
+        const data =
+          await response.json();
+
+        console.log(
+          "PAYMENT SUBMISSION RESPONSE:",
+          data
+        );
+
+        if (!response.ok || !data.success) {
+          alert(
+            data.message ||
+              "Payment submission failed."
+          );
+
+          return;
+        }
+
+        /* -------------------------------------------------
+           Success
+         ------------------------------------------------- */
+
+        alert(
+          "Payment submitted successfully! Admin will verify your payment."
+        );
+
+        navigate("/payments");
+
+      } catch (error) {
+        console.error(
+          "Payment submission error:",
+          error
+        );
+
+        alert(
+          "Something went wrong while submitting the payment."
+        );
+
+      } finally {
         setSubmitting(false);
-      };
-
-      reader.readAsDataURL(
-        paymentScreenshot
-      );
-
-    } catch (error) {
-      console.error(
-        "Payment error:",
-        error
-      );
-
-      alert(
-        "Something went wrong. Please try again."
-      );
-
-      setSubmitting(false);
-    }
+      }
   };
 
   /* =========================================================
@@ -615,9 +558,9 @@ const FeePayment = () => {
           </div>
 
 
-          {/* =================================================
-              AMOUNT
-          ================================================= */}
+{/* =================================================
+               AMOUNT
+           ================================================= */}
 
           <div className="payment-amount-section">
 
@@ -633,8 +576,72 @@ const FeePayment = () => {
 
 
           {/* =================================================
-              QR PAYMENT
-          ================================================= */}
+               FEE BREAKDOWN
+           ================================================= */}
+
+          <div className="fee-breakdown-section">
+
+            <h3>
+              Fee Breakdown
+            </h3>
+
+            <div className="fee-breakdown-table">
+
+              <div className="fee-breakdown-row">
+
+                <span className="fee-breakdown-label">
+                  Tuition Fee
+                </span>
+
+                <span className="fee-breakdown-value">
+                  ₹{monthlyFee.toLocaleString("en-IN")}
+                </span>
+
+              </div>
+
+              <div className="fee-breakdown-row">
+
+                <span className="fee-breakdown-label">
+                  GST (0%)
+                </span>
+
+                <span className="fee-breakdown-value">
+                  ₹{gstAmount.toLocaleString("en-IN")}
+                </span>
+
+              </div>
+
+              <div className="fee-breakdown-row fee-breakdown-total">
+
+                <span className="fee-breakdown-label">
+                  Total
+                </span>
+
+                <span className="fee-breakdown-value">
+                  ₹{(monthlyFee + gstAmount).toLocaleString("en-IN")}
+                </span>
+
+              </div>
+
+            </div>
+
+            <button
+              type="button"
+              className="confirm-payment-btn"
+              onClick={handleConfirmPayment}
+              disabled={monthlyFee <= 0}
+            >
+
+              Confirm Payment
+
+            </button>
+
+          </div>
+
+
+          {/* =================================================
+               QR PAYMENT
+           ================================================= */}
 
           <div className="qr-payment-section">
 
@@ -707,43 +714,6 @@ const FeePayment = () => {
               />
 
             </div>
-
-
-            {/* =================================================
-                SCREENSHOT
-            ================================================= */}
-
-            <div className="form-group">
-
-              <label htmlFor="paymentScreenshot">
-                Payment Screenshot
-              </label>
-
-              <input
-                id="paymentScreenshot"
-                type="file"
-                accept="image/*"
-                onChange={
-                  handleScreenshotChange
-                }
-              />
-
-              {paymentScreenshot && (
-                <div className="selected-file">
-
-                  <span>
-                    Selected:
-                  </span>
-
-                  <strong>
-                    {paymentScreenshot.name}
-                  </strong>
-
-                </div>
-              )}
-
-            </div>
-
 
             {/* =================================================
                 SUBMIT BUTTON

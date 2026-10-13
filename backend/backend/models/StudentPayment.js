@@ -109,7 +109,48 @@ const studentPaymentSchema = new mongoose.Schema(
     receiptGeneratedAt: {
       type: Date,
       default: null
-    }
+    },
+
+    transactions: [
+      {
+        transactionReference: {
+          type: String,
+          required: true,
+          trim: true
+        },
+        amount: {
+          type: Number,
+          required: true,
+          min: 1
+        },
+        status: {
+          type: String,
+          enum: ["Submitted", "Verified", "Rejected"],
+          default: "Submitted"
+        },
+        paymentScreenshot: {
+          type: String,
+          default: ""
+        },
+        submittedAt: {
+          type: Date,
+          default: Date.now
+        },
+        verifiedAt: {
+          type: Date,
+          default: null
+        },
+        verifiedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Admin",
+          default: null
+        },
+        rejectionReason: {
+          type: String,
+          default: ""
+        }
+      }
+    ]
   },
   {
     timestamps: true

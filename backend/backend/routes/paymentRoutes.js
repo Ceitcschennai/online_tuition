@@ -230,9 +230,18 @@ router.get(
       }
 
 
-      /* -----------------------------------------------------
-         RETURN CURRENT PAYMENT
-      ----------------------------------------------------- */
+/* -----------------------------------------------------
+          RETURN CURRENT PAYMENT
+       ----------------------------------------------------- */
+
+      const verifiedTotal = payment.amountPaid || 0;
+      const outstandingBalance = payment.monthlyFee - verifiedTotal;
+      const totalSubmitted = payment.transactions
+        .filter((txn) => txn.status === "Submitted")
+        .reduce((sum, txn) => sum + txn.amount, 0);
+      const totalVerified = payment.transactions
+        .filter((txn) => txn.status === "Verified")
+        .reduce((sum, txn) => sum + txn.amount, 0);
 
       return res.json({
         success: true,
@@ -254,7 +263,14 @@ router.get(
           paymentMonth,
         },
 
-        payment,
+        payment: {
+          ...payment.toObject(),
+          verifiedTotal,
+          outstandingBalance,
+          totalSubmitted,
+          totalVerified,
+          canSubmitMore: outstandingBalance > 0 && payment.status !== "Paid"
+        },
       });
 
     } catch (error) {
@@ -275,15 +291,163 @@ router.get(
 
 
 /* =========================================================
+   GET UPI PAYMENT LINK FOR CURRENT STUDENT
+
+   GET /api/payments/student/:studentId/upi-link
+
+   Returns a UPI URI that prefills the payee address,
+   payee name, exact amount (backend-calculated fee),
+   currency INR, and a transaction reference for reconciliation.
+
+   The student must be authenticated and approved.
+   The UPI ID and payee name are read from environment variables.
+   ========================================================= */
+
+router.get(
+  "/student/:studentId/upi-link",
+  protect,
+  async (req, res) => {
+    try {
+      const studentId = getAuthenticatedStudentId(req);
+
+      if (!studentId) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+      }
+
+      const student = await Student.findById(studentId);
+
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: "Student not found",
+        });
+      }
+
+      /* -----------------------------------------------------
+         ONLY APPROVED STUDENTS CAN GET UPI LINK
+       ----------------------------------------------------- */
+
+      if (
+        student.approvalStatus !== "Approved"
+      ) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Student account is not approved",
+        });
+      }
+
+      /* -----------------------------------------------------
+         NORMALIZE CLASS
+       ----------------------------------------------------- */
+
+      const className = normalizeClass(
+        student.class
+      );
+
+      if (!className) {
+        return res.status(400).json({
+          success: false,
+          message: "Student class is not configured",
+        });
+      }
+
+      /* -----------------------------------------------------
+         CURRENT ACADEMIC YEAR & PAYMENT MONTH
+       ----------------------------------------------------- */
+
+      const academicYear = getAcademicYear();
+      const paymentMonth = getPaymentMonth();
+
+      /* -----------------------------------------------------
+         GET CURRENT FEE STRUCTURE
+       ----------------------------------------------------- */
+
+      const fee = await FeeStructure.findOne({
+        academicYear,
+        className,
+        isActive: true,
+      });
+
+      if (!fee) {
+        return res.status(404).json({
+          success: false,
+          message:
+            `Fee structure not configured for Class ${className}`,
+        });
+      }
+
+      /* -----------------------------------------------------
+         READ UPI CONFIGURATION FROM ENV
+       ----------------------------------------------------- */
+
+      const upiId = process.env.UPI_ID;
+      const upiPayeeName = process.env.UPI_PAYEE_NAME || "CeiT Academy";
+
+      if (!upiId) {
+        return res.status(500).json({
+          success: false,
+          message: "UPI payment is not configured. Contact administrator.",
+        });
+      }
+
+      /* -----------------------------------------------------
+         BUILD UPI URI
+
+         upi://pay?pa=<payee_address>&pn=<payee_name>&am=<amount>&cu=INR&tn=<note>
+       ----------------------------------------------------- */
+
+      const amount = fee.monthlyFee;
+      const transactionNote = `CEITCS-${studentId}-${paymentMonth}`;
+
+      const upiUri = [
+        "upi://pay",
+        `pa=${encodeURIComponent(upiId)}`,
+        `pn=${encodeURIComponent(upiPayeeName)}`,
+        `am=${encodeURIComponent(amount.toString())}`,
+        "cu=INR",
+        `tn=${encodeURIComponent(transactionNote)}`,
+      ].join("&");
+
+      return res.json({
+        success: true,
+        upiUri,
+        amount,
+        academicYear,
+        paymentMonth,
+        className,
+      });
+
+    } catch (error) {
+
+      console.error(
+        "UPI link generation error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Failed to generate UPI payment link",
+      });
+    }
+  }
+);
+
+
+/* =========================================================
    SUBMIT QR PAYMENT
 
    POST /api/payments/student/:studentId/submit
 
    Student:
    1. Scans institute QR
-   2. Makes payment
+   2. Makes payment (full or partial)
    3. Enters UTR / transaction reference
-   4. Uploads payment screenshot
+   4. Enters amount paid
    5. Submits payment
 
    Admin later verifies the payment.
@@ -296,8 +460,9 @@ router.post(
 
     try {
 
-      const {
+const {
         transactionReference,
+        amount,
         paymentScreenshot,
       } = req.body;
 
@@ -313,7 +478,7 @@ router.post(
 
       /* -----------------------------------------------------
          VALIDATE TRANSACTION REFERENCE
-      ----------------------------------------------------- */
+       ----------------------------------------------------- */
 
       if (
         !transactionReference ||
@@ -329,15 +494,18 @@ router.post(
 
 
       /* -----------------------------------------------------
-         VALIDATE SCREENSHOT
-      ----------------------------------------------------- */
+         VALIDATE AMOUNT
+       ----------------------------------------------------- */
 
-      if (!paymentScreenshot) {
+      const submittedAmount = Number(amount);
 
+      if (
+        !Number.isFinite(submittedAmount) ||
+        submittedAmount <= 0
+      ) {
         return res.status(400).json({
           success: false,
-          message:
-            "Payment screenshot is required",
+          message: "Valid payment amount is required",
         });
       }
 
@@ -462,143 +630,140 @@ router.post(
       }
 
 
-      /* -----------------------------------------------------
-         DO NOT ALLOW DUPLICATE PAYMENT
-      ----------------------------------------------------- */
+/* -----------------------------------------------------
+         CALCULATE OUTSTANDING BALANCE
+       ----------------------------------------------------- */
 
-      if (
-        payment.status === "Paid"
-      ) {
+      const verifiedTotal = payment.amountPaid || 0;
+      const outstandingBalance = payment.monthlyFee - verifiedTotal;
 
+      if (outstandingBalance <= 0) {
         return res.status(400).json({
           success: false,
-          message:
-            "This month's fee is already paid",
+          message: "This month's fee is already fully paid",
+        });
+      }
+
+      if (submittedAmount > outstandingBalance) {
+        return res.status(400).json({
+          success: false,
+          message: `Submitted amount exceeds outstanding balance of ₹${outstandingBalance}`,
         });
       }
 
 
       /* -----------------------------------------------------
-         REJECTED PAYMENT RESUBMISSION
+         CHECK FOR DUPLICATE TRANSACTION REFERENCE
+       ----------------------------------------------------- */
 
-         A previously rejected submission may be resubmitted
-         for the same month. No new payment record is created;
-         the existing record is reused. Clear the rejection
-         trail from the previous attempt so the admin reviews
-         the new submission instead of stale data.
-      ----------------------------------------------------- */
+      const isDuplicate = payment.transactions.some(
+        (txn) =>
+          txn.transactionReference === transactionReference.trim()
+      );
 
-      if (
-        payment.status === "Rejected"
-      ) {
-        payment.rejectionReason = "";
-        payment.verifiedBy = null;
-        payment.verifiedAt = null;
-        payment.billNumber = "";
-        payment.receiptGeneratedAt = null;
+      if (isDuplicate) {
+        return res.status(400).json({
+          success: false,
+          message: "This transaction reference has already been submitted",
+        });
       }
 
 
       /* -----------------------------------------------------
-         DO NOT CREATE MULTIPLE SUBMISSIONS
+         REJECTED TRANSACTION RESUBMISSION
 
-         If already Submitted, tell student that
-         admin verification is pending.
-      ----------------------------------------------------- */
+         Allow resubmission for rejected transactions by clearing
+         the rejection trail. Other transactions remain unchanged.
+       ----------------------------------------------------- */
 
-      if (
-        payment.status === "Submitted"
-      ) {
+      const rejectedTxnIndex = payment.transactions.findIndex(
+        (txn) =>
+          txn.transactionReference === transactionReference.trim() &&
+          txn.status === "Rejected"
+      );
 
-        return res.status(400).json({
-          success: false,
-          message:
-            "Payment has already been submitted and is awaiting admin verification",
+      if (rejectedTxnIndex >= 0) {
+        payment.transactions[rejectedTxnIndex].rejectionReason = "";
+        payment.transactions[rejectedTxnIndex].verifiedBy = null;
+        payment.transactions[rejectedTxnIndex].verifiedAt = null;
+        payment.transactions[rejectedTxnIndex].status = "Submitted";
+        payment.transactions[rejectedTxnIndex].amount = submittedAmount;
+        payment.transactions[rejectedTxnIndex].submittedAt = new Date();
+      } else {
+        /* -----------------------------------------------------
+           CREATE NEW TRANSACTION
+         ----------------------------------------------------- */
+
+        payment.transactions.push({
+          transactionReference: transactionReference.trim(),
+          amount: submittedAmount,
+          status: "Submitted",
+          paymentScreenshot: paymentScreenshot || "",
+          submittedAt: new Date(),
         });
       }
 
 
       /* -----------------------------------------------------
          SYNC CURRENT FEE
+       ----------------------------------------------------- */
 
-         If Admin changed the fee before submission,
-         use the latest fee.
-      ----------------------------------------------------- */
-
-      payment.monthlyFee =
-        fee.monthlyFee;
-
-      payment.className =
-        className;
+      payment.monthlyFee = fee.monthlyFee;
+      payment.className = className;
 
 
       /* -----------------------------------------------------
-         SAVE TRANSACTION REFERENCE
-      ----------------------------------------------------- */
+         UPDATE PAYMENT STATUS
 
-      payment.transactionReference =
-        transactionReference.trim();
+         If any transaction is Submitted, overall status is Submitted.
+         If all transactions are Verified and amountPaid >= monthlyFee, status is Paid.
+       ----------------------------------------------------- */
 
+      const hasSubmitted = payment.transactions.some(
+        (txn) => txn.status === "Submitted"
+      );
 
-      /* -----------------------------------------------------
-         SAVE PAYMENT SCREENSHOT
-      ----------------------------------------------------- */
+      const allVerified =
+        payment.transactions.length > 0 &&
+        payment.transactions.every((txn) => txn.status === "Verified");
 
-      payment.paymentScreenshot =
-        paymentScreenshot;
-
-
-      /* -----------------------------------------------------
-         SUBMISSION DATE
-      ----------------------------------------------------- */
-
-      payment.submittedAt =
-        new Date();
+      if (allVerified && payment.amountPaid >= payment.monthlyFee) {
+        payment.status = "Paid";
+      } else if (hasSubmitted) {
+        payment.status = "Submitted";
+      }
 
 
       /* -----------------------------------------------------
-         PAYMENT STATUS
+         SUBMISSION DATE (for the latest transaction)
+       ----------------------------------------------------- */
 
-         Important:
-         Student submission is NOT automatically Paid.
-
-         Admin must verify it first.
-      ----------------------------------------------------- */
-
-      payment.status =
-        "Submitted";
+      payment.submittedAt = new Date();
 
 
       /* -----------------------------------------------------
-         AMOUNT PAID
-
-         Keep amountPaid as 0 until Admin verifies
-         the payment.
-      ----------------------------------------------------- */
-
-      payment.amountPaid = 0;
-
-
-/* -----------------------------------------------------
-          SAVE
+         SAVE
        ----------------------------------------------------- */
 
       await payment.save();
 
 
-      /* -----------------------------------------------------
-          SEND EMAIL NOTIFICATIONS
+/* -----------------------------------------------------
+           SEND EMAIL NOTIFICATIONS
 
-          Send student acknowledgement and admin notification
-          after successful payment submission.
-          Email failures are logged but do not affect the payment.
-       ----------------------------------------------------- */
+           Send student acknowledgement and admin notification
+           after successful payment submission.
+           Email failures are logged but do not affect the payment.
+        ----------------------------------------------------- */
+
+      // Get the latest transaction for email
+      const latestTxn = payment.transactions[payment.transactions.length - 1];
 
       const studentName =
         `${student.firstName || ""} ${student.lastName || ""}`.trim();
 
-      const submissionDate = payment.submittedAt
-        ? payment.submittedAt.toLocaleString("en-IN", {
+      const submissionDate = latestTxn.submittedAt
+        ? latestTxn.submittedAt.toLocaleString("en-IN", {
             timeZone: "Asia/Kolkata",
           })
         : new Date().toLocaleString("en-IN", {
@@ -644,8 +809,11 @@ router.post(
               ">
                 <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
                 <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${className}</p>
-                <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${payment.transactionReference}</p>
-                <p style="margin: 5px 0;"><strong>Amount:</strong> ₹${payment.monthlyFee}</p>
+                <p style="margin: 5px 0;"><strong>Monthly Fee:</strong> ₹${payment.monthlyFee}</p>
+                <p style="margin: 5px 0;"><strong>Verified Amount Paid:</strong> ₹${payment.amountPaid || 0}</p>
+                <p style="margin: 5px 0;"><strong>Outstanding Balance:</strong> ₹${outstandingBalance}</p>
+                <p style="margin: 5px 0;"><strong>Submitted Amount:</strong> ₹${latestTxn.amount}</p>
+                <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${latestTxn.transactionReference}</p>
                 <p style="margin: 5px 0;"><strong>Submission Date:</strong> ${submissionDate}</p>
                 <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #f0a500;">Pending Verification</span></p>
               </div>
@@ -653,8 +821,7 @@ router.post(
               <p>
                 <strong>Important:</strong> Your payment is not yet approved. Our admin team
                 will verify the payment screenshot and transaction reference. Once verified,
-                your payment status will be updated to <strong>Paid</strong> and a receipt
-                will be generated.
+                your payment status will be updated and a receipt will be generated.
               </p>
 
               <p>
@@ -743,8 +910,11 @@ router.post(
                   <p style="margin: 5px 0;"><strong>Student ID:</strong> ${student._id}</p>
                   <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${className}</p>
                   <p style="margin: 5px 0;"><strong>Payment ID:</strong> ${payment._id}</p>
-                  <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${payment.transactionReference}</p>
-                  <p style="margin: 5px 0;"><strong>Amount (Backend-calculated):</strong> ₹${payment.monthlyFee}</p>
+                  <p style="margin: 5px 0;"><strong>Monthly Fee:</strong> ₹${payment.monthlyFee}</p>
+                  <p style="margin: 5px 0;"><strong>Verified Amount Paid:</strong> ₹${payment.amountPaid || 0}</p>
+                  <p style="margin: 5px 0;"><strong>Outstanding Balance:</strong> ₹${outstandingBalance}</p>
+                  <p style="margin: 5px 0;"><strong>Submitted Amount:</strong> ₹${latestTxn.amount}</p>
+                  <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${latestTxn.transactionReference}</p>
                   <p style="margin: 5px 0;"><strong>Submission Date:</strong> ${submissionDate}</p>
                   <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #f0a500;">Pending Verification</span></p>
                 </div>

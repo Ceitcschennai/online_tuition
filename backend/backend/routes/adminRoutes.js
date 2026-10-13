@@ -1732,8 +1732,8 @@ router.put(
 );
 
 /* =====================================================
-   ADMIN — APPROVE STUDENT PAYMENT
-   Verifies a submitted payment proof and marks as Paid
+   ADMIN — APPROVE STUDENT PAYMENT TRANSACTION
+   Verifies a submitted transaction and adds to verified total
 ===================================================== */
 
 router.put(
@@ -1743,6 +1743,7 @@ router.put(
   async (req, res) => {
     try {
       const { paymentId } = req.params;
+      const { transactionReference } = req.body;
 
       const payment =
         await StudentPayment.findById(paymentId).populate(
@@ -1757,291 +1758,98 @@ router.put(
         });
       }
 
-      if (payment.status !== "Submitted") {
+      // Find the transaction to approve
+      const txnIndex = payment.transactions.findIndex(
+        (txn) => txn.transactionReference === transactionReference
+      );
+
+      if (txnIndex < 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Transaction not found"
+        });
+      }
+
+      const transaction = payment.transactions[txnIndex];
+
+      if (transaction.status !== "Submitted") {
         return res.status(400).json({
           success: false,
-          message: `Payment cannot be approved. Current status: ${payment.status}`
+          message: `Transaction cannot be approved. Current status: ${transaction.status}`
         });
+      }
+
+      // Update transaction status
+      transaction.status = "Verified";
+      transaction.verifiedAt = new Date();
+      transaction.verifiedBy = req.user._id;
+
+      // Add transaction amount to verified total
+      payment.amountPaid = (payment.amountPaid || 0) + transaction.amount;
+
+      // Update overall payment status
+      const hasSubmitted = payment.transactions.some(
+        (txn) => txn.status === "Submitted"
+      );
+      const allVerified =
+        payment.transactions.length > 0 &&
+        payment.transactions.every((txn) => txn.status === "Verified");
+
+      if (allVerified && payment.amountPaid >= payment.monthlyFee) {
+        payment.status = "Paid";
+        payment.paidAt = new Date();
+      } else if (hasSubmitted) {
+        payment.status = "Submitted";
       }
 
       // Record admin who approved and verification timestamp
       payment.verifiedBy = req.user._id;
       payment.verifiedAt = new Date();
-      payment.status = "Paid";
-      payment.amountPaid = payment.monthlyFee;
-      payment.paidAt = new Date();
 
       await payment.save();
 
-      // Generate or retrieve the official receipt for this exact payment.
-      // Reuse the existing bill number if one was already assigned so that
-      // retries never change it.
-      let billNumber = payment.billNumber;
-      if (!billNumber) {
-        billNumber = generateReceiptBillNumber();
-        payment.billNumber = billNumber;
-      }
-
-      if (!payment.receiptGeneratedAt) {
-        payment.receiptGeneratedAt = new Date();
-      }
-
-      await payment.save();
-
-      // Build the receipt PDF attachment. If receipt generation or attachment
-      // preparation fails, receiptAttachment stays null so the approval email is
-      // never sent claiming a receipt is attached. The already-approved payment
-      // above is preserved either way.
-      let receiptAttachment = null;
-      try {
-        const pdfBuffer = await generateReceiptPdf(payment, billNumber);
-        receiptAttachment = {
-          filename: `CEITCS-Receipt-${billNumber}.pdf`,
-          content: pdfBuffer,
-          contentType: "application/pdf",
-        };
-      } catch (receiptError) {
-        console.error(
-          "Failed to generate receipt PDF for approval email:",
-          receiptError
-        );
-        receiptAttachment = null;
-      }
-
-      // Send approval email to the student's registered email from the database
-      const studentName =
-        `${payment.student?.firstName || ""} ${
-          payment.student?.lastName || ""
-        }`.trim();
-
-      const verificationDate = payment.verifiedAt.toLocaleString("en-IN", {
-        timeZone: "Asia/Kolkata",
-      });
-
-      const receiptParagraph = receiptAttachment
-        ? `Your official receipt <strong>${billNumber}</strong> is attached to this email as a PDF. Please keep it for your records.`
-        : `Your formal receipt will be available in your payment history.`;
-
-      try {
-        const studentInfo = await transporter.sendMail({
-          from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
-          to: payment.student.email,
-          subject: "CEITCS Course Fee Payment - Approved",
-          html: `
-            <div style="
-              font-family: Arial, sans-serif;
-              background-color: #ffffff;
-              color: #333333;
-              max-width: 650px;
-              margin: 0 auto;
-              padding: 20px;
-              line-height: 1.7;
-            ">
-              <h2 style="color: #2f4b8f; margin-bottom: 5px;">
-                CeiT Academy - Online Tuition
-              </h2>
-
-              <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
-                CEITCS Course Fee Payment - Approved
-              </p>
-
-              <p>Dear ${studentName},</p>
-
-              <p>
-                Your course fee payment has been <strong>verified and approved</strong> by our admin team.
-              </p>
-
-              <div style="
-                background-color: #e8f5e9;
-                border-left: 4px solid #4caf50;
-                padding: 15px 18px;
-                margin: 20px 0;
-              ">
-                <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
-                <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${payment.className}</p>
-                <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${payment.transactionReference}</p>
-                <p style="margin: 5px 0;"><strong>Amount Paid:</strong> ₹${payment.amountPaid}</p>
-                <p style="margin: 5px 0;"><strong>Bill Number:</strong> ${billNumber}</p>
-                <p style="margin: 5px 0;"><strong>Verification Date:</strong> ${verificationDate}</p>
-                <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #4caf50;">Paid</span></p>
-              </div>
-
-              <p>
-                Your payment is now confirmed. ${receiptParagraph}
-              </p>
-
-              <p>
-                Thank you for your timely payment.
-              </p>
-
-              <hr
-                style="
-                  border: none;
-                  border-top: 1px solid #dddddd;
-                  margin: 30px 0;
-                "
-              />
-
-              <p>
-                Regards,<br />
-                <strong>Admin</strong><br />
-                <strong>CeiT Academy - Online Tuition</strong>
-              </p>
-
-              <p
-                style="
-                  color: #888888;
-                  font-size: 13px;
-                  margin-top: 30px;
-                "
-              >
-                This is an automated email from CeiT Academy - Online Tuition.
-                Please do not reply directly to this email.
-              </p>
-            </div>
-          `,
-          ...(receiptAttachment ? { attachments: [receiptAttachment] } : {}),
-        });
-
-        console.log(
-          "📧 Student payment approval email sent:",
-          {
-            to: payment.student.email,
-            messageId: studentInfo.messageId,
-            accepted: studentInfo.accepted,
-            rejected: studentInfo.rejected,
-            receiptAttached: !!receiptAttachment,
-          }
-        );
-      } catch (emailError) {
-        // Email delivery failed. The approved payment is already saved and must
-        // NOT be rolled back, and the bill number must not be regenerated.
-        console.error(
-          "Failed to send student payment approval email:",
-          emailError?.message || emailError
-        );
-      }
-
-      // Send copy to company email if configured
-      const companyEmail = process.env.COMPANY_EMAIL;
-      if (companyEmail) {
-        try {
-          const info = await transporter.sendMail({
-            from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
-            to: companyEmail,
-            subject: `CEITCS Course Fee Payment Approved - ${billNumber}`,
-            html: `
-              <div style="
-                font-family: Arial, sans-serif;
-                background-color: #ffffff;
-                color: #333333;
-                max-width: 650px;
-                margin: 0 auto;
-                padding: 20px;
-                line-height: 1.7;
-              ">
-                <h2 style="color: #2f4b8f; margin-bottom: 5px;">
-                  CeiT Academy - Online Tuition
-                </h2>
-
-                <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
-                  CEITCS Course Fee Payment - Approved (Company Copy)
-                </p>
-
-                <p>
-                  A student's course fee payment has been verified and approved.
-                </p>
-
-                <div style="
-                  background-color: #f0f4ff;
-                  border-left: 4px solid #2f4b8f;
-                  padding: 15px 18px;
-                  margin: 20px 0;
-                ">
-                  <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
-                  <p style="margin: 5px 0;"><strong>Student Email:</strong> ${payment.student?.email || "-"}</p>
-                  <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${payment.className}</p>
-                  <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${payment.transactionReference}</p>
-                  <p style="margin: 5px 0;"><strong>Amount Paid:</strong> ₹${payment.amountPaid}</p>
-                  <p style="margin: 5px 0;"><strong>Bill Number:</strong> ${billNumber}</p>
-                  <p style="margin: 5px 0;"><strong>Verification Date:</strong> ${verificationDate}</p>
-                  <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #4caf50;">Paid</span></p>
-                </div>
-
-                <p>
-                  The official receipt PDF is attached for your records.
-                </p>
-
-                <hr
-                  style="
-                    border: none;
-                    border-top: 1px solid #dddddd;
-                    margin: 30px 0;
-                  "
-                />
-
-                <p>
-                  Regards,<br />
-                  <strong>System</strong><br />
-                  <strong>CeiT Academy - Online Tuition</strong>
-                </p>
-
-                <p
-                  style="
-                    color: #888888;
-                    font-size: 13px;
-                    margin-top: 30px;
-                  "
-                >
-                  This is an automated email from CeiT Academy - Online Tuition.
-                  Please do not reply directly to this email.
-                </p>
-              </div>
-            `,
-            ...(receiptAttachment ? { attachments: [receiptAttachment] } : {}),
-          });
-
-          console.log(
-            "📧 Company payment approval email sent:",
-            {
-              to: companyEmail,
-              messageId: info.messageId,
-              accepted: info.accepted,
-              rejected: info.rejected,
-            }
-          );
-        } catch (companyEmailError) {
-          console.error(
-            "Failed to send company payment approval email:",
-            companyEmailError?.message || companyEmailError
-          );
+      // If fully paid, generate or retrieve the official receipt
+      if (payment.status === "Paid") {
+        let billNumber = payment.billNumber;
+        if (!billNumber) {
+          billNumber = generateReceiptBillNumber();
+          payment.billNumber = billNumber;
         }
+
+        if (!payment.receiptGeneratedAt) {
+          payment.receiptGeneratedAt = new Date();
+        }
+
+        await payment.save();
       }
 
       return res.json({
         success: true,
-        message: "Payment approved successfully",
-        payment
+        message: "Transaction approved successfully",
+        payment,
+        transaction: payment.transactions[txnIndex],
+        fullyPaid: payment.status === "Paid"
       });
 
     } catch (error) {
       console.error(
-        "Approve student payment error:",
+        "Approve transaction error:",
         error
       );
 
-      return res.status(500).json({
+return res.status(500).json({
         success: false,
-        message: "Failed to approve payment",
+        message: "Failed to approve transaction",
         error: error.message
       });
     }
   }
 );
 
+
 /* =====================================================
-   ADMIN — REJECT STUDENT PAYMENT
-   Rejects a submitted payment with a reason
+   ADMIN — REJECT STUDENT PAYMENT TRANSACTION
+   Rejects a submitted transaction with a reason
 ===================================================== */
 
 router.put(
@@ -2051,12 +1859,19 @@ router.put(
   async (req, res) => {
     try {
       const { paymentId } = req.params;
-      const { rejectionReason } = req.body;
+      const { transactionReference, rejectionReason } = req.body;
 
       if (!rejectionReason || !rejectionReason.trim()) {
         return res.status(400).json({
           success: false,
           message: "Rejection reason is required"
+        });
+      }
+
+      if (!transactionReference || !transactionReference.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Transaction reference is required"
         });
       }
 
@@ -2073,19 +1888,57 @@ router.put(
         });
       }
 
-      if (payment.status !== "Submitted") {
-        return res.status(400).json({
+      // Find the transaction to reject
+      const txnIndex = payment.transactions.findIndex(
+        (txn) => txn.transactionReference === transactionReference.trim()
+      );
+
+      if (txnIndex < 0) {
+        return res.status(404).json({
           success: false,
-          message: `Payment cannot be rejected. Current status: ${payment.status}`
+          message: "Transaction not found"
         });
       }
 
-      // Record rejection details
+      const transaction = payment.transactions[txnIndex];
+
+      if (transaction.status !== "Submitted") {
+        return res.status(400).json({
+          success: false,
+          message: `Transaction cannot be rejected. Current status: ${transaction.status}`
+        });
+      }
+
+      // Update transaction status
+      transaction.status = "Rejected";
+      transaction.rejectionReason = rejectionReason.trim();
+      transaction.verifiedAt = new Date();
+      transaction.verifiedBy = req.user._id;
+
+      // Update overall payment status
+      const hasSubmitted = payment.transactions.some(
+        (txn) => txn.status === "Submitted"
+      );
+      const allVerified =
+        payment.transactions.length > 0 &&
+        payment.transactions.every((txn) => txn.status === "Verified");
+      const allRejected =
+        payment.transactions.length > 0 &&
+        payment.transactions.every((txn) => txn.status === "Rejected");
+
+      if (allRejected) {
+        payment.status = "Rejected";
+      } else if (hasSubmitted) {
+        payment.status = "Submitted";
+      } else if (allVerified && payment.amountPaid >= payment.monthlyFee) {
+        payment.status = "Paid";
+      } else {
+        payment.status = "Pending";
+      }
+
+      // Record admin who rejected
       payment.verifiedBy = req.user._id;
       payment.verifiedAt = new Date();
-      payment.status = "Rejected";
-      payment.rejectionReason = rejectionReason.trim();
-      payment.amountPaid = 0;
 
       await payment.save();
 
@@ -2095,7 +1948,7 @@ router.put(
           payment.student?.lastName || ""
         }`.trim();
 
-      const rejectionDate = payment.verifiedAt.toLocaleString("en-IN", {
+      const rejectionDate = transaction.verifiedAt.toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
       });
 
@@ -2103,7 +1956,7 @@ router.put(
         await transporter.sendMail({
           from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
           to: payment.student.email,
-          subject: "CEITCS Course Fee Payment - Rejected",
+          subject: "CEITCS Course Fee Payment Transaction - Rejected",
           html: `
             <div style="
               font-family: Arial, sans-serif;
@@ -2119,13 +1972,13 @@ router.put(
               </h2>
 
               <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
-                CEITCS Course Fee Payment - Rejected
+                CEITCS Course Fee Payment Transaction - Rejected
               </p>
 
               <p>Dear ${studentName},</p>
 
               <p>
-                We regret to inform you that your course fee payment submission has been <strong>rejected</strong> by our admin team.
+                We regret to inform you that your course fee payment transaction has been <strong>rejected</strong> by our admin team.
               </p>
 
               <div style="
@@ -2136,8 +1989,10 @@ router.put(
               ">
                 <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
                 <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${payment.className}</p>
-                <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${payment.transactionReference}</p>
-                <p style="margin: 5px 0;"><strong>Submitted Amount:</strong> ₹${payment.monthlyFee}</p>
+                <p style="margin: 5px 0;"><strong>Monthly Fee:</strong> ₹${payment.monthlyFee}</p>
+                <p style="margin: 5px 0;"><strong>Verified Amount Paid:</strong> ₹${payment.amountPaid || 0}</p>
+                <p style="margin: 5px 0;"><strong>Transaction Reference (UTR):</strong> ${transaction.transactionReference}</p>
+                <p style="margin: 5px 0;"><strong>Submitted Amount:</strong> ₹${transaction.amount}</p>
                 <p style="margin: 5px 0;"><strong>Rejection Date:</strong> ${rejectionDate}</p>
                 <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #d9534f;">Rejected</span></p>
               </div>
@@ -2190,38 +2045,35 @@ router.put(
             </div>
           `,
         });
-
-        console.log(
-          "📧 Student payment rejection email sent to:",
-          payment.student.email
-        );
       } catch (emailError) {
         console.error(
           "Failed to send student payment rejection email:",
-          emailError
+          emailError?.message || emailError
         );
       }
 
       return res.json({
         success: true,
-        message: "Payment rejected successfully",
-        payment
+        message: "Transaction rejected successfully",
+        payment,
+        transaction: payment.transactions[txnIndex]
       });
 
     } catch (error) {
       console.error(
-        "Reject student payment error:",
+        "Reject transaction error:",
         error
       );
 
-      return res.status(500).json({
+return res.status(500).json({
         success: false,
-        message: "Failed to reject payment",
+        message: "Failed to reject transaction",
         error: error.message
       });
     }
   }
 );
+
 
 /* =====================================================
    ADMIN — GENERATE RECEIPT FOR PAID PAYMENT

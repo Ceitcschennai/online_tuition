@@ -49,6 +49,7 @@ import ManageSubjects from "./pages/ManageSubjects";
 import TeacherPayments from "./pages/TeacherPayments";
 
 import FeePayment from "./pages/FeePayment";
+import PaymentDetails from "./pages/PaymentDetails";
 import PaymentHistory from "./pages/PaymentHistory";
 import Payments from "./pages/Payments";
 
@@ -853,6 +854,14 @@ const AppContent = () => {
           path="/fee-payment"
           element={
             <FeePayment />
+          }
+        />
+
+
+        <Route
+          path="/payment-details"
+          element={
+            <PaymentDetails />
           }
         />
 

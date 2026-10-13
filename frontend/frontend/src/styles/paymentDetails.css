@@ -1,0 +1,369 @@
+/* =========================================================
+   PAYMENT DETAILS PAGE
+========================================================= */
+
+.payment-details-page {
+  width: 100%;
+  min-height: 100%;
+  padding: 30px 24px;
+  box-sizing: border-box;
+  background: #f8fafc;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    sans-serif;
+}
+
+.monthly-payment-container {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.payment-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 30px;
+  box-sizing: border-box;
+  box-shadow:
+    0 8px 30px rgba(15, 23, 42, 0.08);
+}
+
+.payment-header {
+  text-align: center;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.payment-header h2 {
+  margin: 0;
+  color: #16345f;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.payment-header p {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* =========================================================
+   FEE BREAKDOWN SECTION
+========================================================= */
+
+.fee-breakdown-section {
+  padding: 28px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.fee-breakdown-section h3 {
+  margin: 0 0 18px;
+  color: #1e293b;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.fee-breakdown-table {
+  margin-bottom: 0;
+}
+
+.fee-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.fee-breakdown-row:last-of-type {
+  border-bottom: none;
+}
+
+.fee-breakdown-row.fee-breakdown-total {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 2px solid #e2e8f0;
+  border-bottom: none;
+}
+
+.fee-breakdown-label {
+  color: #475569;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.fee-breakdown-value {
+  color: #1e293b;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.fee-breakdown-row.fee-breakdown-total .fee-breakdown-label,
+.fee-breakdown-row.fee-breakdown-total .fee-breakdown-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: #16345f;
+}
+
+/* =========================================================
+   PAYMENT DETAILS SECTION
+========================================================= */
+
+.payment-details-section {
+  padding-top: 28px;
+}
+
+.payment-details-section h3 {
+  margin: 0 0 8px;
+  color: #1e293b;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.upi-description {
+  margin: 0 0 20px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   FORM GROUP
+========================================================= */
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-group input[type="text"] {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 14px;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.form-group input[type="text"]::placeholder {
+  color: #94a3b8;
+}
+
+.form-group input[type="text"]:focus {
+  border-color: #3b82f6;
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.form-group input[type="text"]:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.form-error {
+  margin-top: 6px;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.payment-actions {
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pay-now-btn {
+  width: 100%;
+  height: 50px;
+  border: none;
+  border-radius: 9px;
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #1d4ed8
+    );
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.pay-now-btn:hover:not(:disabled) {
+  background:
+    linear-gradient(
+      135deg,
+      #1d4ed8,
+      #1e40af
+    );
+  transform: translateY(-1px);
+  box-shadow:
+    0 5px 15px rgba(37, 99, 235, 0.25);
+}
+
+.pay-now-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pay-now-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.back-payment-btn {
+  width: 100%;
+  height: 48px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.back-payment-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+
+.back-payment-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   FOCUS ACCESSIBILITY
+========================================================= */
+
+.pay-now-btn:focus-visible,
+.back-payment-btn:focus-visible,
+.form-group input:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 768px) {
+  .payment-details-page {
+    padding: 20px 16px;
+  }
+
+  .payment-card {
+    padding: 24px;
+  }
+
+  .payment-header h2 {
+    font-size: 25px;
+  }
+
+  .payment-details-section h3 {
+    font-size: 19px;
+  }
+
+  .fee-breakdown-section h3 {
+    font-size: 19px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+  .payment-details-page {
+    padding: 12px;
+  }
+
+  .monthly-payment-container {
+    max-width: 100%;
+  }
+
+  .payment-card {
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
+
+  .payment-header {
+    padding-bottom: 18px;
+  }
+
+  .payment-header h2 {
+    font-size: 22px;
+  }
+
+  .payment-header p {
+    font-size: 14px;
+  }
+
+  .fee-breakdown-section {
+    padding: 22px 0;
+  }
+
+  .fee-breakdown-section h3 {
+    font-size: 19px;
+  }
+
+  .payment-details-section {
+    padding-top: 22px;
+  }
+
+  .payment-details-section h3 {
+    font-size: 19px;
+  }
+
+  .pay-now-btn {
+    height: 48px;
+  }
+
+  .back-payment-btn {
+    height: 46px;
+  }
+}
