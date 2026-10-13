@@ -397,10 +397,11 @@ router.get(
       /* -----------------------------------------------------
          BUILD UPI URI
 
-         upi://pay?pa=<payee_address>&pn=<payee_name>&am=<amount>&cu=INR&tn=<note>
+         upi://pay?pa=<payee_address>&pn=<payee_name>&am=<amount>&cu=INR&tr=<txn_ref>&tn=<note>
        ----------------------------------------------------- */
 
       const amount = fee.monthlyFee;
+      const transactionRef = `CEITCS-${studentId}-${Date.now()}`;
       const transactionNote = `CEITCS-${studentId}-${paymentMonth}`;
 
       const upiUri = [
@@ -409,6 +410,7 @@ router.get(
         `pn=${encodeURIComponent(upiPayeeName)}`,
         `am=${encodeURIComponent(amount.toString())}`,
         "cu=INR",
+        `tr=${encodeURIComponent(transactionRef)}`,
         `tn=${encodeURIComponent(transactionNote)}`,
       ].join("&");
 
@@ -416,6 +418,7 @@ router.get(
         success: true,
         upiUri,
         amount,
+        transactionRef,
         academicYear,
         paymentMonth,
         className,

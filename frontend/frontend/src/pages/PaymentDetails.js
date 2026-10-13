@@ -208,6 +208,21 @@ const PaymentDetails = () => {
         throw new Error(data.message || "Failed to generate UPI payment link");
       }
 
+      // Safe development diagnostic - logs URI structure without secrets
+      if (process.env.NODE_ENV === "development") {
+        console.debug("UPI URI received:", {
+          scheme: data.upiUri?.startsWith("upi://") ? "upi://" : "invalid",
+          hasPa: data.upiUri?.includes("pa="),
+          hasPn: data.upiUri?.includes("pn="),
+          hasAm: data.upiUri?.includes("am="),
+          hasCu: data.upiUri?.includes("cu=INR"),
+          hasTr: data.upiUri?.includes("tr="),
+          hasTn: data.upiUri?.includes("tn="),
+          amount: data.amount,
+          transactionRef: data.transactionRef,
+        });
+      }
+
       // Store the UPI URI and payee details for user-triggered opening
       setUpiUri(data.upiUri);
       setPayeeDetails({
@@ -215,23 +230,12 @@ const PaymentDetails = () => {
         upiId: data.upiUri.split("pa=")[1]?.split("&")[0] || "",
         amount: data.amount,
         note: data.upiUri.split("tn=")[1]?.split("&")[0] || "",
+        transactionRef: data.transactionRef || "",
       });
 
-      // Try to open UPI app automatically on mobile
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-      if (isMobile) {
-        // On mobile, try to open the UPI app
-        window.location.href = data.upiUri;
-
-        // Show fallback after a short delay if app doesn't open
-        setTimeout(() => {
-          setShowUpiFallback(true);
-        }, 1500);
-      } else {
-        // On desktop, don't auto-redirect; show inline fallback immediately
-        setShowUpiFallback(true);
-      }
+      // Always show fallback UI with Open UPI App button
+      // Do NOT auto-redirect - let user click "Open UPI App" button
+      setShowUpiFallback(true);
     } catch (error) {
       console.error("UPI payment initiation error:", error);
       setUpiError(error.message || "Failed to initiate payment. Please try again.");
@@ -643,7 +647,21 @@ const PaymentDetails = () => {
                     className="open-upi-btn"
                     onClick={() => {
                       if (upiUri) {
-                        window.location.href = upiUri;
+                        // Use anchor click for reliable UPI app handoff on mobile
+                        const link = document.createElement("a");
+                        link.href = upiUri;
+                        link.target = "_blank";
+                        link.rel = "noopener noreferrer";
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        // Also try window.open as fallback
+                        setTimeout(() => {
+                          if (document.hasFocus()) {
+                            window.open(upiUri, "_blank", "noopener,noreferrer");
+                          }
+                        }, 100);
                       }
                     }}
                     disabled={!upiUri}
