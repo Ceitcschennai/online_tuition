@@ -22,6 +22,10 @@ const PaymentDetails = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [payNowLoading, setPayNowLoading] = useState(false);
+  const [upiUri, setUpiUri] = useState(null);
+  const [upiError, setUpiError] = useState("");
+  const [showUpiFallback, setShowUpiFallback] = useState(false);
+  const [payeeDetails, setPayeeDetails] = useState(null);
 
   const gstAmount = 0;
   const totalAmount = monthlyFee + gstAmount;
@@ -162,6 +166,8 @@ const PaymentDetails = () => {
     }
 
     setPayNowLoading(true);
+    setUpiError("");
+    setShowUpiFallback(false);
 
     try {
       const storedStudent = localStorage.getItem("user");
@@ -202,21 +208,33 @@ const PaymentDetails = () => {
         throw new Error(data.message || "Failed to generate UPI payment link");
       }
 
-      // Open the UPI URI
-      window.location.href = data.upiUri;
+      // Store the UPI URI and payee details for user-triggered opening
+      setUpiUri(data.upiUri);
+      setPayeeDetails({
+        name: data.className || "CeiT Academy",
+        upiId: data.upiUri.split("pa=")[1]?.split("&")[0] || "",
+        amount: data.amount,
+        note: data.upiUri.split("tn=")[1]?.split("&")[0] || "",
+      });
 
-      // Show fallback message for desktop users
-      setTimeout(() => {
-        alert(
-          "If the UPI app did not open, please use the QR code on the fee payment page or manually enter the amount in your UPI app.\n\nAmount: ₹" +
-            data.amount.toLocaleString("en-IN") +
-            "\nNote: " +
-            data.upiUri.split("tn=")[1]?.split("&")[0] || ""
-        );
-      }, 500);
+      // Try to open UPI app automatically on mobile
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // On mobile, try to open the UPI app
+        window.location.href = data.upiUri;
+
+        // Show fallback after a short delay if app doesn't open
+        setTimeout(() => {
+          setShowUpiFallback(true);
+        }, 1500);
+      } else {
+        // On desktop, don't auto-redirect; show inline fallback immediately
+        setShowUpiFallback(true);
+      }
     } catch (error) {
       console.error("UPI payment initiation error:", error);
-      alert(error.message || "Failed to initiate payment. Please try again.");
+      setUpiError(error.message || "Failed to initiate payment. Please try again.");
     } finally {
       setPayNowLoading(false);
     }
@@ -574,7 +592,7 @@ const PaymentDetails = () => {
           </div>
 
           {/* =========================================================
-              PAY NOW BUTTON
+              PAY NOW BUTTON & UPI FALLBACK
           ========================================================= */}
           <div className="payment-actions">
             <button
@@ -586,6 +604,61 @@ const PaymentDetails = () => {
               {payNowLoading ? "Processing..." : "Pay Now"}
             </button>
           </div>
+
+          {/* =========================================================
+              UPI FALLBACK UI
+          ========================================================= */}
+          {(upiError || showUpiFallback) && payeeDetails && (
+            <div className="upi-fallback-section">
+              {upiError && (
+                <div className="upi-fallback-error">
+                  {upiError}
+                </div>
+              )}
+              {showUpiFallback && !upiError && (
+                <>
+                  <p className="upi-fallback-message">
+                    <strong>Open your UPI app to complete the payment:</strong>
+                  </p>
+                  <div className="upi-payee-details">
+                    <div className="upi-detail-row">
+                      <span className="upi-detail-label">Recipient:</span>
+                      <span className="upi-detail-value">{payeeDetails.name}</span>
+                    </div>
+                    <div className="upi-detail-row">
+                      <span className="upi-detail-label">UPI ID:</span>
+                      <span className="upi-detail-value upi-id-value">{payeeDetails.upiId}</span>
+                    </div>
+                    <div className="upi-detail-row">
+                      <span className="upi-detail-label">Amount:</span>
+                      <span className="upi-detail-value">₹{payeeDetails.amount.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="upi-detail-row">
+                      <span className="upi-detail-label">Note:</span>
+                      <span className="upi-detail-value">{payeeDetails.note}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="open-upi-btn"
+                    onClick={() => {
+                      if (upiUri) {
+                        window.location.href = upiUri;
+                      }
+                    }}
+                    disabled={!upiUri}
+                  >
+                    Open UPI App
+                  </button>
+                  <p className="upi-desktop-note">
+                    On desktop? UPI app handoff may not be supported in this browser.
+                    Open a UPI app on your phone and pay the recipient above,
+                    then enter the Transaction Reference / UTR below.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
 
           {/* =========================================================
               TRANSACTION REFERENCE / UTR
