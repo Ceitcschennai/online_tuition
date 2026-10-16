@@ -36,6 +36,38 @@ const studentPaymentSchema = new mongoose.Schema(
       min: 0
     },
 
+    /* How this payment record was created.
+       QR     - student scanned the institute QR and submitted a UTR.
+       UPI_ID - student entered their own UPI ID. No money is moved
+                at submission time; the admin must verify the actual
+                incoming funds before the payment is marked Paid. */
+    paymentMethod: {
+      type: String,
+      enum: ["QR", "UPI_ID"],
+      default: "QR",
+    },
+
+    /* Actual amount the student says they paid for the latest
+       submission. Kept separate from:
+         - monthlyFee      (the tuition fee due)
+         - amountPaid      (the admin-verified total)
+       Older records without this field are left as null so no
+       historical amount is invented. */
+    submittedAmount: {
+      type: Number,
+      default: null,
+      min: 0
+    },
+
+    /* The student's own UPI ID (Virtual Payment Address) when the
+       payment was submitted via the UPI_ID method. Empty for QR
+       submissions. Never used as a transaction reference. */
+    studentUpiId: {
+      type: String,
+      default: "",
+      trim: true
+    },
+
     status: {
       type: String,
       enum: [
@@ -111,6 +143,11 @@ const studentPaymentSchema = new mongoose.Schema(
       default: null
     },
 
+    fundsVerified: {
+      type: Boolean,
+      default: false
+    },
+
     transactions: [
       {
         transactionReference: {
@@ -118,6 +155,17 @@ const studentPaymentSchema = new mongoose.Schema(
           required: true,
           trim: true
         },
+
+        /* Submission method for this transaction.
+           UPI_ID means the student entered their own UPI ID as the
+           reference. No transaction ID is generated and no money is
+           moved at submission time. */
+        method: {
+          type: String,
+          enum: ["QR", "UPI_ID"],
+          default: "QR",
+        },
+
         amount: {
           type: Number,
           required: true,

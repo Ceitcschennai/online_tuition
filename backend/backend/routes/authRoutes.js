@@ -33,8 +33,8 @@ router.post("/login", async (req, res) => {
     ========================= */
     if (role === "admin") {
       if (
-        emailLower === "poojagokulan2306@gmail.com" &&
-        password === "Pooja@2306"
+        emailLower === "ceitcschennai@gmail.com" &&
+        password === "CeiTCS@1234"
       ) {
         const token = jwt.sign(
           {

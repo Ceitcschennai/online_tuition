@@ -15,6 +15,7 @@ const { protect, requireAdmin } = require("../middleware/authMiddleware");
 const {
   generateReceiptPdf,
   generateReceiptBillNumber,
+  allocateBillNumber,
 } = require("../utils/receiptPdf");
 
 /* =====================================================
@@ -61,8 +62,77 @@ const sendEmail = async (to, subject, text) => {
 };
 
 /* =====================================================
-   DASHBOARD STATS
+   PAYMENT TRANSACTION VERIFICATION (concurrency-safe)
 ===================================================== */
+
+/* Atomically verify a single Submitted transaction.
+   Flips the matching transaction Submitted→Verified and adds its amount to
+   amountPaid exactly once, even when two admin requests arrive at the same
+   time. The update is gated on the transaction still being "Submitted", so a
+   concurrent request that has already verified it matches nothing and must be
+   treated as idempotent ("already approved") by the caller.
+   Does not set payment.status; callers reload the document and recompute
+   status before saving.
+   Returns the MongoDB update result (matchedCount / modifiedCount). */
+async function verifyTransactionAtomically(paymentId, transactionId, transactionAmount, adminId) {
+  const now = new Date();
+
+  if (
+    typeof transactionAmount !== "number" ||
+    !Number.isFinite(transactionAmount) ||
+    transactionAmount <= 0
+  ) {
+    throw new Error(`Invalid transaction amount: ${transactionAmount}`);
+  }
+
+  return StudentPayment.updateOne(
+    {
+      _id: paymentId,
+      transactions: {
+        $elemMatch: { _id: transactionId, status: "Submitted" }
+      }
+    },
+    {
+      $set: {
+        "transactions.$.status": "Verified",
+        "transactions.$.verifiedAt": now,
+        "transactions.$.verifiedBy": adminId,
+        fundsVerified: true,
+        verifiedBy: adminId,
+        verifiedAt: now
+      },
+      $inc: { amountPaid: transactionAmount }
+    }
+  );
+}
+
+/* Recompute the document-level payment status from its transactions,
+   mirroring the previous partial-payment logic:
+     - all transactions Verified and amountPaid >= monthlyFee → "Paid"
+     - any transaction still Submitted → "Submitted"
+     - otherwise leave status unchanged
+   Mutates the passed (already reloaded) document in memory; the caller's
+   existing save() persists it. Returns true when the payment is "Paid". */
+function recomputePaymentStatus(payment) {
+  const hasSubmitted = payment.transactions.some(
+    (txn) => txn.status === "Submitted"
+  );
+  const allVerified =
+    payment.transactions.length > 0 &&
+    payment.transactions.every((txn) => txn.status === "Verified");
+
+  if (allVerified && payment.amountPaid >= payment.monthlyFee && payment.fundsVerified) {
+    payment.status = "Paid";
+    payment.paidAt = new Date();
+    return true;
+  }
+
+  if (hasSubmitted) {
+    payment.status = "Submitted";
+  }
+
+  return payment.status === "Paid";
+}
 router.get("/dashboard", async (req, res) => {
   try {
     const totalTeachers = await Teacher.countDocuments();
@@ -1679,70 +1749,6 @@ router.put(
   async (req, res) => {
     try {
       const { paymentId } = req.params;
-
-      const payment =
-        await StudentPayment.findById(paymentId);
-
-      if (!payment) {
-        return res.status(404).json({
-          success: false,
-          message: "Payment record not found"
-        });
-      }
-
-      if (payment.status === "Paid") {
-        return res.status(400).json({
-          success: false,
-          message: "Payment is already marked as paid"
-        });
-      }
-
-      payment.amountPaid =
-        payment.monthlyFee;
-
-      payment.status =
-        "Paid";
-
-      payment.paidAt =
-        new Date();
-
-      await payment.save();
-
-      return res.json({
-        success: true,
-        message:
-          "Student payment marked as paid successfully",
-        payment
-      });
-
-    } catch (error) {
-      console.error(
-        "Mark student payment as paid error:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Failed to mark payment as paid",
-        error: error.message
-      });
-    }
-  }
-);
-
-/* =====================================================
-   ADMIN — APPROVE STUDENT PAYMENT TRANSACTION
-   Verifies a submitted transaction and adds to verified total
-===================================================== */
-
-router.put(
-  "/payments/students/:paymentId/approve",
-  protect,
-  requireAdmin,
-  async (req, res) => {
-    try {
-      const { paymentId } = req.params;
       const { transactionReference } = req.body;
 
       const payment =
@@ -1758,7 +1764,23 @@ router.put(
         });
       }
 
-      // Find the transaction to approve
+      if (payment.status === "Paid") {
+        return res.status(400).json({
+          success: false,
+          message: "Payment is already marked as paid"
+        });
+      }
+
+      if (!transactionReference) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Transaction reference is required to verify funds before marking as paid"
+        });
+      }
+
+      /* Find the transaction to verify.
+         The reference must be supplied by the caller. */
       const txnIndex = payment.transactions.findIndex(
         (txn) => txn.transactionReference === transactionReference
       );
@@ -1772,74 +1794,144 @@ router.put(
 
       const transaction = payment.transactions[txnIndex];
 
-      if (transaction.status !== "Submitted") {
-        return res.status(400).json({
-          success: false,
-          message: `Transaction cannot be approved. Current status: ${transaction.status}`
+      if (transaction.status === "Verified") {
+        return res.json({
+          success: true,
+          message: "Transaction already verified",
+          payment,
+          transaction,
+          fullyPaid: payment.status === "Paid",
         });
       }
 
-      // Update transaction status
-      transaction.status = "Verified";
-      transaction.verifiedAt = new Date();
-      transaction.verifiedBy = req.user._id;
+      if (transaction.status !== "Submitted") {
+        return res.status(400).json({
+          success: false,
+          message: `Transaction cannot be verified. Current status: ${transaction.status}`
+        });
+      }
 
-      // Add transaction amount to verified total
-      payment.amountPaid = (payment.amountPaid || 0) + transaction.amount;
-
-      // Update overall payment status
-      const hasSubmitted = payment.transactions.some(
-        (txn) => txn.status === "Submitted"
+      // Core verification and update logic (concurrency-safe).
+      // Atomically flip the Submitted transaction to Verified and add its
+      // amount to amountPaid exactly once. Proceed only if the update
+      // actually modified a document.
+      const verificationResult = await verifyTransactionAtomically(
+        paymentId,
+        transaction._id,
+        transaction.amount,
+        req.user._id
       );
-      const allVerified =
-        payment.transactions.length > 0 &&
-        payment.transactions.every((txn) => txn.status === "Verified");
 
-      if (allVerified && payment.amountPaid >= payment.monthlyFee) {
-        payment.status = "Paid";
-        payment.paidAt = new Date();
-      } else if (hasSubmitted) {
-        payment.status = "Submitted";
+      let updatedPayment;
+      let updatedTransaction;
+
+      if (verificationResult.modifiedCount === 0) {
+        // No transaction was atomically updated. Reload the payment and
+        // distinguish an already-verified transaction from a missing
+        // transaction or one in another status. Never increment amountPaid
+        // again.
+        const fresh = await StudentPayment.findById(paymentId).populate(
+          "student",
+          "firstName lastName email class"
+        );
+        if (!fresh) {
+          return res.status(404).json({
+            success: false,
+            message: "Payment record not found"
+          });
+        }
+        const freshTxn = fresh.transactions.find(
+          (txn) => txn.transactionReference === transactionReference
+        );
+        if (!freshTxn) {
+          return res.status(404).json({
+            success: false,
+            message: "Transaction not found"
+          });
+        }
+        if (freshTxn.status === "Verified") {
+          return res.json({
+            success: true,
+            message: "Transaction already verified",
+            payment: fresh,
+            transaction: freshTxn,
+            fullyPaid: fresh.status === "Paid",
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: `Transaction cannot be verified. Current status: ${freshTxn.status}`
+        });
       }
 
-      // Record admin who approved and verification timestamp
-      payment.verifiedBy = req.user._id;
-      payment.verifiedAt = new Date();
-
-      await payment.save();
-
-      // If fully paid, generate or retrieve the official receipt
-      if (payment.status === "Paid") {
-        let billNumber = payment.billNumber;
-        if (!billNumber) {
-          billNumber = generateReceiptBillNumber();
-          payment.billNumber = billNumber;
-        }
-
-        if (!payment.receiptGeneratedAt) {
-          payment.receiptGeneratedAt = new Date();
-        }
-
-        await payment.save();
+      // Reload the latest payment document before recomputing status, so we
+      // never save a stale document that could overwrite the atomic increment.
+      updatedPayment = await StudentPayment.findById(paymentId).populate(
+        "student",
+        "firstName lastName email class"
+      );
+      if (!updatedPayment) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment record not found"
+        });
       }
+      updatedTransaction = updatedPayment.transactions.find(
+        (txn) => txn.transactionReference === transactionReference
+      );
+
+      // Recompute document-level status from the reloaded transactions,
+      // mirroring the previous partial-payment logic.
+      recomputePaymentStatus(updatedPayment);
+
+      // If fully paid, allocate a unique bill number from the atomic
+      // BillCounter. The counter is idempotent: an already-assigned bill
+      // number is reused, so repeated requests cannot generate a second bill number.
+      if (updatedPayment.status === "Paid") {
+        if (!updatedPayment.billNumber) {
+          const newBill = await allocateBillNumber();
+          // Atomically set the bill number only if it hasn't been set yet.
+          // This prevents duplicate bill numbers under concurrent approvals.
+          const result = await StudentPayment.updateOne(
+            { _id: updatedPayment._id, billNumber: "" },
+            { $set: { billNumber: newBill } }
+          );
+          if (result.modifiedCount > 0) {
+            updatedPayment.billNumber = newBill;
+          } else {
+            // Another request already allocated a bill number; use it.
+            const fresh = await StudentPayment.findById(updatedPayment._id);
+            if (fresh) {
+              updatedPayment.billNumber = fresh.billNumber;
+            }
+          }
+        }
+
+        if (!updatedPayment.receiptGeneratedAt) {
+          updatedPayment.receiptGeneratedAt = new Date();
+        }
+      }
+
+      await updatedPayment.save();
 
       return res.json({
         success: true,
-        message: "Transaction approved successfully",
-        payment,
-        transaction: payment.transactions[txnIndex],
-        fullyPaid: payment.status === "Paid"
+        message: "Transaction verified and payment marked as paid",
+        payment: updatedPayment,
+        transaction: updatedTransaction,
+        fullyPaid: updatedPayment.status === "Paid",
       });
 
     } catch (error) {
       console.error(
-        "Approve transaction error:",
+        "Mark student payment as paid error:",
         error
       );
 
-return res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: "Failed to approve transaction",
+        message:
+          "Failed to mark payment as paid",
         error: error.message
       });
     }
@@ -2065,7 +2157,7 @@ router.put(
         error
       );
 
-return res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: "Failed to reject transaction",
         error: error.message
@@ -2076,9 +2168,472 @@ return res.status(500).json({
 
 
 /* =====================================================
+   ADMIN — APPROVE STUDENT PAYMENT TRANSACTION
+   Verifies a submitted transaction and adds to verified total
+===================================================== */
+
+router.put(
+  "/payments/students/:paymentId/approve",
+  protect,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+      const { transactionReference } = req.body;
+
+      const payment =
+        await StudentPayment.findById(paymentId).populate(
+          "student",
+          "firstName lastName email class"
+        );
+
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment record not found"
+        });
+      }
+
+      /* Find the transaction to approve.
+
+         The reference is normally supplied by the admin dashboard.
+         If it is omitted, fall back to the single pending submission
+         so existing callers keep working. When several submissions
+         are pending the caller must name one explicitly. */
+      const pendingTransactions = payment.transactions.filter(
+        (txn) => txn.status === "Submitted"
+      );
+
+      let txnIndex = -1;
+
+      if (transactionReference) {
+        txnIndex = payment.transactions.findIndex(
+          (txn) => txn.transactionReference === transactionReference
+        );
+
+        if (txnIndex < 0) {
+          return res.status(404).json({
+            success: false,
+            message: "Transaction not found"
+          });
+        }
+
+      } else if (pendingTransactions.length === 1) {
+        txnIndex = payment.transactions.indexOf(pendingTransactions[0]);
+
+      } else if (pendingTransactions.length > 1) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Multiple submissions are pending. Specify the transaction reference to approve."
+        });
+
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "No submitted transaction is awaiting verification"
+        });
+      }
+
+      const transaction = payment.transactions[txnIndex];
+      const approvedTransaction = transaction;
+
+      if (transaction.status === "Verified") {
+        // Idempotent: this transaction was already approved. Return the
+        // current state without reprocessing, so repeated approval requests
+        // cannot generate duplicate bills or send duplicate notifications.
+        return res.json({
+          success: true,
+          message: "Transaction already approved",
+          payment,
+          transaction,
+          fullyPaid: payment.status === "Paid",
+        });
+      }
+
+      if (transaction.status !== "Submitted") {
+        return res.status(400).json({
+          success: false,
+          message: `Transaction cannot be approved. Current status: ${transaction.status}`
+        });
+      }
+
+      // Core verification and update logic (concurrency-safe).
+      // Atomically flip the Submitted transaction to Verified and add its
+      // amount to amountPaid exactly once. Proceed only if the update
+      // actually modified a document.
+      const verificationResult = await verifyTransactionAtomically(
+        paymentId,
+        transaction._id,
+        transaction.amount,
+        req.user._id
+      );
+
+      let updatedPayment;
+      let updatedTransaction;
+
+      if (verificationResult.modifiedCount === 0) {
+        // No transaction was atomically updated. Reload the payment and
+        // distinguish an already-verified transaction from a missing
+        // transaction or one in another status. Never increment amountPaid
+        // again.
+        const fresh = await StudentPayment.findById(paymentId).populate(
+          "student",
+          "firstName lastName email class"
+        );
+        if (!fresh) {
+          return res.status(404).json({
+            success: false,
+            message: "Payment record not found"
+          });
+        }
+        const freshTxn = fresh.transactions.find(
+          (txn) => txn.transactionReference === transactionReference
+        );
+        if (!freshTxn) {
+          return res.status(404).json({
+            success: false,
+            message: "Transaction not found"
+          });
+        }
+        if (freshTxn.status === "Verified") {
+          // Idempotent: this transaction was already approved.
+          return res.json({
+            success: true,
+            message: "Transaction already approved",
+            payment: fresh,
+            transaction: freshTxn,
+            fullyPaid: fresh.status === "Paid",
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: `Transaction cannot be approved. Current status: ${freshTxn.status}`
+        });
+      }
+
+      // Reload the latest payment document before recomputing status, so we
+      // never save a stale document that could overwrite the atomic increment.
+      updatedPayment = await StudentPayment.findById(paymentId).populate(
+        "student",
+        "firstName lastName email class"
+      );
+      if (!updatedPayment) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment record not found"
+        });
+      }
+      updatedTransaction = updatedPayment.transactions.find(
+        (txn) => txn.transactionReference === transactionReference
+      );
+
+      // Recompute document-level status from the reloaded transactions,
+      // mirroring the previous partial-payment logic.
+      recomputePaymentStatus(updatedPayment);
+
+      await updatedPayment.save();
+
+      // If fully paid, allocate a unique bill number from the atomic
+      // BillCounter. The counter is idempotent: an already-assigned bill
+      // number is reused, so repeated approval requests cannot generate
+      // a second bill number.
+      if (updatedPayment.status === "Paid") {
+        if (!updatedPayment.billNumber) {
+          const newBill = await allocateBillNumber();
+          // Atomically set the bill number only if it hasn't been set yet.
+          // This prevents duplicate bill numbers under concurrent approvals.
+          const result = await StudentPayment.updateOne(
+            { _id: updatedPayment._id, billNumber: "" },
+            { $set: { billNumber: newBill } }
+          );
+          if (result.modifiedCount > 0) {
+            updatedPayment.billNumber = newBill;
+          } else {
+            // Another request already allocated a bill number; use it.
+            const fresh = await StudentPayment.findById(updatedPayment._id);
+            if (fresh) {
+              updatedPayment.billNumber = fresh.billNumber;
+            }
+          }
+        }
+
+        if (!updatedPayment.receiptGeneratedAt) {
+          updatedPayment.receiptGeneratedAt = new Date();
+        }
+
+        await updatedPayment.save();
+      }
+
+      const billNumber = updatedPayment.status === "Paid" ? (updatedPayment.billNumber || "") : "";
+
+      // Send approval email to student
+      const studentName =
+        `${updatedPayment.student?.firstName || ""} ${
+          updatedPayment.student?.lastName || ""
+        }`.trim();
+
+      const approvalDate = updatedPayment.verifiedAt.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+      });
+
+      const paymentMethodDisplay = updatedTransaction.method === "UPI_ID" ? "UPI ID" : "QR Code";
+      const upiIdDisplay = updatedTransaction.method === "UPI_ID" && updatedPayment.studentUpiId
+        ? updatedPayment.studentUpiId
+        : "N/A";
+
+      const approvalSubject = updatedPayment.status === "Paid"
+        ? "CEITCS Course Fee Payment - PAID"
+        : "CEITCS Course Fee Payment Transaction - Approved";
+
+      try {
+        await transporter.sendMail({
+          from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
+          to: updatedPayment.student.email,
+          subject: approvalSubject,
+          html: `
+            <div style="
+              font-family: Arial, sans-serif;
+              background-color: #ffffff;
+              color: #333333;
+              max-width: 650px;
+              margin: 0 auto;
+              padding: 20px;
+              line-height: 1.7;
+            ">
+              <h2 style="color: #2f4b8f; margin-bottom: 5px;">
+                CeiT Academy - Online Tuition
+              </h2>
+
+              <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
+                ${approvalSubject}
+              </p>
+
+              <p>Dear ${studentName},</p>
+
+              <p>
+                We are pleased to inform you that your course fee payment transaction has been <strong>approved</strong> by our admin team.
+              </p>
+
+              <div style="
+                background-color: #e8f5e9;
+                border-left: 4px solid #4caf50;
+                padding: 15px 18px;
+                margin: 20px 0;
+              ">
+                <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
+                <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${updatedPayment.className}</p>
+                <p style="margin: 5px 0;"><strong>Monthly Fee:</strong> ₹${updatedPayment.monthlyFee}</p>
+                <p style="margin: 5px 0;"><strong>Verified Amount Paid:</strong> ₹${updatedPayment.amountPaid || 0}</p>
+                <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${paymentMethodDisplay}</p>
+                ${updatedTransaction.method === "UPI_ID" ? `<p style="margin: 5px 0;"><strong>UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
+                <p style="margin: 5px 0;"><strong>Transaction Reference (UTR):</strong> ${updatedTransaction.transactionReference}</p>
+                ${billNumber ? `<p style="margin: 5px 0;"><strong>Bill Number:</strong> ${billNumber}</p>` : ""}
+                <p style="margin: 5px 0;"><strong>Approval Date:</strong> ${approvalDate}</p>
+                <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #4caf50;">${updatedPayment.status === "Paid" ? "Paid" : "Partially Verified"}</span></p>
+              </div>
+
+              <p>
+                Your payment has been successfully verified. ${updatedPayment.status === "Paid" ? "This month's tuition fee is now fully paid." : "Your payment is partially verified; the remaining balance will be updated upon further verification."}
+              </p>
+
+              <p>
+                ${updatedPayment.status === "Paid" ? "You can download your official receipt from the Payments page." : "You will receive a receipt once the full payment is verified."}
+              </p>
+
+              <p>
+                If you have any questions, please contact the administration.
+              </p>
+
+              <hr
+                style="
+                  border: none;
+                  border-top: 1px solid #dddddd;
+                  margin: 30px 0;
+                "
+              />
+
+              <p>
+                Regards,<br />
+                <strong>Admin</strong><br />
+                <strong>CeiT Academy - Online Tuition</strong>
+              </p>
+
+              <p
+                style="
+                  color: #888888;
+                  font-size: 13px;
+                  margin-top: 30px;
+                "
+              >
+                This is an automated email from CeiT Academy - Online Tuition.
+                Please do not reply directly to this email.
+              </p>
+            </div>
+          `,
+        });
+
+        console.log(
+          "📧 Student payment approval email sent to:",
+          updatedPayment.student.email
+        );
+      } catch (emailError) {
+        console.error(
+          "Failed to send student payment approval email:",
+          emailError
+        );
+      }
+
+      /* -----------------------------------------------------
+          COMPANY NOTIFICATION EMAIL
+
+          The company inbox must be notified when an admin
+          verifies a student payment. The verified amount is
+          taken from the approved transaction (a trusted
+          backend source), never invented.
+       ----------------------------------------------------- */
+
+      const companyEmail = process.env.COMPANY_EMAIL;
+
+      if (companyEmail) {
+        const verifiedAmount =
+          updatedTransaction?.amount !== undefined &&
+          updatedTransaction?.amount !== null
+            ? `₹${Number(updatedTransaction.amount).toLocaleString("en-IN")}`
+            : "Not recorded";
+
+        const verificationDate = (updatedPayment.verifiedAt || new Date()).toLocaleString(
+          "en-IN",
+          { timeZone: "Asia/Kolkata" }
+        );
+
+        const paymentStatus =
+          updatedPayment.status === "Paid"
+            ? "Paid"
+            : "Partially Verified";
+
+        try {
+          await transporter.sendMail({
+            from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
+            to: companyEmail,
+            subject: `Payment Verified - ${paymentStatus}`,
+            html: `
+              <div style="
+                font-family: Arial, sans-serif;
+                background-color: #ffffff;
+                color: #333333;
+                max-width: 650px;
+                margin: 0 auto;
+                padding: 20px;
+                line-height: 1.7;
+              ">
+                <h2 style="color: #2f4b8f; margin-bottom: 5px;">
+                  CeiT Academy - Online Tuition
+                </h2>
+
+                <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
+                  Payment Verified - ${paymentStatus}
+                </p>
+
+                <p>
+                  An admin has verified a student payment transaction.
+                </p>
+
+                <div style="
+                  background-color: #e8f5e9;
+                  border-left: 4px solid #4caf50;
+                  padding: 15px 18px;
+                  margin: 20px 0;
+                ">
+                  <p style="margin: 5px 0;"><strong>Student Name:</strong> ${updatedPayment.student?.firstName || ""} ${updatedPayment.student?.lastName || ""}</p>
+                  <p style="margin: 5px 0;"><strong>Student ID:</strong> ${updatedPayment.student?._id?.toString() || "-"}</p>
+                  <p style="margin: 5px 0;"><strong>Student Email:</strong> ${updatedPayment.student?.email || "-"}</p>
+                  <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${updatedPayment.student?.class || updatedPayment.className || "-"}</p>
+                  <p style="margin: 5px 0;"><strong>Applicable Tuition Fee:</strong> ₹${updatedPayment.monthlyFee}</p>
+                  <p style="margin: 5px 0;"><strong>Verified Amount Paid:</strong> ${verifiedAmount}</p>
+                  <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${paymentMethodDisplay}</p>
+                  ${updatedTransaction.method === "UPI_ID" ? `<p style="margin: 5px 0;"><strong>UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
+                  <p style="margin: 5px 0;"><strong>Transaction Reference / UTR:</strong> ${updatedTransaction?.transactionReference || "-"}</p>
+                  <p style="margin: 5px 0;"><strong>Verification Date:</strong> ${verificationDate}</p>
+                  <p style="margin: 5px 0;"><strong>Payment Status:</strong> <span style="color: #4caf50;">${paymentStatus}</span></p>
+                  <p style="margin: 5px 0;"><strong>Payment Record ID:</strong> ${updatedPayment._id}</p>
+                </div>
+
+                <hr
+                  style="
+                    border: none;
+                    border-top: 1px solid #dddddd;
+                    margin: 30px 0;
+                  "
+                />
+
+                <p>
+                  Regards,<br />
+                  <strong>System</strong><br />
+                  <strong>CeiT Academy - Online Tuition</strong>
+                </p>
+
+                <p
+                  style="
+                    color: #888888;
+                    font-size: 13px;
+                    margin-top: 30px;
+                  "
+                >
+                  This is an automated email from CeiT Academy - Online Tuition.
+                  Please do not reply directly to this email.
+                </p>
+              </div>
+            `,
+          });
+
+          console.log(
+            "📧 Company payment verification notification sent to:",
+            companyEmail,
+            "| Payment ID:",
+            updatedPayment._id
+          );
+        } catch (emailError) {
+          console.error(
+            "Failed to send company payment verification notification:",
+            {
+              paymentId: updatedPayment._id,
+              recipient: companyEmail,
+              error: errorError?.message || errorError,
+            }
+          );
+        }
+      }
+
+      return res.json({
+        success: true,
+        message: "Transaction approved successfully",
+        payment: updatedPayment,
+        transaction: updatedTransaction,
+        fullyPaid: updatedPayment.status === "Paid"
+      });
+
+    } catch (error) {
+      console.error(
+        "Approve transaction error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to approve transaction",
+        error: error.message
+      });
+    }
+  }
+);
+
+/* =====================================================
    ADMIN — GENERATE RECEIPT FOR PAID PAYMENT
-   Generates a PDF receipt for approved payments only.
-   Idempotent: reuses existing bill number if already generated.
+   Generates a PDF receipt for verified Paid payments.
+   Idempotent: reuses an existing bill number; allocates a
+   unique one from the atomic BillCounter only when missing,
+   so concurrent requests cannot create duplicate bill numbers.
 ===================================================== */
 
 router.post(
@@ -2109,30 +2664,36 @@ router.post(
         });
       }
 
-      // Generate bill number if not already generated
+      // Reuse an existing bill number; allocate a unique one only when missing.
+      // BillCounter allocation is atomic, so concurrent allocations cannot
+      // hand out the same bill number. The conditional updateOne makes the
+      // assignment idempotent when approvals race.
       let billNumber = payment.billNumber;
       if (!billNumber) {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, "0");
-        const random = Math.floor(Math.random() * 10000)
-          .toString()
-          .padStart(4, "0");
-        billNumber = `CEITCS-${year}${month}-${random}`;
-        payment.billNumber = billNumber;
+        billNumber = await allocateBillNumber();
+        const result = await StudentPayment.updateOne(
+          { _id: payment._id, billNumber: "" },
+          { $set: { billNumber } }
+        );
+        if (result.modifiedCount > 0) {
+          payment.billNumber = billNumber;
+        } else {
+          const fresh = await StudentPayment.findById(payment._id);
+          if (fresh) {
+            payment.billNumber = fresh.billNumber;
+            billNumber = payment.billNumber;
+          }
+        }
       }
 
-      // Set receipt generation timestamp if not already set
       if (!payment.receiptGeneratedAt) {
         payment.receiptGeneratedAt = new Date();
       }
 
       await payment.save();
 
-      // Generate PDF receipt using the shared official receipt format
       const pdfBuffer = await generateReceiptPdf(payment, billNumber);
 
-      // Send PDF as response
       res.set({
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="receipt-${billNumber}.pdf"`,
@@ -2153,7 +2714,8 @@ router.post(
 
 /* =====================================================
    ADMIN — EMAIL RECEIPT TO STUDENT AND ADMIN
-   Sends the generated receipt as PDF attachment.
+   Sends the generated receipt as a PDF attachment.
+   Only issued after the payment is verified and marked Paid.
 ===================================================== */
 
 router.post(
@@ -2184,17 +2746,25 @@ router.post(
         });
       }
 
-      // Generate bill number if not already generated
+      // Reuse an existing bill number; allocate a unique one only when missing.
+      // BillCounter allocation is atomic; the conditional updateOne makes the
+      // assignment idempotent under concurrent requests.
       let billNumber = payment.billNumber;
       if (!billNumber) {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, "0");
-        const random = Math.floor(Math.random() * 10000)
-          .toString()
-          .padStart(4, "0");
-        billNumber = `CEITCS-${year}${month}-${random}`;
-        payment.billNumber = billNumber;
+        billNumber = await allocateBillNumber();
+        const result = await StudentPayment.updateOne(
+          { _id: payment._id, billNumber: "" },
+          { $set: { billNumber } }
+        );
+        if (result.modifiedCount > 0) {
+          payment.billNumber = billNumber;
+        } else {
+          const fresh = await StudentPayment.findById(payment._id);
+          if (fresh) {
+            payment.billNumber = fresh.billNumber;
+            billNumber = payment.billNumber;
+          }
+        }
       }
 
       if (!payment.receiptGeneratedAt) {
@@ -2203,10 +2773,8 @@ router.post(
 
       await payment.save();
 
-      // Generate PDF receipt buffer using the shared official receipt format
       const pdfBuffer = await generateReceiptPdf(payment, billNumber);
 
-      // Details used in the receipt emails
       const studentName =
         `${payment.student?.firstName || ""} ${
           payment.student?.lastName || ""
@@ -2235,7 +2803,6 @@ router.post(
             timeZone: "Asia/Kolkata",
           });
 
-      // Send email to student
       const adminEmail = process.env.ADMIN_EMAIL;
       const emailResults = { student: false, admin: false, company: false };
 

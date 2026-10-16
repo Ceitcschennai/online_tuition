@@ -1291,11 +1291,13 @@ if (reuploadToken) {
     <>
       Upload Replacement Student ID{" "}
       <span className="required-star">*</span>
+      <span className="pdf-note"> (PDF only)</span>
     </>
   ) : (
     <>
       Upload Student ID{" "}
       <span className="required-star">*</span>
+      <span className="pdf-note"> (PDF only)</span>
     </>
   )}
 </label>

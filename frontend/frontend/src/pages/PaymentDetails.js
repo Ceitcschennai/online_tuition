@@ -417,7 +417,7 @@ const PaymentDetails = () => {
                 Payment Submitted
               </strong>
               <p>
-                Your payment has already been submitted
+                Your payment has been submitted
                 and is waiting for admin verification.
               </p>
             </div>

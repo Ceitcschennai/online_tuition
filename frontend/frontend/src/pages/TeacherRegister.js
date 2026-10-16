@@ -32,6 +32,18 @@ const TEACHABLE_CLASSES = [
   "Class 12",
 ];
 
+const PREFERRED_SUBJECTS = [
+  "Tamil",
+  "English",
+  "Maths",
+  "Science",
+  "Social",
+  "Botany",
+  "Zoology",
+  "Computer Science",
+  "Hindi",
+];
+
 
 /* =========================================================
    TIMEZONE OPTIONS
@@ -111,7 +123,7 @@ const TeacherRegister = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    preferredSubject: "",
+    preferredSubject: [],
     classes: [],
   });
 
@@ -130,6 +142,8 @@ const TeacherRegister = () => {
 
   const [classesOpen, setClassesOpen] =
     useState(false);
+
+    const [subjectsOpen, setSubjectsOpen] = useState(false);
 
 
   /* =======================================================
@@ -268,8 +282,11 @@ const TeacherRegister = () => {
 
           confirmPassword: "",
 
-          preferredSubject:
-            teacher.preferredSubject || "",
+          preferredSubject: Array.isArray(teacher.preferredSubject)
+  ? teacher.preferredSubject
+  : teacher.preferredSubject
+    ? teacher.preferredSubject.split(",").map((subject) => subject.trim())
+    : [],
 
           classes:
             teacher.classesAssigned || [],
@@ -455,7 +472,7 @@ const TeacherRegister = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      preferredSubject: "",
+      preferredSubject: [],
       classes: [],
     });
 
@@ -634,7 +651,7 @@ console.log("🔥 degreeFile:", degreeFile);
       !form.email.trim() ||
       !form.password ||
       !form.confirmPassword ||
-      !form.preferredSubject.trim()
+      form.preferredSubject.length === 0
     ) {
 
       showPopup(
@@ -800,7 +817,7 @@ console.log("🔥 degreeFile:", degreeFile);
 
     formData.append(
       "preferredSubject",
-      form.preferredSubject.trim()
+      form.preferredSubject.join()
     );
 
     formData.append(
@@ -1556,22 +1573,83 @@ console.log("🔥 degreeFile:", degreeFile);
                 PREFERRED SUBJECT
             =============================================== */}
 
-            <div className="teacher-form-group">
+            
+{/* PREFERRED SUBJECT */}
+<div className="teacher-form-group">
+  <label>
+    Preferred Subject <span className="required-star">*</span>
+  </label>
 
-              <label>
-                Preferred Subject <span className="required-star">*</span>
-              </label>
+  <div className="teacher-subject-dropdown">
+    <button
+      type="button"
+      className="teacher-subject-select"
+      onClick={() => {
+        if (!isReuploadMode) {
+          setSubjectsOpen((previous) => !previous);
+        }
+      }}
+      disabled={isReuploadMode}
+    >
+      <span>
+        {form.preferredSubject.length > 0
+  ? form.preferredSubject.join(", ")
+  : "Select subjects"}
+      </span>
+      <FaChevronDown />
+    </button>
 
-              <input
-                type="text"
-                name="preferredSubject"
-                value={form.preferredSubject}
-                onChange={handleChange}
-                placeholder="Example: Mathematics"
-                readOnly={isReuploadMode}
-              />
+    
+{subjectsOpen && !isReuploadMode && (
+  <div className="teacher-subject-menu">
+    {PREFERRED_SUBJECTS.map((subject) => (
+      <label
+        key={subject}
+        className="teacher-subject-option"
+      >
+        <input
+          type="checkbox"
+          checked={form.preferredSubject.includes(subject)}
+          onChange={() =>
+            setForm((previous) => ({
+              ...previous,
+              preferredSubject: previous.preferredSubject.includes(subject)
+                ? previous.preferredSubject.filter(
+                    (item) => item !== subject
+                  )
+                : [...previous.preferredSubject, subject],
+            }))
+          }
+        />
+        <span>{subject}</span>
+      </label>
+    ))}
 
-            </div>
+        <div className="teacher-subject-menu-footer">
+          <button
+            type="button"
+            className="teacher-subject-done-button"
+            onClick={() => {
+              if (form.preferredSubject.length === 0) {
+                showPopup(
+                  "error",
+                  "Subject Required",
+                  "Please select your preferred subject."
+                );
+                return;
+              }
+
+              setSubjectsOpen(false);
+            }}
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+
 
 
             {/* ===============================================
@@ -1662,6 +1740,28 @@ console.log("🔥 degreeFile:", degreeFile);
                       )
                     )}
 
+
+<div className="teacher-class-menu-footer">
+  <button
+    type="button"
+    className="teacher-class-done-button"
+    onClick={() => {
+      if (form.classes.length === 0) {
+        showPopup(
+          "error",
+          "Class Required",
+          "Please select at least one class."
+        );
+        return;
+      }
+
+      setClassesOpen(false);
+    }}
+  >
+    Done
+  </button>
+</div>
+
                   </div>
 
                 )}
@@ -1682,9 +1782,11 @@ console.log("🔥 degreeFile:", degreeFile);
                 {isReuploadMode
                   ? <label>
                 Upload Corrected Degree Certificate <span className="required-star">*</span>
+                <span className="pdf-note"> (PDF only)</span>
               </label>
                   : <label>
                 Degree Certificate <span className="required-star">*</span>
+                <span className="pdf-note"> (PDF only)</span>
               </label>
                 }
 

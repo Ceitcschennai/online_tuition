@@ -7,7 +7,6 @@ const transporter = require("../config/email");
 const { protect } = require("../middleware/authMiddleware");
 const {
   generateReceiptPdf,
-  generateReceiptBillNumber,
 } = require("../utils/receiptPdf");
 
 const router = express.Router();
@@ -467,7 +466,20 @@ const {
         transactionReference,
         amount,
         paymentScreenshot,
+        paymentMethod,
+        studentUpiId,
       } = req.body;
+
+      // Safe development diagnostic - logs amount structure without secrets
+      if (process.env.NODE_ENV === "development") {
+        console.debug("Payment submission received:", {
+          hasAmount: amount !== undefined,
+          amountValue: amount,
+          amountType: typeof amount,
+          paymentMethod,
+          hasStudentUpiId: !!studentUpiId,
+        });
+      }
 
       const studentId = getAuthenticatedStudentId(req);
 
@@ -497,18 +509,59 @@ const {
 
 
       /* -----------------------------------------------------
-         VALIDATE AMOUNT
+         VALIDATE PAYMENT METHOD AND UPI ID
+      ----------------------------------------------------- */
+
+      const resolvedPaymentMethod = paymentMethod === "UPI_ID" ? "UPI_ID" : "QR";
+
+      if (resolvedPaymentMethod === "UPI_ID") {
+        if (!studentUpiId || !studentUpiId.trim()) {
+          return res.status(400).json({
+            success: false,
+            message: "UPI ID is required for UPI ID payment method",
+          });
+        }
+
+        // Basic UPI ID format validation (VPA format)
+        const upiIdRegex = /^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}$/;
+        if (!upiIdRegex.test(studentUpiId.trim())) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid UPI ID format. Expected format: username@provider (e.g., user@upi, 9876543210@bank)",
+          });
+        }
+      }
+
+
+      /* -----------------------------------------------------
+         AMOUNT (OPTIONAL)
+
+         The QR-based payment flow does not send an amount:
+         the student pays the exact monthly fee shown on screen.
+         If a client does send an amount it is kept (partial
+         payment) and validated against the outstanding balance
+         below.
        ----------------------------------------------------- */
 
-      const submittedAmount = Number(amount);
+      const requestedAmount =
+        amount === undefined ||
+        amount === null ||
+        amount === ""
+          ? null
+          : Number(amount);
 
       if (
-        !Number.isFinite(submittedAmount) ||
-        submittedAmount <= 0
+        requestedAmount !== null &&
+        (
+          !Number.isFinite(requestedAmount) ||
+          requestedAmount <= 0
+        )
       ) {
+
         return res.status(400).json({
           success: false,
-          message: "Valid payment amount is required",
+          message:
+            "Valid payment amount is required",
         });
       }
 
@@ -613,9 +666,9 @@ const {
         });
 
 
-      /* -----------------------------------------------------
-         CREATE PAYMENT IF NECESSARY
-      ----------------------------------------------------- */
+/* -----------------------------------------------------
+          CREATE PAYMENT IF NECESSARY
+       ----------------------------------------------------- */
 
       if (!payment) {
 
@@ -628,6 +681,8 @@ const {
             monthlyFee: fee.monthlyFee,
             amountPaid: 0,
             status: "Pending",
+            paymentMethod: resolvedPaymentMethod,
+            studentUpiId: resolvedPaymentMethod === "UPI_ID" ? studentUpiId.trim() : "",
           });
 
       }
@@ -647,6 +702,30 @@ const {
         });
       }
 
+
+      /* -----------------------------------------------------
+          RESOLVE SUBMITTED AMOUNT
+
+          When no amount is supplied the student is paying the
+          full outstanding balance (the exact monthly fee shown
+          on the payment page). The amount always comes from the
+          backend fee, never from the client.
+       ----------------------------------------------------- */
+
+      const submittedAmount =
+        requestedAmount === null
+          ? outstandingBalance
+          : requestedAmount;
+
+      // Safe development diagnostic
+      if (process.env.NODE_ENV === "development") {
+        console.debug("Submitted amount resolved:", {
+          requestedAmount,
+          outstandingBalance,
+          submittedAmount,
+        });
+      }
+
       if (submittedAmount > outstandingBalance) {
         return res.status(400).json({
           success: false,
@@ -657,14 +736,17 @@ const {
 
       /* -----------------------------------------------------
          CHECK FOR DUPLICATE TRANSACTION REFERENCE
-       ----------------------------------------------------- */
+      ----------------------------------------------------- */
 
-      const isDuplicate = payment.transactions.some(
+      const normalizedRef = transactionReference.trim();
+
+      const isActiveDuplicate = payment.transactions.some(
         (txn) =>
-          txn.transactionReference === transactionReference.trim()
+          txn.transactionReference === normalizedRef &&
+          txn.status !== "Rejected"
       );
 
-      if (isDuplicate) {
+      if (isActiveDuplicate) {
         return res.status(400).json({
           success: false,
           message: "This transaction reference has already been submitted",
@@ -677,11 +759,11 @@ const {
 
          Allow resubmission for rejected transactions by clearing
          the rejection trail. Other transactions remain unchanged.
-       ----------------------------------------------------- */
+      ----------------------------------------------------- */
 
       const rejectedTxnIndex = payment.transactions.findIndex(
         (txn) =>
-          txn.transactionReference === transactionReference.trim() &&
+          txn.transactionReference === normalizedRef &&
           txn.status === "Rejected"
       );
 
@@ -692,34 +774,71 @@ const {
         payment.transactions[rejectedTxnIndex].status = "Submitted";
         payment.transactions[rejectedTxnIndex].amount = submittedAmount;
         payment.transactions[rejectedTxnIndex].submittedAt = new Date();
+        payment.transactions[rejectedTxnIndex].method = resolvedPaymentMethod;
       } else {
         /* -----------------------------------------------------
            CREATE NEW TRANSACTION
-         ----------------------------------------------------- */
+        ----------------------------------------------------- */
 
         payment.transactions.push({
-          transactionReference: transactionReference.trim(),
+          transactionReference: normalizedRef,
           amount: submittedAmount,
           status: "Submitted",
           paymentScreenshot: paymentScreenshot || "",
           submittedAt: new Date(),
+          method: resolvedPaymentMethod,
         });
       }
 
 
       /* -----------------------------------------------------
-         SYNC CURRENT FEE
-       ----------------------------------------------------- */
+          SYNC CURRENT FEE
+        ----------------------------------------------------- */
 
       payment.monthlyFee = fee.monthlyFee;
       payment.className = className;
+
+      // Ensure paymentMethod and studentUpiId are set for existing records
+      if (!payment.paymentMethod) {
+        payment.paymentMethod = resolvedPaymentMethod;
+      }
+      if (resolvedPaymentMethod === "UPI_ID" && !payment.studentUpiId) {
+        payment.studentUpiId = studentUpiId.trim();
+      }
+
+
+      /* -----------------------------------------------------
+          SAVE SUBMITTED AMOUNT AND UTR
+
+          submittedAmount = the actual amount the student paid.
+          transactionReference = the student's UTR. Both are kept
+          at the top level so the admin API and dashboard can read
+          them without digging through the transactions array.
+          amountPaid is NOT changed here; it only increases when an
+          admin verifies the transaction.
+       ----------------------------------------------------- */
+
+      payment.submittedAmount = submittedAmount;
+      payment.transactionReference = transactionReference.trim();
+
+      // Safe development diagnostic
+      if (process.env.NODE_ENV === "development") {
+        console.debug("Payment before save:", {
+          submittedAmount: payment.submittedAmount,
+          transactionReference: payment.transactionReference,
+          status: payment.status,
+          monthlyFee: payment.monthlyFee,
+          amountPaid: payment.amountPaid,
+        });
+      }
 
 
       /* -----------------------------------------------------
          UPDATE PAYMENT STATUS
 
          If any transaction is Submitted, overall status is Submitted.
-         If all transactions are Verified and amountPaid >= monthlyFee, status is Paid.
+         If all transactions are Verified, amountPaid >= monthlyFee,
+         AND funds have been verified by admin, status is Paid.
        ----------------------------------------------------- */
 
       const hasSubmitted = payment.transactions.some(
@@ -730,7 +849,8 @@ const {
         payment.transactions.length > 0 &&
         payment.transactions.every((txn) => txn.status === "Verified");
 
-      if (allVerified && payment.amountPaid >= payment.monthlyFee) {
+      // Require fundsVerified before transitioning to Paid
+      if (allVerified && payment.amountPaid >= payment.monthlyFee && payment.fundsVerified) {
         payment.status = "Paid";
       } else if (hasSubmitted) {
         payment.status = "Submitted";
@@ -772,6 +892,11 @@ const {
         : new Date().toLocaleString("en-IN", {
             timeZone: "Asia/Kolkata",
           });
+
+      const paymentMethodDisplay = latestTxn.method === "UPI_ID" ? "UPI ID" : "QR Code";
+      const upiIdDisplay = latestTxn.method === "UPI_ID" && payment.studentUpiId
+        ? payment.studentUpiId
+        : "N/A";
 
       // Student acknowledgement email
       try {
@@ -816,6 +941,8 @@ const {
                 <p style="margin: 5px 0;"><strong>Verified Amount Paid:</strong> ₹${payment.amountPaid || 0}</p>
                 <p style="margin: 5px 0;"><strong>Outstanding Balance:</strong> ₹${outstandingBalance}</p>
                 <p style="margin: 5px 0;"><strong>Submitted Amount:</strong> ₹${latestTxn.amount}</p>
+                <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${paymentMethodDisplay}</p>
+                ${latestTxn.method === "UPI_ID" ? `<p style="margin: 5px 0;"><strong>UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
                 <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${latestTxn.transactionReference}</p>
                 <p style="margin: 5px 0;"><strong>Submission Date:</strong> ${submissionDate}</p>
                 <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #f0a500;">Pending Verification</span></p>
@@ -917,6 +1044,8 @@ const {
                   <p style="margin: 5px 0;"><strong>Verified Amount Paid:</strong> ₹${payment.amountPaid || 0}</p>
                   <p style="margin: 5px 0;"><strong>Outstanding Balance:</strong> ₹${outstandingBalance}</p>
                   <p style="margin: 5px 0;"><strong>Submitted Amount:</strong> ₹${latestTxn.amount}</p>
+                  <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${paymentMethodDisplay}</p>
+                  ${latestTxn.method === "UPI_ID" ? `<p style="margin: 5px 0;"><strong>UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
                   <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${latestTxn.transactionReference}</p>
                   <p style="margin: 5px 0;"><strong>Submission Date:</strong> ${submissionDate}</p>
                   <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #f0a500;">Pending Verification</span></p>
@@ -981,6 +1110,130 @@ const {
           console.error(
             "Failed to send admin payment verification email:",
             emailError
+          );
+        }
+      }
+
+      /* -----------------------------------------------------
+          COMPANY NOTIFICATION EMAIL
+
+          The company inbox must be notified of every student
+          payment submission. The amount shown is the amount the
+          student reported paying (latest transaction), which is
+          still UNVERIFIED at this point. It is never substituted
+          with the tuition fee.
+       ----------------------------------------------------- */
+
+      const companyEmail = process.env.COMPANY_EMAIL;
+
+      if (companyEmail) {
+        // The submitted amount comes from the backend-resolved
+        // latest transaction, a trusted source inside this
+        // request. It is labelled as unverified because admin
+        // verification has not happened yet.
+        const submittedAmount = latestTxn?.amount;
+        const submittedAmountDisplay =
+          submittedAmount !== undefined && submittedAmount !== null
+            ? `₹${Number(submittedAmount).toLocaleString("en-IN")}`
+            : "Not recorded";
+
+        try {
+          await transporter.sendMail({
+            from: `"CeiT Academy" <${process.env.EMAIL_USER}>`,
+            to: companyEmail,
+            subject: `Payment Submitted - Awaiting Verification`,
+            html: `
+              <div style="
+                font-family: Arial, sans-serif;
+                background-color: #ffffff;
+                color: #333333;
+                max-width: 650px;
+                margin: 0 auto;
+                padding: 20px;
+                line-height: 1.7;
+              ">
+                <h2 style="color: #2f4b8f; margin-bottom: 5px;">
+                  CeiT Academy - Online Tuition
+                </h2>
+
+                <p style="color: #666666; margin-top: 0; margin-bottom: 25px;">
+                  Payment Submitted - Awaiting Verification
+                </p>
+
+                <p>
+                  A student has submitted a course fee payment. The
+                  payment is <strong>not yet verified</strong> and is
+                  awaiting admin approval.
+                </p>
+
+                <div style="
+                  background-color: #fff8e6;
+                  border-left: 4px solid #f0a500;
+                  padding: 15px 18px;
+                  margin: 20px 0;
+                ">
+                  <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
+                  <p style="margin: 5px 0;"><strong>Student ID:</strong> ${student._id}</p>
+                  <p style="margin: 5px 0;"><strong>Student Email:</strong> ${student.email}</p>
+                  <p style="margin: 5px 0;"><strong>Course/Class:</strong> ${className}</p>
+                  <p style="margin: 5px 0;"><strong>Applicable Tuition Fee:</strong> ₹${payment.monthlyFee}</p>
+                  <p style="margin: 5px 0;"><strong>Amount Paid (Unverified):</strong> ${submittedAmountDisplay}</p>
+                  <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${paymentMethodDisplay}</p>
+                  ${latestTxn.method === "UPI_ID" ? `<p style="margin: 5px 0;"><strong>UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
+                  <p style="margin: 5px 0;"><strong>Transaction Reference / UTR:</strong> ${latestTxn.transactionReference}</p>
+                  <p style="margin: 5px 0;"><strong>Submission Date:</strong> ${submissionDate}</p>
+                  <p style="margin: 5px 0;"><strong>Payment Status:</strong> <span style="color: #f0a500;">Submitted - Awaiting Admin Verification</span></p>
+                  <p style="margin: 5px 0;"><strong>Payment Record ID:</strong> ${payment._id}</p>
+                </div>
+
+                <p>
+                  <em>Note: The amount paid shown above is the amount
+                  the student reported at submission time. It has
+                  not been verified by an admin yet.</em>
+                </p>
+
+                <hr
+                  style="
+                    border: none;
+                    border-top: 1px solid #dddddd;
+                    margin: 30px 0;
+                  "
+                />
+
+                <p>
+                  Regards,<br />
+                  <strong>System</strong><br />
+                  <strong>CeiT Academy - Online Tuition</strong>
+                </p>
+
+                <p
+                  style="
+                    color: #888888;
+                    font-size: 13px;
+                    margin-top: 30px;
+                  "
+                >
+                  This is an automated email from CeiT Academy - Online Tuition.
+                  Please do not reply directly to this email.
+                </p>
+              </div>
+            `,
+          });
+
+          console.log(
+            "📧 Company payment submission notification sent to:",
+            companyEmail,
+            "| Payment ID:",
+            payment._id
+          );
+        } catch (emailError) {
+          console.error(
+            "Failed to send company payment submission notification:",
+            {
+              paymentId: payment._id,
+              recipient: companyEmail,
+              error: emailError?.message || emailError,
+            }
           );
         }
       }
@@ -1107,32 +1360,29 @@ router.get(
         });
       }
 
-      if (payment.status !== "Paid") {
+if (payment.status !== "Paid") {
         return res.status(400).json({
           success: false,
           message: `Receipt can only be generated for paid payments. Current status: ${payment.status}`
         });
       }
 
-      // Generate bill number if not already generated
-      let billNumber = payment.billNumber;
+      // Reuse the payment's existing bill number. A Paid payment must
+      // already have a bill number allocated during the canonical approval
+      // process. If missing, it indicates a data integrity issue.
+      const billNumber = payment.billNumber;
       if (!billNumber) {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, "0");
-        const random = Math.floor(Math.random() * 10000)
-          .toString()
-          .padStart(4, "0");
-        billNumber = `CEITCS-${year}${month}-${random}`;
-        payment.billNumber = billNumber;
+        return res.status(400).json({
+          success: false,
+          message: "Payment is marked Paid but has no bill number. Cannot generate receipt."
+        });
       }
 
       // Set receipt generation timestamp if not already set
       if (!payment.receiptGeneratedAt) {
         payment.receiptGeneratedAt = new Date();
+        await payment.save();
       }
-
-      await payment.save();
 
       // Generate PDF receipt using the shared official receipt format
       const pdfBuffer = await generateReceiptPdf(payment, billNumber);

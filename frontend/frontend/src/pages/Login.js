@@ -17,76 +17,11 @@ import {
   FaArrowRight,
   FaUserPlus,
   FaTimes,
-  FaLaptop,
   FaBars,
 } from "react-icons/fa";
 
 import "../styles/login.css";
 import API_BASE_URL from "../config/api";
-
-// ============================================================
-// MOBILE DEVICE DETECTION
-// ============================================================
-
-const isMobileDevice = () => {
-  const ua =
-    navigator.userAgent ||
-    navigator.vendor ||
-    window.opera;
-
-  return (
-    /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(
-      ua
-    ) || window.innerWidth <= 768
-  );
-};
-
-// ============================================================
-// MOBILE POPUP
-// ============================================================
-
-const MobilePopup = ({ onClose }) => {
-  return (
-    <div className="mobile-popup-overlay">
-      <div className="mobile-popup-card">
-
-        <button
-          type="button"
-          className="mobile-popup-close"
-          onClick={onClose}
-          aria-label="Close"
-        >
-          <FaTimes />
-        </button>
-
-        <div className="mobile-popup-icon">
-          <FaLaptop />
-        </div>
-
-        <h2>Laptop Required</h2>
-
-        <p>
-          <strong>Participant login</strong> is available only
-          on a laptop or desktop computer for the best learning
-          experience.
-        </p>
-
-        <span>
-          Faculty and Admin can login from any device.
-        </span>
-
-        <button
-          type="button"
-          className="mobile-popup-button"
-          onClick={onClose}
-        >
-          Got it
-        </button>
-
-      </div>
-    </div>
-  );
-};
 
 // ============================================================
 // LOGIN COMPONENT
@@ -139,7 +74,6 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showMobilePopup, setShowMobilePopup] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [registerMenuOpen, setRegisterMenuOpen] = useState(false);
 
@@ -161,18 +95,6 @@ const Login = () => {
     e.preventDefault();
 
     setError("");
-
-    // ========================================================
-    // PARTICIPANT MOBILE RESTRICTION
-    // ========================================================
-
-    if (
-      role === "student" &&
-      isMobileDevice()
-    ) {
-      setShowMobilePopup(true);
-      return;
-    }
 
     // ========================================================
     // EMAIL VALIDATION
@@ -436,20 +358,6 @@ const Login = () => {
     <div className="login-page">
 
       {/* ====================================================
-          MOBILE POPUP
-      ==================================================== */}
-
-      {showMobilePopup && (
-
-        <MobilePopup
-          onClose={() =>
-            setShowMobilePopup(false)
-          }
-        />
-
-      )}
-
-      {/* ====================================================
           HEADER
       ==================================================== */}
 
@@ -548,14 +456,14 @@ const Login = () => {
                   href="/register/teacher"
                   onClick={closeAllMenus}
                 >
-                  Faculty
+                  Teacher
                 </a>
 
                 <a
                   href="/register/student"
                   onClick={closeAllMenus}
                 >
-                  Participant
+                  Student
                 </a>
 
               </div>

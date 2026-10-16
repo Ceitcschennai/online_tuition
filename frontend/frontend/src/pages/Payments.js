@@ -270,9 +270,9 @@ const Payments = () => {
     return "pending";
   };
 
-  /* =========================================================
+/* =========================================================
      HANDLE PAY NOW
-  ========================================================= */
+   ========================================================= */
 
   const handlePayment = () => {
     const className =
@@ -284,7 +284,7 @@ const Payments = () => {
       payment?.monthlyFee || 0
     );
 
-    navigate("/fee-payment", {
+    navigate("/upi-transaction", {
       state: {
         className,
         monthlyFee,

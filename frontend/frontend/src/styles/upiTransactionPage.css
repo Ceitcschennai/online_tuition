@@ -1,0 +1,290 @@
+.upi-transaction-page {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding: 24px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.upi-transaction-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+.upi-loading {
+  text-align: center;
+  padding: 48px 24px;
+  color: #666;
+  font-size: 16px;
+}
+
+.upi-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.upi-header {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eef0f3;
+  position: relative;
+}
+
+.upi-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f5f7fa;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #2f4b8f;
+  transition: background-color 0.2s, color 0.2s;
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.upi-back-btn:hover {
+  background: #e8ecf3;
+  color: #1d356e;
+}
+
+.upi-back-btn:active {
+  background: #dce2ee;
+}
+
+.upi-page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1d23;
+  text-align: center;
+  width: 100%;
+}
+
+.upi-course-details {
+  padding: 24px;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.upi-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+}
+
+.upi-detail-row:not(:last-child) {
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.upi-detail-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.upi-detail-value {
+  font-size: 15px;
+  color: #1a1d23;
+  font-weight: 500;
+  text-align: right;
+  max-width: 65%;
+  word-break: break-word;
+}
+
+.upi-fee-row {
+  margin-top: 4px;
+}
+
+.upi-fee-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2f4b8f;
+}
+
+.upi-explanatory-text {
+  margin: 0;
+  padding: 16px 24px;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+  background-color: #fafbfc;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.upi-payment-section {
+  padding: 24px;
+}
+
+.upi-section-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1d23;
+}
+
+.upi-transaction-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2f4b8f 0%, #3d5aa3 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 14px rgba(47, 75, 143, 0.3);
+}
+
+.upi-transaction-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(47, 75, 143, 0.4);
+}
+
+.upi-transaction-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(47, 75, 143, 0.3);
+}
+
+.upi-transaction-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.upi-btn-icon {
+  flex-shrink: 0;
+}
+
+.upi-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  background-color: #fff8e6;
+  border: 1px solid #ffe0b2;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #856404;
+}
+
+.upi-note-icon {
+  flex-shrink: 0;
+  color: #f0a500;
+  margin-top: 1px;
+}
+
+.upi-note span {
+  color: #856404;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .upi-transaction-page {
+    padding: 16px 12px;
+    align-items: stretch;
+  }
+
+  .upi-header {
+    padding: 16px 20px;
+  }
+
+  .upi-back-btn {
+    left: 16px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .upi-page-title {
+    font-size: 18px;
+  }
+
+  .upi-course-details {
+    padding: 20px;
+  }
+
+  .upi-detail-row {
+    padding: 12px 0;
+  }
+
+  .upi-detail-label {
+    font-size: 13px;
+  }
+
+  .upi-detail-value {
+    font-size: 14px;
+    max-width: 60%;
+  }
+
+  .upi-fee-value {
+    font-size: 18px;
+  }
+
+  .upi-explanatory-text {
+    padding: 14px 20px;
+    font-size: 12px;
+  }
+
+  .upi-payment-section {
+    padding: 20px;
+  }
+
+  .upi-section-title {
+    font-size: 15px;
+  }
+
+  .upi-transaction-btn {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  .upi-note {
+    padding: 12px 14px;
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  .upi-transaction-page {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+
+  .upi-card {
+    border-radius: 20px;
+  }
+
+  .upi-header {
+    padding: 24px 32px;
+  }
+
+  .upi-course-details {
+    padding: 28px 32px;
+  }
+
+  .upi-payment-section {
+    padding: 28px 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .upi-transaction-container {
+    max-width: 520px;
+  }
+}

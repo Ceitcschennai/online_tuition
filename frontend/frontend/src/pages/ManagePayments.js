@@ -2,6 +2,62 @@ import React, { useEffect, useState } from "react";
 import API_BASE_URL from "../config/api";
 import "../styles/managePayments.css";
 
+/* =====================================================
+   HELPERS — actual submitted payment data
+
+   These read the amount the student actually paid and the
+   UTR they submitted. The internal MongoDB _id and any
+   generated transaction note are never used as a UTR.
+===================================================== */
+
+const getSubmittedUtr = (payment) =>
+  payment.transactionReference ||
+  payment.razorpayPaymentId ||
+  payment.transactions?.find(
+    (txn) => txn.status === "Submitted"
+  )?.transactionReference ||
+  "";
+
+const getLatestSubmittedUtr = (payment) =>
+  payment.transactionReference ||
+  payment.razorpayPaymentId ||
+  payment.transactions?.filter(
+    (txn) => txn.status === "Submitted"
+  ).slice(-1)[0]?.transactionReference ||
+  "";
+
+/* Pending submissions that are still awaiting verification. */
+const getPendingTransactions = (payment) =>
+  (payment.transactions || []).filter(
+    (txn) => txn.status === "Submitted"
+  );
+
+/* The real amount the student said they paid.
+
+   Priority: explicitly saved submitted amount -> the pending
+   submission amount -> the admin-verified amountPaid.
+   The tuition fee (monthlyFee) is never used here, and null is
+   returned when nothing was recorded so the UI can show "-". */
+const getSubmittedAmount = (payment) => {
+  if (
+    typeof payment.submittedAmount === "number" &&
+    payment.submittedAmount > 0
+  ) {
+    return payment.submittedAmount;
+  }
+
+  const pending = getPendingTransactions(payment);
+  if (pending.length > 0) {
+    return pending.slice(-1)[0].amount;
+  }
+
+  if (typeof payment.amountPaid === "number" && payment.amountPaid > 0) {
+    return payment.amountPaid;
+  }
+
+  return null;
+};
+
 const ManagePayments = () => {
 
   // =====================================================
@@ -396,22 +452,32 @@ const ManagePayments = () => {
   // APPROVE STUDENT PAYMENT
   // =====================================================
 
-  const approvePayment = async (paymentId) => {
+  const approvePayment = async (payment) => {
+    if (!payment?._id) return;
+
     if (!window.confirm("Approve this payment? This will mark it as Paid.")) {
       return;
     }
 
     try {
-      setProcessingPaymentId(paymentId);
+      setProcessingPaymentId(payment._id);
+
+      /* Name the pending submission explicitly so the correct
+         transaction is verified when more than one is pending. */
+      const pending = getPendingTransactions(payment);
+      const transactionReference =
+        getSubmittedUtr(payment) ||
+        (pending.length === 1 ? pending[0].transactionReference : "");
 
       const response = await fetch(
-        `${API_BASE_URL}/api/admin/payments/students/${paymentId}/approve`,
+        `${API_BASE_URL}/api/admin/payments/students/${payment._id}/approve`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
-          }
+          },
+          body: JSON.stringify({ transactionReference })
         }
       );
 
@@ -425,7 +491,7 @@ const ManagePayments = () => {
       await fetchPayments();
       setSelectedPayment(null);
 
-      alert("Payment approved successfully!");
+      alert(data.message || "Payment approved successfully!");
     } catch (error) {
       console.error("Approve payment error:", error);
       alert("Failed to approve payment");
@@ -438,7 +504,7 @@ const ManagePayments = () => {
   // REJECT STUDENT PAYMENT
   // =====================================================
 
-  const rejectPayment = async (paymentId) => {
+  const rejectPayment = async (payment) => {
     const reason = rejectReason.trim();
     if (!reason) {
       alert("Please enter a rejection reason");
@@ -446,17 +512,27 @@ const ManagePayments = () => {
     }
 
     try {
-      setProcessingPaymentId(paymentId);
+      setProcessingPaymentId(payment._id);
+
+      /* Name the pending submission explicitly so the correct
+         transaction is rejected when more than one is pending. */
+      const pending = getPendingTransactions(payment);
+      const transactionReference =
+        getSubmittedUtr(payment) ||
+        (pending.length === 1 ? pending[0].transactionReference : "");
 
       const response = await fetch(
-        `${API_BASE_URL}/api/admin/payments/students/${paymentId}/reject`,
+        `${API_BASE_URL}/api/admin/payments/students/${payment._id}/reject`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({ rejectionReason: reason })
+          body: JSON.stringify({
+            transactionReference,
+            rejectionReason: reason
+          })
         }
       );
 
@@ -471,7 +547,7 @@ const ManagePayments = () => {
       setSelectedPayment(null);
       setRejectReason("");
 
-      alert("Payment rejected successfully");
+      alert(data.message || "Payment rejected successfully");
     } catch (error) {
       console.error("Reject payment error:", error);
       alert("Failed to reject payment");
@@ -487,7 +563,6 @@ const ManagePayments = () => {
   const openPaymentDetail = (payment) => {
     setSelectedPayment(payment);
   };
-
   const closePaymentDetail = () => {
     setSelectedPayment(null);
     setRejectReason("");
@@ -499,50 +574,6 @@ const ManagePayments = () => {
 
   const closeScreenshot = () => {
     setShowScreenshot(false);
-  };
-
-  // =====================================================
-  // MARK STUDENT PAYMENT AS PAID
-  // =====================================================
-
-  const markAsPaid = async (paymentId) => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/admin/payments/students/${paymentId}/mark-paid`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          }
-        }
-      );
-
-      const data = await response.json();
-
-      if (!data.success) {
-        alert(
-          data.message ||
-            "Failed to mark payment as paid"
-        );
-        return;
-      }
-
-      await fetchPayments();
-
-      alert(
-        "Payment marked as paid successfully!"
-      );
-    } catch (error) {
-      console.error(
-        "Mark student payment error:",
-        error
-      );
-
-      alert(
-        "Failed to mark payment as paid"
-      );
-    }
   };
 
   // =====================================================
@@ -726,7 +757,6 @@ const generateTeacherPayments = async () => {
   const exportPayments = () => {
     const csvHeader =
       "Name,Class,Month,Monthly Fee,Amount Paid,Status,Date Paid,Transaction Reference\n";
-
     const csvRows = payments.map(
       (payment) => {
         const name =
@@ -739,17 +769,20 @@ const generateTeacherPayments = async () => {
           payment.className ||
           "";
 
+        const displayAmount = getSubmittedAmount(payment);
+        const displayUtr = getSubmittedUtr(payment);
+
         return [
           `"${name}"`,
           `"${className}"`,
           `"${payment.paymentMonth || ""}"`,
           payment.monthlyFee || 0,
-          payment.amountPaid || 0,
+          displayAmount || 0,
           `"${payment.status || ""}"`,
           payment.paidAt
             ? formatDate(payment.paidAt)
             : "",
-          `"${payment.transactionReference || ""}"`
+          `"${displayUtr}"`
         ].join(",");
       }
     );
@@ -945,10 +978,10 @@ const generateTeacherPayments = async () => {
                     <th>Student</th>
                     <th>Class</th>
                     <th>Month</th>
-                    <th>Amount</th>
+                    <th>Amount Paid</th>
                     <th>Status</th>
                     <th>Payment Date</th>
-                    <th>Payment ID</th>
+                    <th>Transaction Reference / UTR</th>
                     <th className="payment-action-column">Action</th>
                   </tr>
                 </thead>
@@ -970,6 +1003,9 @@ const generateTeacherPayments = async () => {
 
                       const isSubmitted = payment.status === "Submitted";
                       const isProcessing = processingPaymentId === payment._id;
+
+                      const submittedAmount = getSubmittedAmount(payment);
+                      const submittedUtr = getSubmittedUtr(payment);
 
                       return (
                         <tr
@@ -994,14 +1030,9 @@ const generateTeacherPayments = async () => {
                           </td>
 
                           <td className="amount-cell">
-                            ₹
-                            {(
-                              payment.amountPaid ||
-                              payment.monthlyFee ||
-                              0
-                            ).toLocaleString(
-                              "en-IN"
-                            )}
+                            {submittedAmount === null
+                              ? "-"
+                              : `₹${submittedAmount.toLocaleString("en-IN")}`}
                           </td>
 
                           <td>
@@ -1027,7 +1058,7 @@ const generateTeacherPayments = async () => {
                           </td>
 
                           <td className="payment-id">
-                            {payment.razorpayPaymentId || payment.transactionReference || "-"}
+                            {submittedUtr || "-"}
                           </td>
 
                           <td>
@@ -1043,16 +1074,6 @@ const generateTeacherPayments = async () => {
                                     Review
                                   </button>
                                 </>
-                              )}
-
-                              {!isSubmitted && payment.status !== "Paid" && (
-                                <button
-                                  className="table-action primary"
-                                  onClick={() => markAsPaid(payment._id)}
-                                  disabled={isProcessing}
-                                >
-                                  Mark Paid
-                                </button>
                               )}
 
                               {payment.status === "Paid" && (
@@ -1935,8 +1956,16 @@ const generateTeacherPayments = async () => {
                   <strong>₹{(selectedPayment.monthlyFee || 0).toLocaleString("en-IN")}</strong>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Transaction Reference</span>
-                  <strong>{selectedPayment.transactionReference || "-"}</strong>
+                  <span className="detail-label">Amount Paid</span>
+                  <strong>
+                    {getSubmittedAmount(selectedPayment) === null
+                      ? "-"
+                      : `₹${getSubmittedAmount(selectedPayment).toLocaleString("en-IN")}`}
+                  </strong>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Transaction Reference / UTR</span>
+                  <strong>{getLatestSubmittedUtr(selectedPayment) || "-"}</strong>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Submitted At</span>
@@ -1970,8 +1999,8 @@ const generateTeacherPayments = async () => {
                 <div className="modal-actions">
                   <button
                     className="approve-btn"
-                    onClick={() => approvePayment(selectedPayment._id)}
-                    disabled={processingPaymentId === selectedPayment._id}
+                             onClick={() => approvePayment(selectedPayment)}
+                             disabled={processingPaymentId === selectedPayment._id}
                   >
                     {processingPaymentId === selectedPayment._id ? "Processing..." : "✓ Approve Payment"}
                   </button>
@@ -1996,8 +2025,8 @@ const generateTeacherPayments = async () => {
                   />
                   <button
                     className="reject-confirm-btn"
-                    onClick={() => rejectPayment(selectedPayment._id)}
-                    disabled={processingPaymentId === selectedPayment._id || !rejectReason.trim()}
+                              onClick={() => rejectPayment(selectedPayment)}
+                              disabled={processingPaymentId === selectedPayment._id || !rejectReason.trim()}
                   >
                     Confirm Rejection
                   </button>

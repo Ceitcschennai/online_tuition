@@ -1,4 +1,5 @@
 const PDFDocument = require("pdfkit");
+const BillCounter = require("../models/BillCounter");
 
 /* =====================================================
    CEITCS OFFICIAL RECEIPT — shared PDF generation
@@ -13,14 +14,15 @@ const formatKolkata = (date) => {
   return value.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 };
 
-const generateReceiptBillNumber = () => {
+/* Allocate a collision-safe bill number from the atomic BillCounter.
+   Replaces the previous Math.random() based generator, which could
+   produce duplicate bill numbers under concurrent approvals. */
+const allocateBillNumber = async () => {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
-  const random = Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, "0");
-  return `CEITCS-${year}${month}-${random}`;
+  const yearMonth = `${year}${month}`;
+  return BillCounter.allocateNext(yearMonth);
 };
 
 /* Generates the official receipt PDF for a paid payment and
@@ -129,5 +131,5 @@ const generateReceiptPdf = (payment, billNumber) => {
 
 module.exports = {
   generateReceiptPdf,
-  generateReceiptBillNumber,
+  allocateBillNumber,
 };
