@@ -1361,7 +1361,7 @@ if (reuploadToken) {
                 <>
   {reuploadToken
     ? "Re-upload Document"
-    : "Register as Participant"}
+    : "Register as Student"}
 </>
 
               )}

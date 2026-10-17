@@ -1855,7 +1855,7 @@ console.log("🔥 degreeFile:", degreeFile);
 
                 : isReuploadMode
                   ? "Submit Corrected Document"
-                  : "Register as Faculty"
+                  : "Register as Teacher"
 
               }
 

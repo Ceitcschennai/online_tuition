@@ -940,8 +940,7 @@ const Login = () => {
                     </div>
 
                     <span>
-                      Faculty
-                    </span>
+                      Teacher                    </span>
 
                     {role === "teacher" && (
 
@@ -972,7 +971,7 @@ const Login = () => {
                     </div>
 
                     <span>
-                      Participant
+                      Student
                     </span>
 
                     {role === "student" && (
