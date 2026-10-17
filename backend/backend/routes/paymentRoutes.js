@@ -469,7 +469,7 @@ const {
         paymentMethod,
         studentUpiId,
       } = req.body;
-
+console.log("Received student UPI ID:", studentUpiId);
       // Safe development diagnostic - logs amount structure without secrets
       if (process.env.NODE_ENV === "development") {
         console.debug("Payment submission received:", {
@@ -682,7 +682,10 @@ const {
             amountPaid: 0,
             status: "Pending",
             paymentMethod: resolvedPaymentMethod,
-            studentUpiId: resolvedPaymentMethod === "UPI_ID" ? studentUpiId.trim() : "",
+            studentUpiId:
+  studentUpiId && studentUpiId.trim()
+    ? studentUpiId.trim()
+    : "",
           });
 
       }
@@ -798,13 +801,12 @@ const {
       payment.monthlyFee = fee.monthlyFee;
       payment.className = className;
 
-      // Ensure paymentMethod and studentUpiId are set for existing records
-      if (!payment.paymentMethod) {
-        payment.paymentMethod = resolvedPaymentMethod;
-      }
-      if (resolvedPaymentMethod === "UPI_ID" && !payment.studentUpiId) {
-        payment.studentUpiId = studentUpiId.trim();
-      }
+      // Save payment method and student's UPI ID
+payment.paymentMethod = resolvedPaymentMethod;
+
+if (studentUpiId && studentUpiId.trim()) {
+  payment.studentUpiId = studentUpiId.trim();
+}
 
 
       /* -----------------------------------------------------
@@ -894,9 +896,7 @@ const {
           });
 
       const paymentMethodDisplay = latestTxn.method === "UPI_ID" ? "UPI ID" : "QR Code";
-      const upiIdDisplay = latestTxn.method === "UPI_ID" && payment.studentUpiId
-        ? payment.studentUpiId
-        : "N/A";
+      const upiIdDisplay = payment.studentUpiId || "N/A";
 
       // Student acknowledgement email
       try {
@@ -942,7 +942,7 @@ const {
                 <p style="margin: 5px 0;"><strong>Outstanding Balance:</strong> ₹${outstandingBalance}</p>
                 <p style="margin: 5px 0;"><strong>Submitted Amount:</strong> ₹${latestTxn.amount}</p>
                 <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${paymentMethodDisplay}</p>
-                ${latestTxn.method === "UPI_ID" ? `<p style="margin: 5px 0;"><strong>UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
+                ${payment.studentUpiId ? `<p style="margin: 5px 0;"><strong>Student UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
                 <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${latestTxn.transactionReference}</p>
                 <p style="margin: 5px 0;"><strong>Submission Date:</strong> ${submissionDate}</p>
                 <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #f0a500;">Pending Verification</span></p>
@@ -1045,7 +1045,7 @@ const {
                   <p style="margin: 5px 0;"><strong>Outstanding Balance:</strong> ₹${outstandingBalance}</p>
                   <p style="margin: 5px 0;"><strong>Submitted Amount:</strong> ₹${latestTxn.amount}</p>
                   <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${paymentMethodDisplay}</p>
-                  ${latestTxn.method === "UPI_ID" ? `<p style="margin: 5px 0;"><strong>UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
+                  ${payment.studentUpiId ? `<p style="margin: 5px 0;"><strong>Student UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
                   <p style="margin: 5px 0;"><strong>Payment Reference (UTR):</strong> ${latestTxn.transactionReference}</p>
                   <p style="margin: 5px 0;"><strong>Submission Date:</strong> ${submissionDate}</p>
                   <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #f0a500;">Pending Verification</span></p>
@@ -1179,7 +1179,7 @@ const {
                   <p style="margin: 5px 0;"><strong>Applicable Tuition Fee:</strong> ₹${payment.monthlyFee}</p>
                   <p style="margin: 5px 0;"><strong>Amount Paid (Unverified):</strong> ${submittedAmountDisplay}</p>
                   <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${paymentMethodDisplay}</p>
-                  ${latestTxn.method === "UPI_ID" ? `<p style="margin: 5px 0;"><strong>UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
+                  ${payment.studentUpiId ? `<p style="margin: 5px 0;"><strong>Student UPI ID:</strong> ${upiIdDisplay}</p>` : ""}
                   <p style="margin: 5px 0;"><strong>Transaction Reference / UTR:</strong> ${latestTxn.transactionReference}</p>
                   <p style="margin: 5px 0;"><strong>Submission Date:</strong> ${submissionDate}</p>
                   <p style="margin: 5px 0;"><strong>Payment Status:</strong> <span style="color: #f0a500;">Submitted - Awaiting Admin Verification</span></p>
